@@ -9,6 +9,7 @@ ApplicationWindow {
     required property var movieModel
     required property var vpnManager
     required property var providerManager
+    required property var prowlarrManager
     width: 1280
     height: 760
     minimumWidth: 900
@@ -44,7 +45,9 @@ ApplicationWindow {
                 Layout.preferredWidth: 255
                 Layout.fillHeight: true
                 currentIndex: window.pageIndex
+                searchEnabled: window.prowlarrManager.ready && !window.prowlarrManager.searchBusy
                 onPageRequested: index => window.pageIndex = index
+                onSearchRequested: query => window.prowlarrManager.search(query)
             }
 
             Rectangle {
@@ -57,12 +60,16 @@ ApplicationWindow {
                     anchors.fill: parent
                     anchors.margins: 18
                     currentIndex: window.pageIndex
-                    DiscoverPage { movieModel: window.movieModel }
+                    DiscoverPage {
+                        movieModel: window.movieModel
+                        prowlarrManager: window.prowlarrManager
+                    }
                     LibraryPage {}
                     DownloadsPage {}
                     SettingsPage {
                         vpnManager: window.vpnManager
                         providerManager: window.providerManager
+                        prowlarrManager: window.prowlarrManager
                     }
                 }
             }

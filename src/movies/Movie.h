@@ -12,4 +12,7 @@ struct Movie final
     QString quality;
     int seederCount = 0;
     qint64 sizeBytes = 0;
+    QString sourceLabel;
+    QString downloadUrl;
+    QString magnetUrl;
 };

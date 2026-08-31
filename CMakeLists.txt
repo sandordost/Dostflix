@@ -23,6 +23,7 @@ qt_add_executable(dostflix
     src/providers/TorznabParser.cpp
     src/providers/ProviderListModel.cpp
     src/providers/ProviderManager.cpp
+    src/providers/ProwlarrManager.cpp
     src/providers/SecretStore.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp

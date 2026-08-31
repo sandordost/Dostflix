@@ -10,7 +10,8 @@ private slots:
     {
         MovieListModel model;
         model.replaceMovies({Movie{QStringLiteral("m1"), QStringLiteral("Arrival"), 2016,
-                                   QString(), QStringLiteral("1080p"), 42, 8'000'000'000LL}});
+                                   QString(), QStringLiteral("1080p"), 42, 8'000'000'000LL,
+                                   QString(), QString(), QString()}});
         QCOMPARE(model.rowCount(), 1);
         const QModelIndex first = model.index(0, 0);
         QCOMPARE(model.data(first, MovieListModel::TitleRole).toString(), QStringLiteral("Arrival"));
@@ -22,7 +23,8 @@ private slots:
     {
         MovieListModel model;
         model.replaceMovies({Movie{QStringLiteral("m1"), QStringLiteral("Arrival"), 2016,
-                                   QString(), QStringLiteral("1080p"), 42, 8'000'000'000LL}});
+                                   QString(), QStringLiteral("1080p"), 42, 8'000'000'000LL,
+                                   QString(), QString(), QString()}});
         QCOMPARE(model.rowCount(model.index(0, 0)), 0);
         QVERIFY(!model.data(QModelIndex(), MovieListModel::TitleRole).isValid());
     }

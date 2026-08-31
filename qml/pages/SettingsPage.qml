@@ -10,6 +10,7 @@ Item {
     id: root
     required property var vpnManager
     required property var providerManager
+    required property var prowlarrManager
 
     FileDialog {
         id: profileDialog
@@ -140,9 +141,49 @@ Item {
             font.weight: Font.DemiBold
         }
 
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: prowlarrRow.implicitHeight + 24
+            radius: Theme.radius
+            color: Theme.raised
+
+            RowLayout {
+                id: prowlarrRow
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+
+                Rectangle {
+                    implicitWidth: 9
+                    implicitHeight: 9
+                    radius: 5
+                    color: root.prowlarrManager.ready ? Theme.safe : Theme.textSecondary
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Label { text: qsTr("Managed Prowlarr"); color: Theme.textPrimary; font.weight: Font.DemiBold }
+                    Label { text: root.prowlarrManager.stateLabel; color: Theme.textSecondary }
+                }
+                Button {
+                    text: qsTr("Configure indexers")
+                    enabled: root.prowlarrManager.ready
+                    onClicked: root.prowlarrManager.openWebInterface()
+                }
+            }
+        }
+
         Label {
             Layout.fillWidth: true
-            text: qsTr("Add your own Prowlarr or Torznab-compatible endpoint. Dostflix includes no providers.")
+            visible: root.prowlarrManager.errorMessage.length > 0
+            text: root.prowlarrManager.errorMessage
+            color: "#ff9b9b"
+            wrapMode: Text.WordWrap
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Configure indexers in managed Prowlarr above, or add a separate Torznab-compatible endpoint. Dostflix includes no indexers.")
             color: Theme.textSecondary
             wrapMode: Text.WordWrap
         }
