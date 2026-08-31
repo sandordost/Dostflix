@@ -49,5 +49,14 @@ add_test(NAME qml_component_tests COMMAND tst_qml_components
     -input ${CMAKE_CURRENT_SOURCE_DIR}/qml
 )
 set_tests_properties(qml_component_tests PROPERTIES
-    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_CONTROLS_STYLE=Basic"
 )
+
+qt_add_executable(tst_app_controller
+    ui/tst_app_controller.cpp
+    ${PROJECT_SOURCE_DIR}/src/ui/AppController.cpp
+)
+target_include_directories(tst_app_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_app_controller PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_app_controller)
+add_test(NAME app_controller COMMAND tst_app_controller)

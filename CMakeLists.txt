@@ -18,6 +18,7 @@ qt_add_executable(dostflix
     src/library/LibraryDatabase.cpp
     src/movies/Movie.cpp
     src/movies/MovieListModel.cpp
+    src/ui/AppController.cpp
 )
 target_include_directories(dostflix PRIVATE src)
 
@@ -29,6 +30,15 @@ qt_add_qml_module(dostflix_ui
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Dostflix
     QML_FILES
         qml/Main.qml
+        qml/components/AppHeader.qml
+        qml/components/MovieCard.qml
+        qml/components/MovieGrid.qml
+        qml/components/NowWatchingCard.qml
+        qml/components/SidePanel.qml
+        qml/pages/DiscoverPage.qml
+        qml/pages/DownloadsPage.qml
+        qml/pages/LibraryPage.qml
+        qml/pages/SettingsPage.qml
         qml/theme/Theme.qml
     RESOURCES
         assets/backgrounds/dust-background.jpg
