@@ -16,6 +16,8 @@ qt_add_executable(dostflix
     src/app/AppPaths.cpp
     src/app/AppSettings.cpp
     src/library/LibraryDatabase.cpp
+    src/movies/Movie.cpp
+    src/movies/MovieListModel.cpp
 )
 target_include_directories(dostflix PRIVATE src)
 qt_add_qml_module(dostflix

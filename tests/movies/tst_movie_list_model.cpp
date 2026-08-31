@@ -1,0 +1,32 @@
+#include "movies/MovieListModel.h"
+#include <QtTest>
+
+class MovieListModelTest final : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void exposesStableQmlRoles()
+    {
+        MovieListModel model;
+        model.replaceMovies({Movie{QStringLiteral("m1"), QStringLiteral("Arrival"), 2016,
+                                   QString(), QStringLiteral("1080p"), 42, 8'000'000'000LL}});
+        QCOMPARE(model.rowCount(), 1);
+        const QModelIndex first = model.index(0, 0);
+        QCOMPARE(model.data(first, MovieListModel::TitleRole).toString(), QStringLiteral("Arrival"));
+        QCOMPARE(model.data(first, MovieListModel::SeederCountRole).toInt(), 42);
+        QCOMPARE(model.roleNames().value(MovieListModel::PosterUrlRole), QByteArray("posterUrl"));
+    }
+
+    void ignoresChildRowsAndInvalidIndexes()
+    {
+        MovieListModel model;
+        model.replaceMovies({Movie{QStringLiteral("m1"), QStringLiteral("Arrival"), 2016,
+                                   QString(), QStringLiteral("1080p"), 42, 8'000'000'000LL}});
+        QCOMPARE(model.rowCount(model.index(0, 0)), 0);
+        QVERIFY(!model.data(QModelIndex(), MovieListModel::TitleRole).isValid());
+    }
+};
+
+QTEST_GUILESS_MAIN(MovieListModelTest)
+#include "tst_movie_list_model.moc"

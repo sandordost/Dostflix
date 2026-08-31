@@ -29,3 +29,13 @@ target_include_directories(tst_library_database PRIVATE ${PROJECT_SOURCE_DIR}/sr
 target_link_libraries(tst_library_database PRIVATE Qt6::Core Qt6::Sql Qt6::Test)
 dostflix_enable_warnings(tst_library_database)
 add_test(NAME library_database COMMAND tst_library_database)
+
+qt_add_executable(tst_movie_list_model
+    movies/tst_movie_list_model.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/Movie.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/MovieListModel.cpp
+)
+target_include_directories(tst_movie_list_model PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_movie_list_model PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_movie_list_model)
+add_test(NAME movie_list_model COMMAND tst_movie_list_model)
