@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Dostflix
+Comment=Native VPN-protected movie library and streaming client
+Exec=dostflix
+Icon=io.github.sandordost.Dostflix
+Terminal=false
+Categories=AudioVideo;Video;Player;
+StartupWMClass=Dostflix
