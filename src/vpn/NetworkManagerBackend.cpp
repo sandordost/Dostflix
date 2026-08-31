@@ -147,7 +147,15 @@ QString NetworkManagerBackend::tunnelInterface(const QString &uuid, QString *err
         if (error) *error = processError(process);
         return {};
     }
-    return QString::fromUtf8(process.readAllStandardOutput()).trimmed().section(QLatin1Char(','), 0, 0);
+    const QStringList devices = QString::fromUtf8(process.readAllStandardOutput())
+                                    .trimmed().split(QLatin1Char(','), Qt::SkipEmptyParts);
+    for (const QString &device : devices) {
+        if (QFileInfo::exists(QStringLiteral("/sys/class/net/%1/tun_flags").arg(device))) {
+            return device;
+        }
+    }
+    if (error) *error = QStringLiteral("VPN tunnel interface is not ready");
+    return {};
 }
 
 bool NetworkManagerBackend::routeUsesInterface(const QString &interfaceName, QString *error)

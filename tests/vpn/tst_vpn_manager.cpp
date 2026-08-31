@@ -15,6 +15,8 @@ public:
     int activationCount = 0;
     int deactivationCount = 0;
     QString deactivatedPath;
+    bool routeReady = true;
+    bool dnsReady = true;
 
     QList<VpnProfile> profiles(QString *error) override
     {
@@ -42,14 +44,14 @@ public:
 
     bool routeUsesInterface(const QString &, QString *error) override
     {
-        error->clear();
-        return true;
+        *error = routeReady ? QString{} : QStringLiteral("Default IPv4 route does not use the VPN interface");
+        return routeReady;
     }
 
     bool dnsUsesInterface(const QString &, QString *error) override
     {
-        error->clear();
-        return true;
+        *error = dnsReady ? QString{} : QStringLiteral("DNS server route bypasses the VPN interface");
+        return dnsReady;
     }
 
     VpnConnectionState connectionState(const QString &, QString *path, QString *error) override
@@ -198,6 +200,29 @@ private slots:
         manager.shutdown();
         QCOMPARE(guard.removeCount, 1);
         QCOMPARE(backend.deactivationCount, 0);
+    }
+
+    void waitsForTunnelRoutesWithoutShowingAnError()
+    {
+        QTemporaryDir directory;
+        AppSettings settings(directory.filePath(QStringLiteral("settings.ini")));
+        settings.setVpnConnectionUuid(QStringLiteral("vpn-1"));
+        FakeVpnBackend backend;
+        backend.state = VpnConnectionState::Activated;
+        backend.routeReady = false;
+        FakeNetworkGuard guard;
+        VpnManager manager(settings, backend, &guard);
+
+        manager.start();
+
+        QVERIFY(manager.busy());
+        QVERIFY(manager.errorMessage().isEmpty());
+        QVERIFY(!manager.networkReady());
+
+        backend.routeReady = true;
+        QTRY_VERIFY_WITH_TIMEOUT(manager.networkReady(), 2'000);
+        QVERIFY(manager.errorMessage().isEmpty());
+        manager.shutdown();
     }
 
     void removesGuardWhenSwitchingFromExternalVpn()

@@ -118,9 +118,11 @@ void VpnManager::connectSelected()
     if (current == VpnConnectionState::Activated || current == VpnConnectionState::Activating) {
         m_activePath = existingPath;
         m_ownsConnection = false;
-        setState(current == VpnConnectionState::Activated ? State::Connected : State::Connecting);
-        if (current == VpnConnectionState::Activated && !installProtectedGuard()) return;
         m_pollTimer.start();
+        setState(State::Connecting);
+        if (current == VpnConnectionState::Activated && installProtectedGuard()) {
+            setState(State::Connected);
+        }
         return;
     }
     if (current == VpnConnectionState::Failed) {
@@ -220,9 +222,12 @@ bool VpnManager::installProtectedGuard()
     QString error;
     const QString interfaceName = m_backend.tunnelInterface(m_selectedUuid, &error);
     if (interfaceName.isEmpty() || !m_backend.routeUsesInterface(interfaceName, &error)
-        || !m_backend.dnsUsesInterface(interfaceName, &error)
-        || !m_guard->installProtected(m_transport, interfaceName, &error)) {
-        setState(State::Error, error.isEmpty() ? tr("VPN tunnel interface is unavailable") : error);
+        || !m_backend.dnsUsesInterface(interfaceName, &error)) {
+        setState(State::Connecting);
+        return false;
+    }
+    if (!m_guard->installProtected(m_transport, interfaceName, &error)) {
+        setState(State::Error, error.isEmpty() ? tr("VPN protection could not be installed") : error);
         return false;
     }
     m_guardProtected = true;
