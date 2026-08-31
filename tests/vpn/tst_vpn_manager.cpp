@@ -1,4 +1,5 @@
 #include "app/AppSettings.h"
+#include "network/NetworkGuardBackend.h"
 #include "vpn/VpnBackend.h"
 #include "vpn/VpnManager.h"
 
@@ -14,6 +15,8 @@ public:
     int activationCount = 0;
     int deactivationCount = 0;
     QString deactivatedPath;
+    bool routeReady = true;
+    bool dnsReady = true;
 
     QList<VpnProfile> profiles(QString *error) override
     {
@@ -25,6 +28,30 @@ public:
     {
         error->clear();
         return QStringLiteral("vpn-1");
+    }
+
+    VpnTransport transport(const QString &, QString *error) override
+    {
+        error->clear();
+        return {QStringLiteral("vpn.example.test"), 443, false};
+    }
+
+    QString tunnelInterface(const QString &, QString *error) override
+    {
+        error->clear();
+        return QStringLiteral("tun0");
+    }
+
+    bool routeUsesInterface(const QString &, QString *error) override
+    {
+        *error = routeReady ? QString{} : QStringLiteral("Default IPv4 route does not use the VPN interface");
+        return routeReady;
+    }
+
+    bool dnsUsesInterface(const QString &, QString *error) override
+    {
+        *error = dnsReady ? QString{} : QStringLiteral("DNS server route bypasses the VPN interface");
+        return dnsReady;
     }
 
     VpnConnectionState connectionState(const QString &, QString *path, QString *error) override
@@ -51,6 +78,35 @@ public:
         deactivatedPath = path;
         ++deactivationCount;
         state = VpnConnectionState::Inactive;
+        return true;
+    }
+};
+
+class FakeNetworkGuard final : public NetworkGuardBackend
+{
+public:
+    int bootstrapCount = 0;
+    int protectedCount = 0;
+    int removeCount = 0;
+
+    bool installBootstrap(const VpnTransport &, QString *error) override
+    {
+        error->clear();
+        ++bootstrapCount;
+        return true;
+    }
+    bool installProtected(const VpnTransport &, const QString &interfaceName,
+                          QString *error) override
+    {
+        error->clear();
+        if (interfaceName != QStringLiteral("tun0")) return false;
+        ++protectedCount;
+        return true;
+    }
+    bool remove(QString *error) override
+    {
+        error->clear();
+        ++removeCount;
         return true;
     }
 };
@@ -124,6 +180,67 @@ private slots:
 
         QVERIFY(manager.selectedProfileUuid().isEmpty());
         QVERIFY(settings.vpnConnectionUuid().isEmpty());
+    }
+
+    void exposesNetworkingOnlyAfterProtectedGuard()
+    {
+        QTemporaryDir directory;
+        AppSettings settings(directory.filePath(QStringLiteral("settings.ini")));
+        settings.setVpnConnectionUuid(QStringLiteral("vpn-1"));
+        FakeVpnBackend backend;
+        backend.state = VpnConnectionState::Activated;
+        FakeNetworkGuard guard;
+        VpnManager manager(settings, backend, &guard);
+
+        manager.start();
+
+        QCOMPARE(guard.bootstrapCount, 1);
+        QCOMPARE(guard.protectedCount, 1);
+        QVERIFY(manager.networkReady());
+        manager.shutdown();
+        QCOMPARE(guard.removeCount, 1);
+        QCOMPARE(backend.deactivationCount, 0);
+    }
+
+    void waitsForTunnelRoutesWithoutShowingAnError()
+    {
+        QTemporaryDir directory;
+        AppSettings settings(directory.filePath(QStringLiteral("settings.ini")));
+        settings.setVpnConnectionUuid(QStringLiteral("vpn-1"));
+        FakeVpnBackend backend;
+        backend.state = VpnConnectionState::Activated;
+        backend.routeReady = false;
+        FakeNetworkGuard guard;
+        VpnManager manager(settings, backend, &guard);
+
+        manager.start();
+
+        QVERIFY(manager.busy());
+        QVERIFY(manager.errorMessage().isEmpty());
+        QVERIFY(!manager.networkReady());
+
+        backend.routeReady = true;
+        QTRY_VERIFY_WITH_TIMEOUT(manager.networkReady(), 2'000);
+        QVERIFY(manager.errorMessage().isEmpty());
+        manager.shutdown();
+    }
+
+    void removesGuardWhenSwitchingFromExternalVpn()
+    {
+        QTemporaryDir directory;
+        AppSettings settings(directory.filePath(QStringLiteral("settings.ini")));
+        settings.setVpnConnectionUuid(QStringLiteral("vpn-1"));
+        FakeVpnBackend backend;
+        backend.state = VpnConnectionState::Activated;
+        FakeNetworkGuard guard;
+        VpnManager manager(settings, backend, &guard);
+        manager.start();
+
+        manager.selectProfile(QStringLiteral("vpn-2"));
+
+        QCOMPARE(guard.removeCount, 1);
+        QCOMPARE(backend.deactivationCount, 0);
+        QCOMPARE(manager.selectedProfileUuid(), QStringLiteral("vpn-2"));
     }
 };
 

@@ -117,7 +117,9 @@ Item {
                 id: notice
                 anchors.fill: parent
                 anchors.margins: 12
-                text: qsTr("Internet searches and downloads stay disabled until the kill switch has been installed and verified.")
+                text: root.vpnManager.networkReady
+                      ? qsTr("Network protection verified. Protected features may now use the VPN.")
+                      : qsTr("Internet searches and downloads stay disabled until the kill switch has been installed and verified.")
                 color: Theme.textSecondary
                 wrapMode: Text.WordWrap
             }

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Qml Quick QuickControls2 QuickTest Sql Test)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 QuickTest Sql Test)
 qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/DostflixWarnings.cmake)
@@ -18,6 +18,8 @@ qt_add_executable(dostflix
     src/library/LibraryDatabase.cpp
     src/movies/Movie.cpp
     src/movies/MovieListModel.cpp
+    src/network/NetworkGuardClient.cpp
+    src/network/SystemdScope.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp
@@ -49,16 +51,33 @@ qt_add_qml_module(dostflix_ui
 )
 target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2)
 target_link_libraries(dostflix PRIVATE
-    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
+    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
 )
 dostflix_enable_warnings(dostflix)
+
+qt_add_executable(dostflix-network-helper
+    src/network-helper/main.cpp
+    src/network/NetworkGuardRules.cpp
+)
+target_include_directories(dostflix-network-helper PRIVATE src)
+target_link_libraries(dostflix-network-helper PRIVATE Qt6::Core Qt6::Network)
+dostflix_enable_warnings(dostflix-network-helper)
 
 include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
+    add_custom_target(network_isolation_test
+        COMMAND ${PROJECT_SOURCE_DIR}/tests/network/run_isolation_test.sh
+                $<TARGET_FILE:dostflix-network-helper>
+        DEPENDS dostflix-network-helper
+        USES_TERMINAL
+    )
 endif()
 
 install(TARGETS dostflix RUNTIME DESTINATION bin)
+install(TARGETS dostflix-network-helper RUNTIME DESTINATION lib/dostflix)
+install(FILES packaging/io.github.sandordost.Dostflix.network-guard.policy
+        DESTINATION share/polkit-1/actions)
 install(FILES packaging/io.github.sandordost.Dostflix.desktop
         DESTINATION share/applications)
 install(FILES assets/icons/dostflix.svg
