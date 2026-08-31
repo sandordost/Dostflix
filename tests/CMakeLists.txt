@@ -39,3 +39,15 @@ target_include_directories(tst_movie_list_model PRIVATE ${PROJECT_SOURCE_DIR}/sr
 target_link_libraries(tst_movie_list_model PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_movie_list_model)
 add_test(NAME movie_list_model COMMAND tst_movie_list_model)
+
+qt_add_executable(tst_qml_components qml/tst_qml.cpp)
+target_link_libraries(tst_qml_components PRIVATE
+    Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickTest dostflix_uiplugin
+)
+dostflix_enable_warnings(tst_qml_components)
+add_test(NAME qml_component_tests COMMAND tst_qml_components
+    -input ${CMAKE_CURRENT_SOURCE_DIR}/qml
+)
+set_tests_properties(qml_component_tests PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
