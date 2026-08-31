@@ -56,3 +56,8 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS dostflix RUNTIME DESTINATION bin)
+install(FILES packaging/io.github.sandordost.Dostflix.desktop
+        DESTINATION share/applications)
+install(FILES assets/icons/dostflix.svg
+        DESTINATION share/icons/hicolor/scalable/apps
+        RENAME io.github.sandordost.Dostflix.svg)

@@ -1,5 +1,9 @@
 .superpowers/
 .worktrees/
 build/
+packaging/arch/pkg/
+packaging/arch/src/
+packaging/arch/build/
+packaging/arch/*.pkg.tar.*
 work/
 outputs/
