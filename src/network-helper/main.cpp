@@ -47,11 +47,19 @@ int main(int argc, char **argv)
     const QByteArray expectedUid = qgetenv("PKEXEC_UID");
     if (expectedUid.isEmpty() || !status.readAll().contains("Uid:\t" + expectedUid + "\t"))
         return fail(QStringLiteral("Calling process owner mismatch"));
-    if (!cgroup.readAll().contains((QStringLiteral("/") + scope).toUtf8()))
+    QString cgroupPath;
+    for (const QString &line : QString::fromUtf8(cgroup.readAll()).split(QLatin1Char('\n'))) {
+        if (line.startsWith(QStringLiteral("0::/")) && line.endsWith(QStringLiteral("/") + scope)) {
+            cgroupPath = line.mid(4);
+            break;
+        }
+    }
+    if (cgroupPath.isEmpty())
         return fail(QStringLiteral("Calling process is outside the requested scope"));
 
     if (action == QStringLiteral("remove")) {
-        NetworkGuardRequest identity{session, scope, 1,
+        const int actualLevel = static_cast<int>(cgroupPath.count(QLatin1Char('/')) + 1);
+        NetworkGuardRequest identity{session, scope, cgroupPath, actualLevel,
             QHostAddress(QStringLiteral("127.0.0.1")), GuardTransport::Tcp, 1, {},
             GuardPhase::Bootstrap};
         QString validationError;
@@ -73,8 +81,10 @@ int main(int argc, char **argv)
     const QString phase = args.at(10);
     if (!digitsOnly(levelText) || !digitsOnly(portText))
         return fail(QStringLiteral("Invalid numeric field"));
+    if (levelText.toInt() != cgroupPath.count(QLatin1Char('/')) + 1)
+        return fail(QStringLiteral("Cgroup level mismatch"));
 
-    NetworkGuardRequest request{session, scope, levelText.toInt(), QHostAddress(endpoint),
+    NetworkGuardRequest request{session, scope, cgroupPath, levelText.toInt(), QHostAddress(endpoint),
         protocol == QStringLiteral("tcp") ? GuardTransport::Tcp : GuardTransport::Udp,
         static_cast<quint16>(portText.toUInt()), interfaceName,
         phase == QStringLiteral("protected") ? GuardPhase::Protected : GuardPhase::Bootstrap};
@@ -90,7 +100,10 @@ int main(int argc, char **argv)
     if (!nft.waitForStarted()) return fail(QStringLiteral("Unable to start nftables"));
     nft.write(rules.toUtf8());
     nft.closeWriteChannel();
-    if (!nft.waitForFinished(10'000) || nft.exitCode() != 0)
-        return fail(QStringLiteral("nftables rejected the guarded ruleset"));
+    if (!nft.waitForFinished(10'000) || nft.exitCode() != 0) {
+        const QString detail = QString::fromUtf8(nft.readAllStandardError()).trimmed();
+        return fail(detail.isEmpty() ? QStringLiteral("nftables rejected the guarded ruleset")
+                                     : detail);
+    }
     return EXIT_SUCCESS;
 }

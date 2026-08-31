@@ -6,15 +6,15 @@ This repository does not bundle torrent indexers or content sources. Users are r
 
 ## Current status
 
-The current application contains the native shell, Dostify-inspired visual tokens,
-a responsive fixed-ratio movie grid, XDG settings, and the versioned SQLite
-library schema. The VPN lifecycle increment can import and select OpenVPN profiles
-through NetworkManager, connect the selected profile at startup, and disconnect it
-at shutdown only when Dostflix started it.
+The current application contains the native shell, library foundation, OpenVPN
+profile management, and a process-scoped nftables kill switch. The installed
+launcher places Dostflix in a dedicated systemd cgroup; Polkit-authorized rules
+block that scope from the clear interface before VPN activation and during tunnel
+loss. `networkReady` becomes true only after NetworkManager, the tunnel interface,
+the default route, and protected firewall state have all been verified.
 
-Protected internet features remain disabled until the nftables kill switch and
-network-isolation tests are complete. Provider, torrent, player, and subtitle
-behavior will be added in separately tested phases.
+Provider, torrent, player, and subtitle behavior will be added in separately
+tested phases and must use the `networkReady` gate.
 
 ## Arch installation and dependencies
 
@@ -44,6 +44,13 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ctest --test-dir build --output-on-failure
 cmake --build build --target dostflix_ui_qmllint
+```
+
+The privileged isolation test creates temporary network namespaces and virtual
+interfaces, then verifies bootstrap, protected, and removal behavior:
+
+```bash
+cmake --build build --target network_isolation_test
 ```
 
 Run the application with:

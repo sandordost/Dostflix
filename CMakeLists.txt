@@ -18,6 +18,7 @@ qt_add_executable(dostflix
     src/library/LibraryDatabase.cpp
     src/movies/Movie.cpp
     src/movies/MovieListModel.cpp
+    src/network/NetworkGuardClient.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp
@@ -49,7 +50,7 @@ qt_add_qml_module(dostflix_ui
 )
 target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2)
 target_link_libraries(dostflix PRIVATE
-    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
+    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
 )
 dostflix_enable_warnings(dostflix)
 
@@ -64,6 +65,12 @@ dostflix_enable_warnings(dostflix-network-helper)
 include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
+    add_custom_target(network_isolation_test
+        COMMAND ${PROJECT_SOURCE_DIR}/tests/network/run_isolation_test.sh
+                $<TARGET_FILE:dostflix-network-helper>
+        DEPENDS dostflix-network-helper
+        USES_TERMINAL
+    )
 endif()
 
 install(TARGETS dostflix RUNTIME DESTINATION lib/dostflix)

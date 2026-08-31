@@ -6,6 +6,7 @@ namespace {
 const QRegularExpression sessionPattern(QStringLiteral("^[a-f0-9]{32}$"));
 const QRegularExpression scopePattern(QStringLiteral("^dostflix-[a-f0-9]{32}\\.scope$"));
 const QRegularExpression interfacePattern(QStringLiteral("^[A-Za-z0-9_.-]{1,15}$"));
+const QRegularExpression cgroupPattern(QStringLiteral("^[A-Za-z0-9@_.\\-/]+$"));
 }
 
 QString NetworkGuardRules::tableName(const QString &sessionId)
@@ -27,6 +28,14 @@ bool NetworkGuardRules::validate(const NetworkGuardRequest &request, QString *er
     if (!scopePattern.match(request.scopeName).hasMatch()
         || !request.scopeName.contains(request.sessionId)) {
         return reject(QStringLiteral("Invalid Dostflix cgroup scope"));
+    }
+    const QStringList components = request.cgroupPath.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+    if (!cgroupPattern.match(request.cgroupPath).hasMatch()
+        || request.cgroupPath.startsWith(QLatin1Char('/'))
+        || request.cgroupPath.contains(QStringLiteral(".."))
+        || components.isEmpty() || components.constLast() != request.scopeName
+        || components.size() != request.cgroupLevel) {
+        return reject(QStringLiteral("Invalid cgroup path"));
     }
     if (request.cgroupLevel < 1 || request.cgroupLevel > 16) {
         return reject(QStringLiteral("Invalid cgroup level"));
@@ -51,7 +60,7 @@ QString NetworkGuardRules::build(const NetworkGuardRequest &request, QString *er
         return {};
     }
     const QString match = QStringLiteral("socket cgroupv2 level %1 \"%2\"")
-                              .arg(request.cgroupLevel).arg(request.scopeName);
+                              .arg(request.cgroupLevel).arg(request.cgroupPath);
     const QString family = request.endpoint.protocol() == QAbstractSocket::IPv4Protocol
                                ? QStringLiteral("ip") : QStringLiteral("ip6");
     const QString transport = request.transport == GuardTransport::Udp

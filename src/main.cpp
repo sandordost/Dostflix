@@ -1,6 +1,7 @@
 #include "app/AppPaths.h"
 #include "app/AppSettings.h"
 #include "movies/MovieListModel.h"
+#include "network/NetworkGuardClient.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -24,7 +25,8 @@ int main(int argc, char *argv[])
     }
     AppSettings settings(QDir(paths.configDir()).filePath(QStringLiteral("settings.ini")));
     NetworkManagerBackend vpnBackend;
-    VpnManager vpnManager(settings, vpnBackend);
+    NetworkGuardClient networkGuard;
+    VpnManager vpnManager(settings, vpnBackend, &networkGuard);
     QObject::connect(&app, &QCoreApplication::aboutToQuit,
                      &vpnManager, &VpnManager::shutdown);
 

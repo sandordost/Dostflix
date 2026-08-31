@@ -10,6 +10,7 @@ struct NetworkGuardRequest
 {
     QString sessionId;
     QString scopeName;
+    QString cgroupPath;
     int cgroupLevel = 0;
     QHostAddress endpoint;
     GuardTransport transport = GuardTransport::Udp;

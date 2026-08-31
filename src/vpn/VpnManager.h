@@ -7,6 +7,7 @@
 #include <QUrl>
 
 class AppSettings;
+class NetworkGuardBackend;
 class VpnBackend;
 
 class VpnManager final : public QObject
@@ -19,12 +20,14 @@ class VpnManager final : public QObject
     Q_PROPERTY(bool busy READ busy NOTIFY stateChanged)
     Q_PROPERTY(bool connected READ connected NOTIFY stateChanged)
     Q_PROPERTY(bool ownsConnection READ ownsConnection NOTIFY stateChanged)
+    Q_PROPERTY(bool networkReady READ networkReady NOTIFY stateChanged)
 
 public:
     enum class State { NotConfigured, Disconnected, Connecting, Connected, Disconnecting, Error };
     Q_ENUM(State)
 
-    VpnManager(AppSettings &settings, VpnBackend &backend, QObject *parent = nullptr);
+    VpnManager(AppSettings &settings, VpnBackend &backend,
+               NetworkGuardBackend *guard = nullptr, QObject *parent = nullptr);
 
     [[nodiscard]] VpnProfileModel *profileModel();
     [[nodiscard]] QString selectedProfileUuid() const;
@@ -33,6 +36,7 @@ public:
     [[nodiscard]] bool busy() const;
     [[nodiscard]] bool connected() const;
     [[nodiscard]] bool ownsConnection() const;
+    [[nodiscard]] bool networkReady() const;
 
     Q_INVOKABLE void refreshProfiles();
     Q_INVOKABLE void selectProfile(const QString &uuid);
@@ -48,10 +52,14 @@ signals:
 
 private:
     void updateConnectionState();
+    bool installBootstrapGuard();
+    bool installProtectedGuard();
+    bool removeGuard();
     void setState(State state, QString error = {});
 
     AppSettings &m_settings;
     VpnBackend &m_backend;
+    NetworkGuardBackend *m_guard = nullptr;
     VpnProfileModel m_profiles;
     QTimer m_pollTimer;
     QString m_selectedUuid;
@@ -59,4 +67,7 @@ private:
     QString m_error;
     State m_state = State::NotConfigured;
     bool m_ownsConnection = false;
+    bool m_guardInstalled = false;
+    bool m_guardProtected = false;
+    VpnTransport m_transport;
 };

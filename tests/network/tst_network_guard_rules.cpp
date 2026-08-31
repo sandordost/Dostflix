@@ -9,7 +9,9 @@ class NetworkGuardRulesTest final : public QObject
     static NetworkGuardRequest validRequest()
     {
         const QString id(32, QLatin1Char('a'));
-        return {id, QStringLiteral("dostflix-") + id + QStringLiteral(".scope"), 5,
+        const QString scope = QStringLiteral("dostflix-") + id + QStringLiteral(".scope");
+        return {id, scope,
+                QStringLiteral("user.slice/user-1000.slice/user@1000.service/app.slice/") + scope, 5,
                 QHostAddress(QStringLiteral("198.51.100.20")), GuardTransport::Udp,
                 443, QStringLiteral("tun0"), GuardPhase::Protected};
     }

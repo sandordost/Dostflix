@@ -6,7 +6,11 @@
 #include <QDBusPendingReply>
 #include <QDBusReply>
 #include <QFileInfo>
+#include <QFile>
+#include <QHostAddress>
 #include <QProcess>
+#include <QProcessEnvironment>
+#include <QRegularExpression>
 #include <QSet>
 
 namespace {
@@ -82,6 +86,154 @@ QList<VpnProfile> NetworkManagerBackend::profiles(QString *error)
         return {};
     }
     return parseNmcliProfiles(process.readAllStandardOutput());
+}
+
+VpnTransport NetworkManagerBackend::parseOpenVpnData(const QString &data, QString *error)
+{
+    const QRegularExpression remoteExpression(
+        QStringLiteral("(?:^|, )remote = ((?:\\\\.|[^,])+)"));
+    const QRegularExpressionMatch match = remoteExpression.match(data);
+    if (!match.hasMatch()) {
+        if (error) *error = QStringLiteral("OpenVPN profile has no transport endpoint");
+        return {};
+    }
+    QString remote = match.captured(1);
+    remote.replace(QStringLiteral("\\:"), QStringLiteral(":"));
+    QString host = remote;
+    quint16 port = 1194;
+    const qsizetype separator = remote.lastIndexOf(QLatin1Char(':'));
+    bool portOk = false;
+    const uint parsedPort = separator > 0 ? remote.mid(separator + 1).toUInt(&portOk) : 0;
+    if (portOk && parsedPort <= 65'535) {
+        host = remote.left(separator);
+        port = static_cast<quint16>(parsedPort);
+    }
+    if (host.startsWith(QLatin1Char('[')) && host.endsWith(QLatin1Char(']')))
+        host = host.mid(1, host.size() - 2);
+    const bool tcp = data.contains(QStringLiteral("proto-tcp = yes"))
+                     || data.contains(QStringLiteral("proto = tcp"));
+    if (host.isEmpty() || port == 0) {
+        if (error) *error = QStringLiteral("OpenVPN transport endpoint is invalid");
+        return {};
+    }
+    return {host, port, tcp};
+}
+
+VpnTransport NetworkManagerBackend::transport(const QString &uuid, QString *error)
+{
+    QProcess process;
+    process.start(QStringLiteral("nmcli"), {QStringLiteral("--get-values"),
+        QStringLiteral("vpn.service-type,vpn.data"), QStringLiteral("connection"),
+        QStringLiteral("show"), QStringLiteral("uuid"), uuid});
+    if (!process.waitForFinished(10'000) || process.exitCode() != 0) {
+        if (error) *error = processError(process);
+        return {};
+    }
+    const QString output = QString::fromUtf8(process.readAllStandardOutput());
+    if (!output.startsWith(QStringLiteral("org.freedesktop.NetworkManager.openvpn\n"))) {
+        if (error) *error = QStringLiteral("Selected profile is not an OpenVPN connection");
+        return {};
+    }
+    return parseOpenVpnData(output.section(QLatin1Char('\n'), 1), error);
+}
+
+QString NetworkManagerBackend::tunnelInterface(const QString &uuid, QString *error)
+{
+    QProcess process;
+    process.start(QStringLiteral("nmcli"), {QStringLiteral("--get-values"),
+        QStringLiteral("GENERAL.DEVICES"), QStringLiteral("connection"),
+        QStringLiteral("show"), QStringLiteral("--active"), QStringLiteral("uuid"), uuid});
+    if (!process.waitForFinished(10'000) || process.exitCode() != 0) {
+        if (error) *error = processError(process);
+        return {};
+    }
+    return QString::fromUtf8(process.readAllStandardOutput()).trimmed().section(QLatin1Char(','), 0, 0);
+}
+
+bool NetworkManagerBackend::routeUsesInterface(const QString &interfaceName, QString *error)
+{
+    QProcess process;
+    process.start(QStringLiteral("/usr/bin/ip"), {QStringLiteral("-4"), QStringLiteral("route"),
+        QStringLiteral("get"), QStringLiteral("1.1.1.1")});
+    if (!process.waitForFinished(5'000) || process.exitCode() != 0) {
+        if (error) *error = processError(process);
+        return false;
+    }
+    const QStringList fields = QString::fromUtf8(process.readAllStandardOutput())
+                                   .split(QRegularExpression(QStringLiteral("\\s+")),
+                                          Qt::SkipEmptyParts);
+    const qsizetype deviceIndex = fields.indexOf(QStringLiteral("dev"));
+    if (deviceIndex < 0 || deviceIndex + 1 >= fields.size()
+        || fields.at(deviceIndex + 1) != interfaceName) {
+        if (error) *error = QStringLiteral("Default IPv4 route does not use the VPN interface");
+        return false;
+    }
+    return true;
+}
+
+bool NetworkManagerBackend::dnsUsesInterface(const QString &interfaceName, QString *error)
+{
+    QFile resolvConf(QStringLiteral("/etc/resolv.conf"));
+    if (!resolvConf.open(QIODevice::ReadOnly)) {
+        if (error) *error = QStringLiteral("Unable to inspect DNS configuration");
+        return false;
+    }
+    QStringList servers;
+    const QRegularExpression nameserverExpression(
+        QStringLiteral("^\\s*nameserver\\s+(\\S+)"), QRegularExpression::MultilineOption);
+    auto matches = nameserverExpression.globalMatch(QString::fromUtf8(resolvConf.readAll()));
+    while (matches.hasNext()) servers.push_back(matches.next().captured(1));
+    if (servers.isEmpty()) {
+        if (error) *error = QStringLiteral("No DNS servers are configured");
+        return false;
+    }
+
+    for (const QString &server : servers) {
+        const QHostAddress address(server.section(QLatin1Char('%'), 0, 0));
+        if (address.isNull()) {
+            if (error) *error = QStringLiteral("DNS server address is invalid");
+            return false;
+        }
+        if (address.isLoopback()) {
+            QProcess resolved;
+            QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+            environment.insert(QStringLiteral("LC_ALL"), QStringLiteral("C"));
+            resolved.setProcessEnvironment(environment);
+            resolved.start(QStringLiteral("/usr/bin/resolvectl"),
+                           {QStringLiteral("status"), interfaceName});
+            if (!resolved.waitForFinished(5'000) || resolved.exitCode() != 0) {
+                if (error) *error = QStringLiteral("Local DNS resolver is not bound to the VPN");
+                return false;
+            }
+            const QString status = QString::fromUtf8(resolved.readAllStandardOutput());
+            if (!status.contains(QStringLiteral("DNS Servers:"))
+                || (!status.contains(QStringLiteral("DNS Domain: ~."))
+                    && !status.contains(QStringLiteral("DefaultRoute setting: yes")))) {
+                if (error) *error = QStringLiteral("Local DNS resolver has no VPN default route");
+                return false;
+            }
+            continue;
+        }
+        QProcess route;
+        route.start(QStringLiteral("/usr/bin/ip"),
+                    {address.protocol() == QAbstractSocket::IPv6Protocol
+                         ? QStringLiteral("-6") : QStringLiteral("-4"),
+                     QStringLiteral("route"), QStringLiteral("get"), address.toString()});
+        if (!route.waitForFinished(5'000) || route.exitCode() != 0) {
+            if (error) *error = QStringLiteral("DNS server route is unavailable");
+            return false;
+        }
+        const QStringList fields = QString::fromUtf8(route.readAllStandardOutput())
+                                       .split(QRegularExpression(QStringLiteral("\\s+")),
+                                              Qt::SkipEmptyParts);
+        const qsizetype deviceIndex = fields.indexOf(QStringLiteral("dev"));
+        if (deviceIndex < 0 || deviceIndex + 1 >= fields.size()
+            || fields.at(deviceIndex + 1) != interfaceName) {
+            if (error) *error = QStringLiteral("DNS server route bypasses the VPN interface");
+            return false;
+        }
+    }
+    return true;
 }
 
 QString NetworkManagerBackend::importOpenVpn(const QString &filePath, QString *error)

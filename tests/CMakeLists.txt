@@ -66,7 +66,7 @@ qt_add_executable(tst_network_manager_backend
     ${PROJECT_SOURCE_DIR}/src/vpn/NetworkManagerBackend.cpp
 )
 target_include_directories(tst_network_manager_backend PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(tst_network_manager_backend PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
+target_link_libraries(tst_network_manager_backend PRIVATE Qt6::Core Qt6::DBus Qt6::Network Qt6::Test)
 dostflix_enable_warnings(tst_network_manager_backend)
 add_test(NAME network_manager_backend COMMAND tst_network_manager_backend)
 

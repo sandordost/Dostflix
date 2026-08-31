@@ -22,6 +22,18 @@ private slots:
         QCOMPARE(profiles.at(1), VpnProfile({QStringLiteral("3333"),
                                             QStringLiteral("Backslash\\ profile")}));
     }
+
+    void parsesOpenVpnTransport()
+    {
+        QString error;
+        const VpnTransport transport = NetworkManagerBackend::parseOpenVpnData(
+            QStringLiteral("auth = SHA512, remote = nl3.vpn.example\\:443, proto-tcp = no"),
+            &error);
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+        QCOMPARE(transport.host, QStringLiteral("nl3.vpn.example"));
+        QCOMPARE(transport.port, quint16(443));
+        QVERIFY(!transport.tcp);
+    }
 };
 
 QTEST_GUILESS_MAIN(NetworkManagerBackendTest)

@@ -6,12 +6,12 @@
 
 ## Security boundary
 
-Dostflix runs inside a dedicated transient systemd user scope. The firewall matches that cgroup-v2 scope, not the desktop user's UID, so browsers and other applications remain unaffected. A root-owned D-Bus service installs and removes only tables whose names and ownership records it created. Polkit authorizes every state-changing request from the desktop session.
+Dostflix runs inside a dedicated transient systemd user scope. The firewall matches that cgroup-v2 scope, not the desktop user's UID, so browsers and other applications remain unaffected. A root-owned helper reached through `pkexec` installs and removes only validated, session-namespaced tables. Separate Polkit actions authorize installation and narrowly validated removal from the active desktop session.
 
 The service never accepts arbitrary nftables text. Its narrow typed request contains:
 
 - an unguessable session identifier;
-- the verified caller PID and cgroup-v2 scope;
+- the caller PID, whose UID and cgroup-v2 scope the helper independently verifies through `/proc`;
 - one numeric VPN endpoint address, transport protocol, and port;
 - the eventual tunnel interface name;
 - the requested transition: bootstrap, protected, or remove.
@@ -35,7 +35,7 @@ Delete only the session table recorded by the service. Removal is allowed after 
 ## Implementation order
 
 1. Implement pure request validation and deterministic nftables ruleset generation with IPv4/IPv6 tests.
-2. Add the root D-Bus service and Polkit action; resolve and verify the caller through the bus rather than trusting command-line identity fields.
+2. Add the root helper and argument-specific Polkit actions; derive and verify the caller's UID and full cgroup path instead of trusting requested identity fields.
 3. Add the systemd user-scope launcher and validate its exact cgroup path.
 4. Add endpoint parsing/resolution, guard transitions, route checks, and `networkReady` gating.
 5. Add Linux network-namespace tests proving clear-interface packets fail in all lifecycle states.

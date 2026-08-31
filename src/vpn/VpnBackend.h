@@ -11,6 +11,13 @@ struct VpnProfile
     friend bool operator==(const VpnProfile &, const VpnProfile &) = default;
 };
 
+struct VpnTransport
+{
+    QString host;
+    quint16 port = 0;
+    bool tcp = false;
+};
+
 enum class VpnConnectionState
 {
     Inactive,
@@ -27,6 +34,12 @@ public:
 
     [[nodiscard]] virtual QList<VpnProfile> profiles(QString *error) = 0;
     [[nodiscard]] virtual QString importOpenVpn(const QString &filePath, QString *error) = 0;
+    [[nodiscard]] virtual VpnTransport transport(const QString &uuid, QString *error) = 0;
+    [[nodiscard]] virtual QString tunnelInterface(const QString &uuid, QString *error) = 0;
+    [[nodiscard]] virtual bool routeUsesInterface(const QString &interfaceName,
+                                                  QString *error) = 0;
+    [[nodiscard]] virtual bool dnsUsesInterface(const QString &interfaceName,
+                                                QString *error) = 0;
     [[nodiscard]] virtual VpnConnectionState connectionState(const QString &uuid,
                                                               QString *activePath,
                                                               QString *error) = 0;
