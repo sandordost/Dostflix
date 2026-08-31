@@ -43,6 +43,22 @@ private slots:
         QVERIFY(NetworkManagerBackend::parseRouteDevice(
                     "RTNETLINK answers: Network is unreachable\n").isEmpty());
     }
+
+    void configuresExclusiveVpnDnsBeforeActivation()
+    {
+        const QStringList arguments = NetworkManagerBackend::fullTunnelArguments(
+            QStringLiteral("vpn-uuid"));
+        QCOMPARE(arguments.mid(0, 4), QStringList({QStringLiteral("connection"),
+                                                  QStringLiteral("modify"),
+                                                  QStringLiteral("uuid"),
+                                                  QStringLiteral("vpn-uuid")}));
+        const qsizetype ipv4Priority = arguments.indexOf(QStringLiteral("ipv4.dns-priority"));
+        const qsizetype ipv6Priority = arguments.indexOf(QStringLiteral("ipv6.dns-priority"));
+        QVERIFY(ipv4Priority >= 0);
+        QVERIFY(ipv6Priority >= 0);
+        QCOMPARE(arguments.at(ipv4Priority + 1), QStringLiteral("-50"));
+        QCOMPARE(arguments.at(ipv6Priority + 1), QStringLiteral("-50"));
+    }
 };
 
 QTEST_GUILESS_MAIN(NetworkManagerBackendTest)

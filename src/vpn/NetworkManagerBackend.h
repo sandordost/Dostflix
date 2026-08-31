@@ -22,6 +22,7 @@ public:
     [[nodiscard]] static QList<VpnProfile> parseNmcliProfiles(const QByteArray &output);
     [[nodiscard]] static VpnTransport parseOpenVpnData(const QString &data, QString *error);
     [[nodiscard]] static QString parseRouteDevice(const QByteArray &output);
+    [[nodiscard]] static QStringList fullTunnelArguments(const QString &uuid);
 
 private:
     [[nodiscard]] static QStringList splitEscapedFields(const QByteArray &line);

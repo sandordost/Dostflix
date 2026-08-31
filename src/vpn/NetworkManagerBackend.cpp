@@ -165,6 +165,18 @@ QString NetworkManagerBackend::parseRouteDevice(const QByteArray &output)
                ? fields.at(deviceIndex + 1) : QString{};
 }
 
+QStringList NetworkManagerBackend::fullTunnelArguments(const QString &uuid)
+{
+    return {QStringLiteral("connection"), QStringLiteral("modify"),
+            QStringLiteral("uuid"), uuid,
+            QStringLiteral("ipv4.never-default"), QStringLiteral("no"),
+            QStringLiteral("ipv6.never-default"), QStringLiteral("no"),
+            QStringLiteral("ipv4.ignore-auto-dns"), QStringLiteral("no"),
+            QStringLiteral("ipv6.ignore-auto-dns"), QStringLiteral("no"),
+            QStringLiteral("ipv4.dns-priority"), QStringLiteral("-50"),
+            QStringLiteral("ipv6.dns-priority"), QStringLiteral("-50")};
+}
+
 bool NetworkManagerBackend::routeUsesInterface(const QString &interfaceName, QString *error)
 {
     QProcess process;
@@ -345,6 +357,13 @@ VpnConnectionState NetworkManagerBackend::connectionState(const QString &uuid,
 
 bool NetworkManagerBackend::activate(const QString &uuid, QString *activePath, QString *error)
 {
+    QProcess configure;
+    configure.start(QStringLiteral("/usr/bin/nmcli"), fullTunnelArguments(uuid));
+    if (!configure.waitForFinished(10'000) || configure.exitCode() != 0) {
+        if (error) *error = processError(configure);
+        return false;
+    }
+
     QDBusInterface settings(service, settingsPath, settingsInterface,
                             QDBusConnection::systemBus());
     const QDBusReply<QDBusObjectPath> profileReply = settings.call(
