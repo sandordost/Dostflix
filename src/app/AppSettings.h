@@ -1,5 +1,7 @@
 #pragma once
 
+#include "providers/ProviderConfig.h"
+
 #include <QSettings>
 
 class AppSettings final
@@ -11,6 +13,8 @@ public:
     void setLibraryDirectory(const QString &value);
     [[nodiscard]] QString vpnConnectionUuid() const;
     void setVpnConnectionUuid(const QString &value);
+    [[nodiscard]] QList<ProviderConfig> providers() const;
+    void setProviders(const QList<ProviderConfig> &providers);
 
 private:
     mutable QSettings m_settings;

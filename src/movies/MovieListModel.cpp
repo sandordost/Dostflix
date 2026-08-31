@@ -1,6 +1,16 @@
 #include "movies/MovieListModel.h"
 
+#include <QRegularExpression>
 #include <utility>
+
+namespace {
+QString normalizedTitle(QString value)
+{
+    static const QRegularExpression separators(QStringLiteral("[^\\p{L}\\p{N}]+"));
+    value = value.toLower().replace(separators, QStringLiteral(" ")).trimmed();
+    return value;
+}
+}
 
 MovieListModel::MovieListModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -57,4 +67,26 @@ void MovieListModel::replaceMovies(std::vector<Movie> movies)
     beginResetModel();
     m_movies = std::move(movies);
     endResetModel();
+}
+
+void MovieListModel::applyPosterMatches(const std::vector<MoviePosterMatch> &matches)
+{
+    if (matches.empty() || m_movies.empty()) return;
+    bool changed = false;
+    for (Movie &movie : m_movies) {
+        if (!movie.posterUrl.isEmpty()) continue;
+        const QString releaseTitle = normalizedTitle(movie.title);
+        for (const MoviePosterMatch &match : matches) {
+            if (!match.posterUrl.isEmpty()
+                && (movie.year == 0 || match.year == 0 || movie.year == match.year)
+                && releaseTitle.contains(normalizedTitle(match.title))) {
+                movie.posterUrl = match.posterUrl;
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (changed) {
+        emit dataChanged(index(0, 0), index(rowCount() - 1, 0), {PosterUrlRole});
+    }
 }

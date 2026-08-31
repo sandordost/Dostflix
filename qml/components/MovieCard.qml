@@ -24,7 +24,9 @@ Item {
             anchors.top: parent.top
             anchors.margins: 8
             height: width / Theme.posterAspectRatio
-            source: root.posterUrl
+            source: root.posterUrl.toString().length > 0
+                    ? root.posterUrl
+                    : "qrc:/qt/qml/Dostflix/assets/images/poster-placeholder.svg"
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
 

@@ -7,7 +7,19 @@ import Dostflix
 Item {
     id: root
     property int currentIndex: 0
+    property bool searchEnabled: false
     signal pageRequested(int index)
+    signal searchRequested(string query)
+
+    Timer {
+        id: searchDebounce
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            if (searchField.text.trim().length > 0 && root.searchEnabled)
+                root.searchRequested(searchField.text)
+        }
+    }
     implicitWidth: 255
 
     Rectangle {
@@ -22,8 +34,17 @@ Item {
         spacing: 6
 
         TextField {
+            id: searchField
             Layout.fillWidth: true
             placeholderText: qsTr("Search movies…")
+            enabled: root.searchEnabled
+            onTextChanged: {
+                searchDebounce.stop()
+                if (text.trim().length > 0 && root.searchEnabled) {
+                    root.pageRequested(0)
+                    searchDebounce.start()
+                }
+            }
             Accessible.name: qsTr("Search movies")
         }
 

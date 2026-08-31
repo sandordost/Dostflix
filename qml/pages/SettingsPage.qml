@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
@@ -7,6 +9,8 @@ import Dostflix
 Item {
     id: root
     required property var vpnManager
+    required property var providerManager
+    required property var prowlarrManager
 
     FileDialog {
         id: profileDialog
@@ -15,8 +19,13 @@ Item {
         onAccepted: root.vpnManager.importProfile(selectedFile)
     }
 
-    ColumnLayout {
+    ScrollView {
         anchors.fill: parent
+        clip: true
+        contentWidth: availableWidth
+
+        ColumnLayout {
+        width: parent.width
         spacing: 18
 
         Label {
@@ -125,6 +134,182 @@ Item {
             }
         }
 
-        Item { Layout.fillHeight: true }
+        Label {
+            text: qsTr("Torrent providers")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.titleSize
+            font.weight: Font.DemiBold
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: prowlarrRow.implicitHeight + 24
+            radius: Theme.radius
+            color: Theme.raised
+
+            RowLayout {
+                id: prowlarrRow
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+
+                BusyIndicator {
+                    implicitWidth: 22
+                    implicitHeight: 22
+                    running: root.prowlarrManager.running && !root.prowlarrManager.ready
+                    visible: running
+                }
+                Rectangle {
+                    implicitWidth: 9
+                    implicitHeight: 9
+                    radius: 5
+                    visible: !root.prowlarrManager.running || root.prowlarrManager.ready
+                    color: root.prowlarrManager.ready ? Theme.safe : Theme.textSecondary
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Label { text: qsTr("Managed Prowlarr"); color: Theme.textPrimary; font.weight: Font.DemiBold }
+                    Label { text: root.prowlarrManager.stateLabel; color: Theme.textSecondary }
+                }
+                Button {
+                    text: qsTr("Configure indexers")
+                    enabled: root.prowlarrManager.ready
+                    onClicked: root.prowlarrManager.openWebInterface()
+                }
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.prowlarrManager.errorMessage.length > 0
+            text: root.prowlarrManager.errorMessage
+            color: "#ff9b9b"
+            wrapMode: Text.WordWrap
+        }
+
+        Label {
+            text: qsTr("Movie metadata")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.titleSize
+            font.weight: Font.DemiBold
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Add your optional TMDB API Read Access Token for movie posters and metadata. It is stored in a private user-only credential file.")
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            TextField {
+                id: tmdbToken
+                Layout.fillWidth: true
+                placeholderText: root.providerManager.hasTmdbToken
+                                 ? qsTr("TMDB token saved")
+                                 : qsTr("TMDB API Read Access Token")
+                echoMode: TextInput.Password
+            }
+            Button {
+                text: qsTr("Save token")
+                onClicked: {
+                    if (root.providerManager.saveTmdbToken(tmdbToken.text))
+                        tmdbToken.clear()
+                }
+            }
+            Button {
+                text: qsTr("Remove")
+                visible: root.providerManager.hasTmdbToken
+                onClicked: root.providerManager.clearTmdbToken()
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Configure indexers in managed Prowlarr above, or add a separate Torznab-compatible endpoint. Dostflix includes no indexers.")
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            TextField {
+                id: providerName
+                Layout.preferredWidth: 190
+                placeholderText: qsTr("Provider name")
+            }
+            ComboBox {
+                id: providerKind
+                model: ["Torznab", "Prowlarr"]
+            }
+            TextField {
+                id: providerEndpoint
+                Layout.fillWidth: true
+                placeholderText: qsTr("https://example.test/api")
+            }
+            TextField {
+                id: providerApiKey
+                Layout.preferredWidth: 190
+                placeholderText: qsTr("API key (optional)")
+                echoMode: TextInput.Password
+            }
+            Button {
+                text: qsTr("Add provider")
+                onClicked: {
+                    if (root.providerManager.addProvider(providerName.text,
+                                                         providerKind.currentText,
+                                                         providerEndpoint.text,
+                                                         providerApiKey.text)) {
+                        providerName.clear()
+                        providerEndpoint.clear()
+                        providerApiKey.clear()
+                    }
+                }
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.providerManager.errorMessage.length > 0
+            text: root.providerManager.errorMessage
+            color: "#ff9b9b"
+            wrapMode: Text.WordWrap
+        }
+
+        ListView {
+            Layout.fillWidth: true
+            implicitHeight: Math.min(contentHeight, 150)
+            model: root.providerManager.model
+            spacing: 6
+            clip: true
+            delegate: Rectangle {
+                id: providerDelegate
+                required property int index
+                required property string name
+                required property string kind
+                required property string endpoint
+                width: ListView.view.width
+                height: 52
+                radius: Theme.radius
+                color: Theme.raised
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    Label { text: providerDelegate.name; color: Theme.textPrimary; font.weight: Font.DemiBold }
+                    Label { text: providerDelegate.kind; color: Theme.textSecondary }
+                    Label { Layout.fillWidth: true; text: providerDelegate.endpoint; color: Theme.textSecondary; elide: Text.ElideMiddle }
+                    ToolButton {
+                        icon.name: "edit-delete-symbolic"
+                        Accessible.name: qsTr("Remove provider")
+                        onClicked: root.providerManager.removeProvider(providerDelegate.index)
+                    }
+                }
+            }
+        }
+
+        Item { implicitHeight: 1 }
+        }
     }
 }

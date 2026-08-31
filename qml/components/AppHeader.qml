@@ -6,6 +6,7 @@ Item {
     id: root
     required property string vpnLabel
     required property bool vpnConnected
+    required property bool vpnBusy
     height: 72
 
     Image {
@@ -33,10 +34,17 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 8
 
+        BusyIndicator {
+            width: 18
+            height: 18
+            running: root.vpnBusy
+            visible: running
+        }
         Rectangle {
             width: 8
             height: 8
             radius: 4
+            visible: !root.vpnBusy
             color: root.vpnConnected ? Theme.safe : Theme.textSecondary
         }
         Label {

@@ -89,3 +89,32 @@ target_include_directories(tst_network_guard_rules PRIVATE ${PROJECT_SOURCE_DIR}
 target_link_libraries(tst_network_guard_rules PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 dostflix_enable_warnings(tst_network_guard_rules)
 add_test(NAME network_guard_rules COMMAND tst_network_guard_rules)
+
+qt_add_executable(tst_torznab_parser
+    providers/tst_torznab_parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/TorznabParser.cpp
+)
+target_include_directories(tst_torznab_parser PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torznab_parser PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_torznab_parser)
+add_test(NAME torznab_parser COMMAND tst_torznab_parser)
+
+qt_add_executable(tst_provider_manager
+    providers/tst_provider_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderManager.cpp
+)
+target_include_directories(tst_provider_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_provider_manager PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_provider_manager)
+add_test(NAME provider_manager COMMAND tst_provider_manager)
+
+qt_add_executable(tst_secret_store
+    providers/tst_secret_store.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/SecretStore.cpp
+)
+target_include_directories(tst_secret_store PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_secret_store PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_secret_store)
+add_test(NAME secret_store COMMAND tst_secret_store)
