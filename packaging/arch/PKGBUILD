@@ -5,7 +5,8 @@ pkgdesc='Native VPN-protected movie library and streaming client'
 arch=('x86_64')
 url='https://github.com/sandordost/Dostflix'
 license=('GPL-3.0-or-later')
-depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'sqlite')
+depends=('networkmanager' 'networkmanager-openvpn' 'openvpn'
+         'qt6-base' 'qt6-declarative' 'qt6-svg' 'sqlite')
 makedepends=('cmake' 'ninja' 'qt6-tools')
 source=()
 sha256sums=()

@@ -7,6 +7,7 @@ ApplicationWindow {
     id: window
     required property var appController
     required property var movieModel
+    required property var vpnManager
     width: 1280
     height: 760
     minimumWidth: 900
@@ -29,7 +30,8 @@ ApplicationWindow {
 
         AppHeader {
             Layout.fillWidth: true
-            vpnLabel: qsTr("VPN not configured")
+            vpnLabel: window.vpnManager.stateLabel
+            vpnConnected: window.vpnManager.connected
         }
 
         RowLayout {
@@ -57,7 +59,7 @@ ApplicationWindow {
                     DiscoverPage { movieModel: window.movieModel }
                     LibraryPage {}
                     DownloadsPage {}
-                    SettingsPage {}
+                    SettingsPage { vpnManager: window.vpnManager }
                 }
             }
         }

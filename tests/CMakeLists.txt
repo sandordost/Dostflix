@@ -60,3 +60,23 @@ target_include_directories(tst_app_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_app_controller PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_app_controller)
 add_test(NAME app_controller COMMAND tst_app_controller)
+
+qt_add_executable(tst_network_manager_backend
+    vpn/tst_network_manager_backend.cpp
+    ${PROJECT_SOURCE_DIR}/src/vpn/NetworkManagerBackend.cpp
+)
+target_include_directories(tst_network_manager_backend PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_network_manager_backend PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
+dostflix_enable_warnings(tst_network_manager_backend)
+add_test(NAME network_manager_backend COMMAND tst_network_manager_backend)
+
+qt_add_executable(tst_vpn_manager
+    vpn/tst_vpn_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/vpn/VpnManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/vpn/VpnProfileModel.cpp
+)
+target_include_directories(tst_vpn_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_vpn_manager PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_vpn_manager)
+add_test(NAME vpn_manager COMMAND tst_vpn_manager)
