@@ -15,11 +15,10 @@ NetworkGuardClient::NetworkGuardClient(QString helperPath)
         return;
     }
 
+    const QString installedHelper = QStringLiteral("/usr/lib/dostflix/dostflix-network-helper");
     const QString developmentHelper = QDir(QCoreApplication::applicationDirPath())
                                           .filePath(QStringLiteral("dostflix-network-helper"));
-    m_helperPath = QFileInfo::exists(developmentHelper)
-                       ? developmentHelper
-                       : QStringLiteral("/usr/lib/dostflix/dostflix-network-helper");
+    m_helperPath = QFileInfo::exists(installedHelper) ? installedHelper : developmentHelper;
 }
 
 bool NetworkGuardClient::loadScope(QString *error)
