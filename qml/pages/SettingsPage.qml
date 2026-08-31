@@ -18,8 +18,13 @@ Item {
         onAccepted: root.vpnManager.importProfile(selectedFile)
     }
 
-    ColumnLayout {
+    ScrollView {
         anchors.fill: parent
+        clip: true
+        contentWidth: availableWidth
+
+        ColumnLayout {
+        width: parent.width
         spacing: 18
 
         Label {
@@ -218,6 +223,7 @@ Item {
             }
         }
 
-        Item { Layout.fillHeight: true }
+        Item { implicitHeight: 1 }
+        }
     }
 }
