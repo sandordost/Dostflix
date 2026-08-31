@@ -89,3 +89,12 @@ target_include_directories(tst_network_guard_rules PRIVATE ${PROJECT_SOURCE_DIR}
 target_link_libraries(tst_network_guard_rules PRIVATE Qt6::Core Qt6::Network Qt6::Test)
 dostflix_enable_warnings(tst_network_guard_rules)
 add_test(NAME network_guard_rules COMMAND tst_network_guard_rules)
+
+qt_add_executable(tst_torznab_parser
+    providers/tst_torznab_parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/TorznabParser.cpp
+)
+target_include_directories(tst_torznab_parser PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torznab_parser PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_torznab_parser)
+add_test(NAME torznab_parser COMMAND tst_torznab_parser)

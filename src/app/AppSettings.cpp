@@ -24,3 +24,41 @@ void AppSettings::setVpnConnectionUuid(const QString &value)
 {
     m_settings.setValue(QStringLiteral("vpn/connectionUuid"), value);
 }
+
+QList<ProviderConfig> AppSettings::providers() const
+{
+    QList<ProviderConfig> result;
+    const int count = m_settings.beginReadArray(QStringLiteral("providers"));
+    result.reserve(count);
+    for (int index = 0; index < count; ++index) {
+        m_settings.setArrayIndex(index);
+        ProviderConfig provider;
+        provider.id = m_settings.value(QStringLiteral("id")).toString();
+        provider.name = m_settings.value(QStringLiteral("name")).toString();
+        provider.kind = m_settings.value(QStringLiteral("kind")).toString()
+                                == QStringLiteral("prowlarr")
+                            ? ProviderKind::Prowlarr : ProviderKind::Torznab;
+        provider.endpoint = m_settings.value(QStringLiteral("endpoint")).toUrl();
+        provider.enabled = m_settings.value(QStringLiteral("enabled"), true).toBool();
+        result.push_back(provider);
+    }
+    m_settings.endArray();
+    return result;
+}
+
+void AppSettings::setProviders(const QList<ProviderConfig> &providers)
+{
+    m_settings.beginWriteArray(QStringLiteral("providers"), static_cast<int>(providers.size()));
+    for (qsizetype index = 0; index < providers.size(); ++index) {
+        m_settings.setArrayIndex(static_cast<int>(index));
+        const ProviderConfig &provider = providers.at(index);
+        m_settings.setValue(QStringLiteral("id"), provider.id);
+        m_settings.setValue(QStringLiteral("name"), provider.name);
+        m_settings.setValue(QStringLiteral("kind"), provider.kind == ProviderKind::Prowlarr
+                                                       ? QStringLiteral("prowlarr")
+                                                       : QStringLiteral("torznab"));
+        m_settings.setValue(QStringLiteral("endpoint"), provider.endpoint);
+        m_settings.setValue(QStringLiteral("enabled"), provider.enabled);
+    }
+    m_settings.endArray();
+}
