@@ -16,10 +16,25 @@ Protected internet features remain disabled until the nftables kill switch and
 network-isolation tests are complete. Provider, torrent, player, and subtitle
 behavior will be added in separately tested phases.
 
-## Arch prerequisites
+## Arch installation and dependencies
+
+The recommended local installation route is the Arch package. `makepkg -si`
+installs Dostflix's declared runtime and build dependencies through pacman,
+including NetworkManager's OpenVPN plugin, OpenVPN, nftables, Polkit, libtorrent,
+mpv, Secret Service support, and Qt's Wayland platform integration.
 
 ```bash
-sudo pacman -S --needed base-devel cmake networkmanager networkmanager-openvpn ninja openvpn qt6-base qt6-declarative qt6-svg qt6-tools sqlite
+cd packaging/arch
+makepkg -si
+```
+
+For a source-only development build, install the toolchain and current direct
+dependencies with:
+
+```bash
+sudo pacman -S --needed base-devel cmake hicolor-icon-theme libsecret \
+  libtorrent-rasterbar mpv networkmanager networkmanager-openvpn nftables ninja \
+  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite
 ```
 
 ## Build and test
@@ -39,7 +54,7 @@ Run the application with:
 
 ## Local package
 
-From `packaging/arch`:
+To rebuild the local package from `packaging/arch`:
 
 ```bash
 makepkg -si
