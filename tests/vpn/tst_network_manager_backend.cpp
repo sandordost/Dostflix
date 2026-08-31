@@ -34,6 +34,15 @@ private slots:
         QCOMPARE(transport.port, quint16(443));
         QVERIFY(!transport.tcp);
     }
+
+    void parsesTheDeviceFromAnIpRoute()
+    {
+        QCOMPARE(NetworkManagerBackend::parseRouteDevice(
+                     "1.1.1.1 via 10.9.6.1 dev tun0 src 10.9.6.231 uid 1000\n"),
+                 QStringLiteral("tun0"));
+        QVERIFY(NetworkManagerBackend::parseRouteDevice(
+                    "RTNETLINK answers: Network is unreachable\n").isEmpty());
+    }
 };
 
 QTEST_GUILESS_MAIN(NetworkManagerBackendTest)

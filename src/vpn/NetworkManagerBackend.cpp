@@ -139,23 +139,30 @@ VpnTransport NetworkManagerBackend::transport(const QString &uuid, QString *erro
 
 QString NetworkManagerBackend::tunnelInterface(const QString &uuid, QString *error)
 {
+    Q_UNUSED(uuid)
     QProcess process;
-    process.start(QStringLiteral("nmcli"), {QStringLiteral("--get-values"),
-        QStringLiteral("GENERAL.DEVICES"), QStringLiteral("connection"),
-        QStringLiteral("show"), QStringLiteral("--active"), QStringLiteral("uuid"), uuid});
-    if (!process.waitForFinished(10'000) || process.exitCode() != 0) {
+    process.start(QStringLiteral("/usr/bin/ip"), {QStringLiteral("-4"), QStringLiteral("route"),
+        QStringLiteral("get"), QStringLiteral("1.1.1.1")});
+    if (!process.waitForFinished(5'000) || process.exitCode() != 0) {
         if (error) *error = processError(process);
         return {};
     }
-    const QStringList devices = QString::fromUtf8(process.readAllStandardOutput())
-                                    .trimmed().split(QLatin1Char(','), Qt::SkipEmptyParts);
-    for (const QString &device : devices) {
-        if (QFileInfo::exists(QStringLiteral("/sys/class/net/%1/tun_flags").arg(device))) {
-            return device;
-        }
+    const QString device = parseRouteDevice(process.readAllStandardOutput());
+    if (!device.isEmpty()
+        && QFileInfo::exists(QStringLiteral("/sys/class/net/%1/tun_flags").arg(device))) {
+        return device;
     }
     if (error) *error = QStringLiteral("VPN tunnel interface is not ready");
     return {};
+}
+
+QString NetworkManagerBackend::parseRouteDevice(const QByteArray &output)
+{
+    const QStringList fields = QString::fromUtf8(output).split(
+        QRegularExpression(QStringLiteral("\\s+")), Qt::SkipEmptyParts);
+    const qsizetype deviceIndex = fields.indexOf(QStringLiteral("dev"));
+    return deviceIndex >= 0 && deviceIndex + 1 < fields.size()
+               ? fields.at(deviceIndex + 1) : QString{};
 }
 
 bool NetworkManagerBackend::routeUsesInterface(const QString &interfaceName, QString *error)
