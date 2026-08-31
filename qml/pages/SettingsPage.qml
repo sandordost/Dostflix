@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
@@ -7,6 +9,7 @@ import Dostflix
 Item {
     id: root
     required property var vpnManager
+    required property var providerManager
 
     FileDialog {
         id: profileDialog
@@ -122,6 +125,96 @@ Item {
                       : qsTr("Internet searches and downloads stay disabled until the kill switch has been installed and verified.")
                 color: Theme.textSecondary
                 wrapMode: Text.WordWrap
+            }
+        }
+
+        Label {
+            text: qsTr("Torrent providers")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.titleSize
+            font.weight: Font.DemiBold
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Add your own Prowlarr or Torznab-compatible endpoint. Dostflix includes no providers.")
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            TextField {
+                id: providerName
+                Layout.preferredWidth: 190
+                placeholderText: qsTr("Provider name")
+            }
+            ComboBox {
+                id: providerKind
+                model: ["Torznab", "Prowlarr"]
+            }
+            TextField {
+                id: providerEndpoint
+                Layout.fillWidth: true
+                placeholderText: qsTr("https://example.test/api")
+            }
+            TextField {
+                id: providerApiKey
+                Layout.preferredWidth: 190
+                placeholderText: qsTr("API key (optional)")
+                echoMode: TextInput.Password
+            }
+            Button {
+                text: qsTr("Add provider")
+                onClicked: {
+                    if (root.providerManager.addProvider(providerName.text,
+                                                         providerKind.currentText,
+                                                         providerEndpoint.text,
+                                                         providerApiKey.text)) {
+                        providerName.clear()
+                        providerEndpoint.clear()
+                        providerApiKey.clear()
+                    }
+                }
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.providerManager.errorMessage.length > 0
+            text: root.providerManager.errorMessage
+            color: "#ff9b9b"
+            wrapMode: Text.WordWrap
+        }
+
+        ListView {
+            Layout.fillWidth: true
+            implicitHeight: Math.min(contentHeight, 150)
+            model: root.providerManager.model
+            spacing: 6
+            clip: true
+            delegate: Rectangle {
+                id: providerDelegate
+                required property int index
+                required property string name
+                required property string kind
+                required property string endpoint
+                width: ListView.view.width
+                height: 52
+                radius: Theme.radius
+                color: Theme.raised
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    Label { text: providerDelegate.name; color: Theme.textPrimary; font.weight: Font.DemiBold }
+                    Label { text: providerDelegate.kind; color: Theme.textSecondary }
+                    Label { Layout.fillWidth: true; text: providerDelegate.endpoint; color: Theme.textSecondary; elide: Text.ElideMiddle }
+                    ToolButton {
+                        icon.name: "edit-delete-symbolic"
+                        Accessible.name: qsTr("Remove provider")
+                        onClicked: root.providerManager.removeProvider(providerDelegate.index)
+                    }
+                }
             }
         }
 

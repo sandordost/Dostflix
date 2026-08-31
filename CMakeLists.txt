@@ -21,6 +21,9 @@ qt_add_executable(dostflix
     src/network/NetworkGuardClient.cpp
     src/network/SystemdScope.cpp
     src/providers/TorznabParser.cpp
+    src/providers/ProviderListModel.cpp
+    src/providers/ProviderManager.cpp
+    src/providers/SecretStore.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp

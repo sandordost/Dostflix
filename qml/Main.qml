@@ -8,6 +8,7 @@ ApplicationWindow {
     required property var appController
     required property var movieModel
     required property var vpnManager
+    required property var providerManager
     width: 1280
     height: 760
     minimumWidth: 900
@@ -59,7 +60,10 @@ ApplicationWindow {
                     DiscoverPage { movieModel: window.movieModel }
                     LibraryPage {}
                     DownloadsPage {}
-                    SettingsPage { vpnManager: window.vpnManager }
+                    SettingsPage {
+                        vpnManager: window.vpnManager
+                        providerManager: window.providerManager
+                    }
                 }
             }
         }

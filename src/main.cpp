@@ -3,6 +3,8 @@
 #include "movies/MovieListModel.h"
 #include "network/NetworkGuardClient.h"
 #include "network/SystemdScope.h"
+#include "providers/ProviderManager.h"
+#include "providers/SecretStore.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -33,6 +35,8 @@ int main(int argc, char *argv[])
     NetworkManagerBackend vpnBackend;
     NetworkGuardClient networkGuard;
     VpnManager vpnManager(settings, vpnBackend, &networkGuard);
+    LibSecretStore secretStore;
+    ProviderManager providerManager(settings, secretStore);
     QObject::connect(&app, &QCoreApplication::aboutToQuit,
                      &vpnManager, &VpnManager::shutdown);
 
@@ -51,6 +55,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
         {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
+        {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
     });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },

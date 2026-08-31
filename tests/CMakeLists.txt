@@ -98,3 +98,14 @@ target_include_directories(tst_torznab_parser PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_torznab_parser PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_torznab_parser)
 add_test(NAME torznab_parser COMMAND tst_torznab_parser)
+
+qt_add_executable(tst_provider_manager
+    providers/tst_provider_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderManager.cpp
+)
+target_include_directories(tst_provider_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_provider_manager PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_provider_manager)
+add_test(NAME provider_manager COMMAND tst_provider_manager)
