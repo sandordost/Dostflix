@@ -2,6 +2,7 @@
 #include "app/AppSettings.h"
 #include "movies/MovieListModel.h"
 #include "network/NetworkGuardClient.h"
+#include "network/SystemdScope.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -18,6 +19,11 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QCoreApplication::setOrganizationName(QStringLiteral("SandorDost"));
     QCoreApplication::setApplicationName(QStringLiteral("Dostflix"));
+
+    QString scopeError;
+    if (!SystemdScope::enter(&scopeError)) {
+        qWarning().noquote() << scopeError;
+    }
 
     const AppPaths paths;
     if (!paths.ensureExists()) {

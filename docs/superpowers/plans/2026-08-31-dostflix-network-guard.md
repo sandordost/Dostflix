@@ -36,7 +36,7 @@ Delete only the session table recorded by the service. Removal is allowed after 
 
 1. Implement pure request validation and deterministic nftables ruleset generation with IPv4/IPv6 tests.
 2. Add the root helper and argument-specific Polkit actions; derive and verify the caller's UID and full cgroup path instead of trusting requested identity fields.
-3. Add the systemd user-scope launcher and validate its exact cgroup path.
+3. Register the running application directly in a transient systemd user scope and validate its exact cgroup path.
 4. Add endpoint parsing/resolution, guard transitions, route checks, and `networkReady` gating.
 5. Add Linux network-namespace tests proving clear-interface packets fail in all lifecycle states.
 6. Package the service, D-Bus policy, Polkit action, launcher, and tests.

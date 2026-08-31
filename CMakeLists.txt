@@ -19,6 +19,7 @@ qt_add_executable(dostflix
     src/movies/Movie.cpp
     src/movies/MovieListModel.cpp
     src/network/NetworkGuardClient.cpp
+    src/network/SystemdScope.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp
@@ -73,9 +74,8 @@ if(BUILD_TESTING)
     )
 endif()
 
-install(TARGETS dostflix RUNTIME DESTINATION lib/dostflix)
+install(TARGETS dostflix RUNTIME DESTINATION bin)
 install(TARGETS dostflix-network-helper RUNTIME DESTINATION lib/dostflix)
-install(PROGRAMS packaging/dostflix-launcher DESTINATION bin RENAME dostflix)
 install(FILES packaging/io.github.sandordost.Dostflix.network-guard.policy
         DESTINATION share/polkit-1/actions)
 install(FILES packaging/io.github.sandordost.Dostflix.desktop

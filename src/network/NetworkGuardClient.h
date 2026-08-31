@@ -7,7 +7,7 @@
 class NetworkGuardClient final : public NetworkGuardBackend
 {
 public:
-    explicit NetworkGuardClient(QString helperPath = QStringLiteral("/usr/lib/dostflix/dostflix-network-helper"));
+    explicit NetworkGuardClient(QString helperPath = {});
 
     bool installBootstrap(const VpnTransport &transport, QString *error) override;
     bool installProtected(const VpnTransport &transport, const QString &interfaceName,

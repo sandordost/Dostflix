@@ -8,7 +8,7 @@ This repository does not bundle torrent indexers or content sources. Users are r
 
 The current application contains the native shell, library foundation, OpenVPN
 profile management, and a process-scoped nftables kill switch. The installed
-launcher places Dostflix in a dedicated systemd cgroup; Polkit-authorized rules
+application registers itself in a dedicated systemd cgroup; Polkit-authorized rules
 block that scope from the clear interface before VPN activation and during tunnel
 loss. `networkReady` becomes true only after NetworkManager, the tunnel interface,
 the default route, and protected firewall state have all been verified.

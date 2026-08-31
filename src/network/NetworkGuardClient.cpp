@@ -1,26 +1,29 @@
 #include "network/NetworkGuardClient.h"
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QHostInfo>
 #include <QProcess>
 #include <QRegularExpression>
 
 NetworkGuardClient::NetworkGuardClient(QString helperPath)
-    : m_helperPath(std::move(helperPath))
 {
+    if (!helperPath.isEmpty()) {
+        m_helperPath = std::move(helperPath);
+        return;
+    }
+
+    const QString developmentHelper = QDir(QCoreApplication::applicationDirPath())
+                                          .filePath(QStringLiteral("dostflix-network-helper"));
+    m_helperPath = QFileInfo::exists(developmentHelper)
+                       ? developmentHelper
+                       : QStringLiteral("/usr/lib/dostflix/dostflix-network-helper");
 }
 
 bool NetworkGuardClient::loadScope(QString *error)
 {
-    m_session = QString::fromUtf8(qgetenv("DOSTFLIX_GUARD_SESSION"));
-    m_scope = QString::fromUtf8(qgetenv("DOSTFLIX_GUARD_SCOPE"));
-    const QRegularExpression idPattern(QStringLiteral("^[a-f0-9]{32}$"));
-    if (!idPattern.match(m_session).hasMatch()
-        || m_scope != QStringLiteral("dostflix-%1.scope").arg(m_session)) {
-        if (error) *error = QStringLiteral("Dostflix was not started through its protected launcher");
-        return false;
-    }
     QFile file(QStringLiteral("/proc/self/cgroup"));
     if (!file.open(QIODevice::ReadOnly)) {
         if (error) *error = QStringLiteral("Unable to inspect the Dostflix cgroup");
@@ -30,13 +33,16 @@ bool NetworkGuardClient::loadScope(QString *error)
     for (const QString &line : data.split(QLatin1Char('\n'))) {
         if (!line.startsWith(QStringLiteral("0::"))) continue;
         const QStringList components = line.mid(3).split(QLatin1Char('/'), Qt::SkipEmptyParts);
-        const qsizetype index = components.indexOf(m_scope);
-        if (index >= 0 && index == components.size() - 1) {
-            m_cgroupLevel = static_cast<int>(index + 1);
-            return true;
-        }
+        if (components.isEmpty()) continue;
+        const QRegularExpressionMatch match = QRegularExpression(
+            QStringLiteral("^dostflix-([a-f0-9]{32})\\.scope$")).match(components.constLast());
+        if (!match.hasMatch()) continue;
+        m_session = match.captured(1);
+        m_scope = components.constLast();
+        m_cgroupLevel = static_cast<int>(components.size());
+        return true;
     }
-    if (error) *error = QStringLiteral("Dostflix is outside its protected cgroup");
+    if (error) *error = QStringLiteral("Dostflix could not enter its protected systemd scope");
     return false;
 }
 
