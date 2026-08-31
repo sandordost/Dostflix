@@ -4,14 +4,37 @@ Dostflix is a native Qt 6 movie library and streaming client for Arch Linux. The
 
 This repository does not bundle torrent indexers or content sources. Users are responsible for configuring lawful sources and for complying with applicable copyright law.
 
-## Foundation status
+## Current status
 
-The current foundation release contains the native application shell, Dostify-inspired visual tokens, a responsive fixed-ratio movie grid, XDG settings paths, and the versioned SQLite library schema. It deliberately performs no network requests. VPN, provider, torrent, player, and subtitle behavior will be added in separately tested phases.
+The current application contains the native shell, Dostify-inspired visual tokens,
+a responsive fixed-ratio movie grid, XDG settings, and the versioned SQLite
+library schema. The VPN lifecycle increment can import and select OpenVPN profiles
+through NetworkManager, connect the selected profile at startup, and disconnect it
+at shutdown only when Dostflix started it.
 
-## Arch prerequisites
+Protected internet features remain disabled until the nftables kill switch and
+network-isolation tests are complete. Provider, torrent, player, and subtitle
+behavior will be added in separately tested phases.
+
+## Arch installation and dependencies
+
+The recommended local installation route is the Arch package. `makepkg -si`
+installs Dostflix's declared runtime and build dependencies through pacman,
+including NetworkManager's OpenVPN plugin, OpenVPN, nftables, Polkit, libtorrent,
+mpv, Secret Service support, and Qt's Wayland platform integration.
 
 ```bash
-sudo pacman -S --needed base-devel cmake ninja qt6-base qt6-declarative qt6-svg qt6-tools sqlite
+cd packaging/arch
+makepkg -si
+```
+
+For a source-only development build, install the toolchain and current direct
+dependencies with:
+
+```bash
+sudo pacman -S --needed base-devel cmake hicolor-icon-theme libsecret \
+  libtorrent-rasterbar mpv networkmanager networkmanager-openvpn nftables ninja \
+  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite
 ```
 
 ## Build and test
@@ -31,7 +54,7 @@ Run the application with:
 
 ## Local package
 
-From `packaging/arch`:
+To rebuild the local package from `packaging/arch`:
 
 ```bash
 makepkg -si

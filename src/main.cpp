@@ -1,6 +1,11 @@
+#include "app/AppPaths.h"
+#include "app/AppSettings.h"
 #include "movies/MovieListModel.h"
 #include "ui/AppController.h"
+#include "vpn/NetworkManagerBackend.h"
+#include "vpn/VpnManager.h"
 
+#include <QDir>
 #include <QGuiApplication>
 #include <QQuickStyle>
 #include <QQmlApplicationEngine>
@@ -12,6 +17,16 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QCoreApplication::setOrganizationName(QStringLiteral("SandorDost"));
     QCoreApplication::setApplicationName(QStringLiteral("Dostflix"));
+
+    const AppPaths paths;
+    if (!paths.ensureExists()) {
+        return EXIT_FAILURE;
+    }
+    AppSettings settings(QDir(paths.configDir()).filePath(QStringLiteral("settings.ini")));
+    NetworkManagerBackend vpnBackend;
+    VpnManager vpnManager(settings, vpnBackend);
+    QObject::connect(&app, &QCoreApplication::aboutToQuit,
+                     &vpnManager, &VpnManager::shutdown);
 
     AppController controller;
     MovieListModel movies;
@@ -27,10 +42,12 @@ int main(int argc, char *argv[])
     engine.setInitialProperties({
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
+        {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
     });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },
                      Qt::QueuedConnection);
     engine.loadFromModule(QStringLiteral("Dostflix"), QStringLiteral("Main"));
+    vpnManager.start();
     return app.exec();
 }

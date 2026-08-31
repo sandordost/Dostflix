@@ -5,6 +5,7 @@ import Dostflix
 Item {
     id: root
     required property string vpnLabel
+    required property bool vpnConnected
     height: 72
 
     Image {
@@ -36,7 +37,7 @@ Item {
             width: 8
             height: 8
             radius: 4
-            color: Theme.safe
+            color: root.vpnConnected ? Theme.safe : Theme.textSecondary
         }
         Label {
             text: root.vpnLabel

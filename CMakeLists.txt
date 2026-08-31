@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 QuickTest Sql Test)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Qml Quick QuickControls2 QuickTest Sql Test)
 qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/DostflixWarnings.cmake)
@@ -19,6 +19,9 @@ qt_add_executable(dostflix
     src/movies/Movie.cpp
     src/movies/MovieListModel.cpp
     src/ui/AppController.cpp
+    src/vpn/NetworkManagerBackend.cpp
+    src/vpn/VpnManager.cpp
+    src/vpn/VpnProfileModel.cpp
 )
 target_include_directories(dostflix PRIVATE src)
 
@@ -46,7 +49,7 @@ qt_add_qml_module(dostflix_ui
 )
 target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2)
 target_link_libraries(dostflix PRIVATE
-    Qt6::Core Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
+    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
 )
 dostflix_enable_warnings(dostflix)
 
