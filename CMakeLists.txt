@@ -53,12 +53,23 @@ target_link_libraries(dostflix PRIVATE
 )
 dostflix_enable_warnings(dostflix)
 
+qt_add_executable(dostflix-network-helper
+    src/network-helper/main.cpp
+    src/network/NetworkGuardRules.cpp
+)
+target_include_directories(dostflix-network-helper PRIVATE src)
+target_link_libraries(dostflix-network-helper PRIVATE Qt6::Core Qt6::Network)
+dostflix_enable_warnings(dostflix-network-helper)
+
 include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
 install(TARGETS dostflix RUNTIME DESTINATION bin)
+install(TARGETS dostflix-network-helper RUNTIME DESTINATION lib/dostflix)
+install(FILES packaging/io.github.sandordost.Dostflix.network-guard.policy
+        DESTINATION share/polkit-1/actions)
 install(FILES packaging/io.github.sandordost.Dostflix.desktop
         DESTINATION share/applications)
 install(FILES assets/icons/dostflix.svg
