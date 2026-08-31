@@ -20,6 +20,7 @@ depends=(
   'qt6-svg'
   'qt6-wayland'
   'sqlite'
+  'systemd'
 )
 makedepends=('cmake' 'ninja' 'qt6-tools')
 source=()

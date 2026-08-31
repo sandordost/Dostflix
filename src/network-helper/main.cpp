@@ -27,19 +27,18 @@ int main(int argc, char **argv)
     QCoreApplication app(argc, argv);
     const QStringList args = app.arguments();
     if (geteuid() != 0) return fail(QStringLiteral("Network guard helper must run as root"));
-    if (args.size() != 10) return fail(QStringLiteral("Invalid network guard request"));
+    if (args.size() < 5) return fail(QStringLiteral("Invalid network guard request"));
 
-    const QString callerPid = args.at(1);
-    const QString session = args.at(2);
-    const QString scope = args.at(3);
-    const QString levelText = args.at(4);
-    const QString endpoint = args.at(5);
-    const QString protocol = args.at(6);
-    const QString portText = args.at(7);
-    const QString interfaceName = args.at(8);
-    const QString phase = args.at(9);
-    if (!digitsOnly(callerPid) || !digitsOnly(levelText) || !digitsOnly(portText))
-        return fail(QStringLiteral("Invalid numeric field"));
+    const QString action = args.at(1);
+    const QString callerPid = args.at(2);
+    const QString session = args.at(3);
+    const QString scope = args.at(4);
+    if ((action == QStringLiteral("install") && args.size() != 11)
+        || (action == QStringLiteral("remove") && args.size() != 5))
+        return fail(QStringLiteral("Invalid network guard request"));
+    if (action != QStringLiteral("install") && action != QStringLiteral("remove"))
+        return fail(QStringLiteral("Invalid network guard action"));
+    if (!digitsOnly(callerPid)) return fail(QStringLiteral("Invalid caller process"));
 
     QFile status(QStringLiteral("/proc/%1/status").arg(callerPid));
     QFile cgroup(QStringLiteral("/proc/%1/cgroup").arg(callerPid));
@@ -50,6 +49,30 @@ int main(int argc, char **argv)
         return fail(QStringLiteral("Calling process owner mismatch"));
     if (!cgroup.readAll().contains((QStringLiteral("/") + scope).toUtf8()))
         return fail(QStringLiteral("Calling process is outside the requested scope"));
+
+    if (action == QStringLiteral("remove")) {
+        NetworkGuardRequest identity{session, scope, 1,
+            QHostAddress(QStringLiteral("127.0.0.1")), GuardTransport::Tcp, 1, {},
+            GuardPhase::Bootstrap};
+        QString validationError;
+        if (!NetworkGuardRules::validate(identity, &validationError)) return fail(validationError);
+        QProcess remove;
+        remove.start(QStringLiteral("/usr/bin/nft"),
+                     {QStringLiteral("delete"), QStringLiteral("table"),
+                      QStringLiteral("inet"), NetworkGuardRules::tableName(session)});
+        if (!remove.waitForFinished(10'000) || remove.exitCode() != 0)
+            return fail(QStringLiteral("Unable to remove Dostflix network guard"));
+        return EXIT_SUCCESS;
+    }
+
+    const QString levelText = args.at(5);
+    const QString endpoint = args.at(6);
+    const QString protocol = args.at(7);
+    const QString portText = args.at(8);
+    const QString interfaceName = args.at(9);
+    const QString phase = args.at(10);
+    if (!digitsOnly(levelText) || !digitsOnly(portText))
+        return fail(QStringLiteral("Invalid numeric field"));
 
     NetworkGuardRequest request{session, scope, levelText.toInt(), QHostAddress(endpoint),
         protocol == QStringLiteral("tcp") ? GuardTransport::Tcp : GuardTransport::Udp,

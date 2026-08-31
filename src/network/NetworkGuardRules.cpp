@@ -56,7 +56,11 @@ QString NetworkGuardRules::build(const NetworkGuardRequest &request, QString *er
                                ? QStringLiteral("ip") : QStringLiteral("ip6");
     const QString transport = request.transport == GuardTransport::Udp
                                   ? QStringLiteral("udp") : QStringLiteral("tcp");
-    QString rules = QStringLiteral(
+    QString rules;
+    if (request.phase == GuardPhase::Protected) {
+        rules = QStringLiteral("flush table inet %1\n").arg(tableName(request.sessionId));
+    }
+    rules += QStringLiteral(
         "table inet %1 {\n"
         "  chain output {\n"
         "    type filter hook output priority -10; policy accept;\n"

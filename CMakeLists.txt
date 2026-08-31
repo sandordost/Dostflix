@@ -66,8 +66,9 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-install(TARGETS dostflix RUNTIME DESTINATION bin)
+install(TARGETS dostflix RUNTIME DESTINATION lib/dostflix)
 install(TARGETS dostflix-network-helper RUNTIME DESTINATION lib/dostflix)
+install(PROGRAMS packaging/dostflix-launcher DESTINATION bin RENAME dostflix)
 install(FILES packaging/io.github.sandordost.Dostflix.network-guard.policy
         DESTINATION share/polkit-1/actions)
 install(FILES packaging/io.github.sandordost.Dostflix.desktop

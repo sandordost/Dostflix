@@ -24,6 +24,7 @@ private slots:
         QVERIFY(rules.contains(QStringLiteral("ip daddr 198.51.100.20 udp dport 443 accept")));
         QVERIFY(rules.contains(QStringLiteral("oifname \"tun0\" accept")));
         QVERIFY(rules.contains(QStringLiteral("reject")));
+        QVERIFY(rules.startsWith(QStringLiteral("flush table inet dostflix_")));
         QVERIFY(!rules.contains(QStringLiteral("policy drop")));
     }
 
@@ -45,6 +46,7 @@ private slots:
         const QString rules = NetworkGuardRules::build(request, &error);
         QVERIFY2(!rules.isEmpty(), qPrintable(error));
         QVERIFY(!rules.contains(QStringLiteral("tun0")));
+        QVERIFY(!rules.startsWith(QStringLiteral("flush table")));
     }
 };
 
