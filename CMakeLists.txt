@@ -11,7 +11,12 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/DostflixWarnings.cmake)
 
-qt_add_executable(dostflix src/main.cpp)
+qt_add_executable(dostflix
+    src/main.cpp
+    src/app/AppPaths.cpp
+    src/app/AppSettings.cpp
+)
+target_include_directories(dostflix PRIVATE src)
 qt_add_qml_module(dostflix
     URI Dostflix
     VERSION 1.0
