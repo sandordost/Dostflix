@@ -1,6 +1,7 @@
 #include "providers/ProwlarrManager.h"
 
 #include "movies/MovieListModel.h"
+#include "providers/ProviderManager.h"
 
 #include <QDesktopServices>
 #include <QDir>
@@ -20,8 +21,12 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
-ProwlarrManager::ProwlarrManager(QString dataDir, MovieListModel &movieModel, QObject *parent)
-    : QObject(parent), m_dataDir(std::move(dataDir)), m_movieModel(movieModel)
+ProwlarrManager::ProwlarrManager(QString dataDir, MovieListModel &movieModel,
+                                 ProviderManager &providerManager, QObject *parent)
+    : QObject(parent)
+    , m_dataDir(std::move(dataDir))
+    , m_movieModel(movieModel)
+    , m_providerManager(providerManager)
 {
     m_probeTimer.setInterval(500);
     connect(&m_probeTimer, &QTimer::timeout, this, &ProwlarrManager::probe);
@@ -52,7 +57,10 @@ bool ProwlarrManager::ready() const { return m_ready; }
 QString ProwlarrManager::errorMessage() const { return m_error; }
 QString ProwlarrManager::webUrl() const { return QStringLiteral("http://127.0.0.1:9696"); }
 QString ProwlarrManager::apiKey() const { return m_apiKey; }
-bool ProwlarrManager::searchBusy() const { return !m_searchReply.isNull(); }
+bool ProwlarrManager::searchBusy() const
+{
+    return !m_searchReply.isNull() || !m_metadataReply.isNull();
+}
 QString ProwlarrManager::searchError() const { return m_searchError; }
 
 QString ProwlarrManager::stateLabel() const
@@ -81,8 +89,22 @@ void ProwlarrManager::shutdown()
 void ProwlarrManager::search(const QString &query)
 {
     const QString trimmed = query.trimmed();
-    if (!m_ready || trimmed.isEmpty() || searchBusy()) return;
+    if (!m_ready || trimmed.isEmpty()) return;
 
+    if (m_searchReply) {
+        QNetworkReply *oldReply = m_searchReply;
+        m_searchReply = nullptr;
+        oldReply->abort();
+        oldReply->deleteLater();
+    }
+    if (m_metadataReply) {
+        QNetworkReply *oldReply = m_metadataReply;
+        m_metadataReply = nullptr;
+        oldReply->abort();
+        oldReply->deleteLater();
+    }
+
+    m_searchQuery = trimmed;
     m_searchError.clear();
     QUrl url(webUrl() + QStringLiteral("/api/v1/search"));
     QUrlQuery parameters;
@@ -98,9 +120,10 @@ void ProwlarrManager::search(const QString &query)
     m_searchReply = m_network.get(request);
     emit searchStateChanged();
 
-    connect(m_searchReply, &QNetworkReply::finished, this, [this] {
-        QNetworkReply *reply = m_searchReply;
-        if (reply == nullptr) return;
+    QNetworkReply *searchReply = m_searchReply;
+    connect(searchReply, &QNetworkReply::finished, this, [this, searchReply] {
+        if (m_searchReply != searchReply) return;
+        QNetworkReply *reply = searchReply;
         const QByteArray body = reply->readAll();
         if (reply->error() != QNetworkReply::NoError) {
             m_searchError = reply->errorString();
@@ -144,6 +167,60 @@ void ProwlarrManager::search(const QString &query)
         }
         reply->deleteLater();
         m_searchReply = nullptr;
+        if (m_searchError.isEmpty() && m_movieModel.rowCount() > 0
+            && m_providerManager.hasTmdbToken()) {
+            fetchMetadata(m_searchQuery);
+        }
+        emit searchStateChanged();
+    });
+}
+
+void ProwlarrManager::fetchMetadata(const QString &query)
+{
+    QUrl url(QStringLiteral("https://api.themoviedb.org/3/search/movie"));
+    QUrlQuery parameters;
+    parameters.addQueryItem(QStringLiteral("query"), query);
+    parameters.addQueryItem(QStringLiteral("include_adult"), QStringLiteral("false"));
+    parameters.addQueryItem(QStringLiteral("language"), QStringLiteral("nl-NL"));
+    parameters.addQueryItem(QStringLiteral("page"), QStringLiteral("1"));
+    url.setQuery(parameters);
+    QNetworkRequest request(url);
+    request.setRawHeader("Accept", "application/json");
+    request.setRawHeader("Authorization",
+                         QByteArray("Bearer ") + m_providerManager.tmdbToken().toUtf8());
+    request.setTransferTimeout(15'000);
+    m_metadataReply = m_network.get(request);
+    QNetworkReply *metadataReply = m_metadataReply;
+    emit searchStateChanged();
+
+    connect(metadataReply, &QNetworkReply::finished, this, [this, metadataReply] {
+        if (m_metadataReply != metadataReply) return;
+        if (metadataReply->error() == QNetworkReply::NoError) {
+            const QJsonDocument document = QJsonDocument::fromJson(metadataReply->readAll());
+            const QJsonArray results = document.object().value(QStringLiteral("results")).toArray();
+            std::vector<MoviePosterMatch> matches;
+            matches.reserve(static_cast<std::size_t>(results.size()));
+            for (const QJsonValue &value : results) {
+                const QJsonObject movie = value.toObject();
+                const QString path = movie.value(QStringLiteral("poster_path")).toString();
+                const QString releaseDate = movie.value(QStringLiteral("release_date")).toString();
+                if (!path.isEmpty()) {
+                    const QString posterUrl =
+                        QStringLiteral("https://image.tmdb.org/t/p/w500%1").arg(path);
+                    const int year = releaseDate.left(4).toInt();
+                    matches.push_back({movie.value(QStringLiteral("title")).toString(),
+                                       year, posterUrl});
+                    const QString originalTitle =
+                        movie.value(QStringLiteral("original_title")).toString();
+                    if (originalTitle != matches.back().title) {
+                        matches.push_back({originalTitle, year, posterUrl});
+                    }
+                }
+            }
+            m_movieModel.applyPosterMatches(matches);
+        }
+        metadataReply->deleteLater();
+        m_metadataReply = nullptr;
         emit searchStateChanged();
     });
 }
@@ -227,7 +304,19 @@ void ProwlarrManager::start()
 
 void ProwlarrManager::stop()
 {
-    if (m_searchReply) m_searchReply->abort();
+    if (m_searchReply) {
+        QNetworkReply *reply = m_searchReply;
+        m_searchReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
+    if (m_metadataReply) {
+        QNetworkReply *reply = m_metadataReply;
+        m_metadataReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
+    emit searchStateChanged();
     m_probeTimer.stop();
     m_ready = false;
     if (!running()) return;

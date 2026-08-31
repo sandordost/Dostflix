@@ -11,8 +11,11 @@ public:
     QString storedId;
     QString storedSecret;
     QString removedId;
+    QString loadedSecret;
     bool store(const QString &id, const QString &secret, QString *error) override
     { storedId = id; storedSecret = secret; error->clear(); return true; }
+    QString load(const QString &, QString *error) override
+    { error->clear(); return loadedSecret; }
     bool remove(const QString &id, QString *error) override
     { removedId = id; error->clear(); return true; }
 };
@@ -39,6 +42,21 @@ private slots:
         manager.removeProvider(0);
         QCOMPARE(manager.model()->rowCount(), 0);
         QCOMPARE(secrets.removedId, secrets.storedId);
+    }
+
+    void storesTmdbTokenOutsideSettings()
+    {
+        QTemporaryDir directory;
+        AppSettings settings(directory.filePath(QStringLiteral("settings.ini")));
+        FakeSecretStore secrets;
+        ProviderManager manager(settings, secrets);
+
+        QVERIFY(manager.saveTmdbToken(QStringLiteral(" bearer-token ")));
+        QVERIFY(manager.hasTmdbToken());
+        QCOMPARE(manager.tmdbToken(), QStringLiteral("bearer-token"));
+        QCOMPARE(secrets.storedId, QStringLiteral("metadata-tmdb"));
+        manager.clearTmdbToken();
+        QVERIFY(!manager.hasTmdbToken());
     }
 };
 

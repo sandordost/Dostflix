@@ -9,10 +9,14 @@ ProviderManager::ProviderManager(AppSettings &settings, SecretStore &secrets, QO
     : QObject(parent), m_settings(settings), m_secrets(secrets)
 {
     m_model.replace(settings.providers());
+    QString ignored;
+    m_tmdbToken = m_secrets.load(QStringLiteral("metadata-tmdb"), &ignored);
 }
 
 ProviderListModel *ProviderManager::model() { return &m_model; }
 QString ProviderManager::errorMessage() const { return m_error; }
+bool ProviderManager::hasTmdbToken() const { return !m_tmdbToken.isEmpty(); }
+QString ProviderManager::tmdbToken() const { return m_tmdbToken; }
 
 bool ProviderManager::addProvider(const QString &name, const QString &kind,
                                   const QString &endpoint, const QString &apiKey)
@@ -51,6 +55,36 @@ void ProviderManager::removeProvider(int row)
     m_model.replace(std::move(providers));
     QString ignored;
     m_secrets.remove(id, &ignored);
+}
+
+bool ProviderManager::saveTmdbToken(const QString &token)
+{
+    const QString trimmed = token.trimmed();
+    if (trimmed.isEmpty()) {
+        setError(tr("Enter a TMDB API Read Access Token"));
+        return false;
+    }
+    QString error;
+    if (!m_secrets.store(QStringLiteral("metadata-tmdb"), trimmed, &error)) {
+        setError(error);
+        return false;
+    }
+    m_tmdbToken = trimmed;
+    setError({});
+    emit tmdbTokenChanged();
+    return true;
+}
+
+void ProviderManager::clearTmdbToken()
+{
+    QString error;
+    if (!m_secrets.remove(QStringLiteral("metadata-tmdb"), &error)) {
+        setError(error);
+        return;
+    }
+    m_tmdbToken.clear();
+    setError({});
+    emit tmdbTokenChanged();
 }
 
 void ProviderManager::setError(QString error)

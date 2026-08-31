@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         {"m5", "Solaris", 1972, {}, "1080p", 39, 6'100'000'000LL, {}, {}, {}},
     });
     ProwlarrManager prowlarrManager(
-        QDir(paths.dataDir()).filePath(QStringLiteral("prowlarr")), movies);
+        QDir(paths.dataDir()).filePath(QStringLiteral("prowlarr")), movies, providerManager);
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &prowlarrManager,
                      [&] { prowlarrManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&] {

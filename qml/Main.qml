@@ -34,6 +34,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             vpnLabel: window.vpnManager.stateLabel
             vpnConnected: window.vpnManager.connected
+            vpnBusy: window.vpnManager.busy
         }
 
         RowLayout {
@@ -45,7 +46,7 @@ ApplicationWindow {
                 Layout.preferredWidth: 255
                 Layout.fillHeight: true
                 currentIndex: window.pageIndex
-                searchEnabled: window.prowlarrManager.ready && !window.prowlarrManager.searchBusy
+                searchEnabled: window.prowlarrManager.ready
                 onPageRequested: index => window.pageIndex = index
                 onSearchRequested: query => window.prowlarrManager.search(query)
             }

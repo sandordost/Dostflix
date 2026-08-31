@@ -29,6 +29,24 @@ bool LibSecretStore::store(const QString &providerId, const QString &secret, QSt
                           QStringLiteral("provider"), providerId}, secret, error);
 }
 
+QString LibSecretStore::load(const QString &providerId, QString *error)
+{
+    QProcess process;
+    process.start(QStringLiteral("/usr/bin/secret-tool"),
+                  {QStringLiteral("lookup"), QStringLiteral("application"),
+                   QStringLiteral("dostflix"), QStringLiteral("provider"), providerId});
+    if (!process.waitForStarted(5'000) || !process.waitForFinished(15'000)) {
+        if (error) *error = QStringLiteral("Desktop secret store is unavailable");
+        return {};
+    }
+    if (process.exitCode() != 0) {
+        if (error) error->clear();
+        return {};
+    }
+    if (error) error->clear();
+    return QString::fromUtf8(process.readAllStandardOutput()).trimmed();
+}
+
 bool LibSecretStore::remove(const QString &providerId, QString *error)
 {
     return runSecretTool({QStringLiteral("clear"), QStringLiteral("application"),

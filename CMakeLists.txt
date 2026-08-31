@@ -53,6 +53,7 @@ qt_add_qml_module(dostflix_ui
     RESOURCES
         assets/backgrounds/dust-background.jpg
         assets/icons/dostflix.svg
+        assets/images/poster-placeholder.svg
 )
 target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2)
 target_link_libraries(dostflix PRIVATE

@@ -10,6 +10,16 @@ Item {
     property bool searchEnabled: false
     signal pageRequested(int index)
     signal searchRequested(string query)
+
+    Timer {
+        id: searchDebounce
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            if (searchField.text.trim().length > 0 && root.searchEnabled)
+                root.searchRequested(searchField.text)
+        }
+    }
     implicitWidth: 255
 
     Rectangle {
@@ -28,10 +38,11 @@ Item {
             Layout.fillWidth: true
             placeholderText: qsTr("Search movies…")
             enabled: root.searchEnabled
-            onAccepted: {
-                if (text.trim().length > 0) {
+            onTextChanged: {
+                searchDebounce.stop()
+                if (text.trim().length > 0 && root.searchEnabled) {
                     root.pageRequested(0)
-                    root.searchRequested(text)
+                    searchDebounce.start()
                 }
             }
             Accessible.name: qsTr("Search movies")

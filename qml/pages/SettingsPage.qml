@@ -153,10 +153,17 @@ Item {
                 anchors.margins: 12
                 spacing: 10
 
+                BusyIndicator {
+                    implicitWidth: 22
+                    implicitHeight: 22
+                    running: root.prowlarrManager.running && !root.prowlarrManager.ready
+                    visible: running
+                }
                 Rectangle {
                     implicitWidth: 9
                     implicitHeight: 9
                     radius: 5
+                    visible: !root.prowlarrManager.running || root.prowlarrManager.ready
                     color: root.prowlarrManager.ready ? Theme.safe : Theme.textSecondary
                 }
                 ColumnLayout {
@@ -179,6 +186,44 @@ Item {
             text: root.prowlarrManager.errorMessage
             color: "#ff9b9b"
             wrapMode: Text.WordWrap
+        }
+
+        Label {
+            text: qsTr("Movie metadata")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.titleSize
+            font.weight: Font.DemiBold
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Add your optional TMDB API Read Access Token for movie posters and metadata. The token is stored in your desktop secret store.")
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            TextField {
+                id: tmdbToken
+                Layout.fillWidth: true
+                placeholderText: root.providerManager.hasTmdbToken
+                                 ? qsTr("TMDB token saved")
+                                 : qsTr("TMDB API Read Access Token")
+                echoMode: TextInput.Password
+            }
+            Button {
+                text: qsTr("Save token")
+                onClicked: {
+                    if (root.providerManager.saveTmdbToken(tmdbToken.text))
+                        tmdbToken.clear()
+                }
+            }
+            Button {
+                text: qsTr("Remove")
+                visible: root.providerManager.hasTmdbToken
+                onClicked: root.providerManager.clearTmdbToken()
+            }
         }
 
         Label {

@@ -7,6 +7,7 @@
 #include <QTimer>
 
 class MovieListModel;
+class ProviderManager;
 class QNetworkReply;
 
 class ProwlarrManager final : public QObject
@@ -23,6 +24,7 @@ class ProwlarrManager final : public QObject
 
 public:
     explicit ProwlarrManager(QString dataDir, MovieListModel &movieModel,
+                             ProviderManager &providerManager,
                              QObject *parent = nullptr);
 
     [[nodiscard]] bool installed() const;
@@ -49,18 +51,22 @@ private:
     void start();
     void stop();
     void probe();
+    void fetchMetadata(const QString &query);
     void setError(QString error);
 
     static constexpr auto Executable = "/usr/lib/prowlarr/bin/Prowlarr";
     QString m_dataDir;
     MovieListModel &m_movieModel;
+    ProviderManager &m_providerManager;
     QString m_apiKey;
     QNetworkAccessManager m_network;
     QPointer<QNetworkReply> m_searchReply;
+    QPointer<QNetworkReply> m_metadataReply;
     QProcess m_process;
     QTimer m_probeTimer;
     bool m_networkReady = false;
     bool m_ready = false;
     QString m_error;
     QString m_searchError;
+    QString m_searchQuery;
 };
