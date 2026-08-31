@@ -197,7 +197,7 @@ Item {
 
         Label {
             Layout.fillWidth: true
-            text: qsTr("Add your optional TMDB API Read Access Token for movie posters and metadata. The token is stored in your desktop secret store.")
+            text: qsTr("Add your optional TMDB API Read Access Token for movie posters and metadata. It is stored in a private user-only credential file.")
             color: Theme.textSecondary
             wrapMode: Text.WordWrap
         }
