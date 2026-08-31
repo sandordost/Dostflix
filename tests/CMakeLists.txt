@@ -20,3 +20,12 @@ target_include_directories(tst_app_settings PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_app_settings PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_app_settings)
 add_test(NAME app_settings COMMAND tst_app_settings)
+
+qt_add_executable(tst_library_database
+    library/tst_library_database.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LibraryDatabase.cpp
+)
+target_include_directories(tst_library_database PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_library_database PRIVATE Qt6::Core Qt6::Sql Qt6::Test)
+dostflix_enable_warnings(tst_library_database)
+add_test(NAME library_database COMMAND tst_library_database)
