@@ -24,7 +24,8 @@ TestCase {
         property real subtitleDelay: 0
         property int pauseCalls: 0
         property int subtitleCalls: 0
-        function stop() {}
+        property int stopCalls: 0
+        function stop() { stopCalls += 1 }
         function seek(offset) {}
         function setPosition(seconds) {}
         function setVolume(value) {}
@@ -43,6 +44,11 @@ TestCase {
             anchors.fill: parent
             player: fakePlayer
         }
+    }
+    SignalSpy {
+        id: browseSpy
+        target: page
+        signalName: "browseRequested"
     }
 
     function test_formats_time() {
@@ -63,6 +69,15 @@ TestCase {
         verify(findChild(page, "subtitleDelayControl") !== null)
         verify(findChild(page, "localSubtitleButton") !== null)
         verify(findChild(page, "findSubtitlesButton") !== null)
+    }
+
+    function test_stop_control_stops_playback_and_browses() {
+        const button = findChild(page, "stopButton")
+        verify(button !== null)
+        browseSpy.clear()
+        mouseClick(button)
+        compare(fakePlayer.stopCalls, 1)
+        compare(browseSpy.count, 1)
     }
 
 }

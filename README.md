@@ -35,7 +35,9 @@ supported local videos, registers them in SQLite without duplicates, and plays
 them through embedded mpv even when the VPN is unavailable. The selected
 TorrServer video is simultaneously retained as a resumable `.dostflix.part`
 file. Its exact transfer identity and progress survive restarts; only an exact,
-fsynced, atomically finalized video becomes visible in the Library.
+fsynced, atomically finalized video becomes visible in the Library. Downloads
+can be played or removed directly, and selecting the same release again reuses
+its existing torrent cache and partial-file progress.
 
 ## Arch installation and dependencies
 
@@ -110,7 +112,8 @@ changing cross-component behavior:
 - `docs/superpowers/plans/2026-09-01-dostflix-local-library.md` — local folder,
   SQLite registration, offline playback, tests, and torrent-retention handoff.
 - `docs/superpowers/plans/2026-09-01-dostflix-durable-retention.md` — resumable
-  loopback writer, SQLite transfer state, atomic completion, and security rules.
+  loopback writer, playback/removal lifecycle, cache reuse, atomic completion,
+  and security rules.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 

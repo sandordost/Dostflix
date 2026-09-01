@@ -24,11 +24,13 @@ ApplicationWindow {
     property int pageIndex: 0
     property bool showingPlayer: false
     property string launchedStreamUrl: ""
+    property string stoppedStreamUrl: ""
 
     function openReadyStream() {
         const url = window.torrentEngine.streamUrl
         if (!window.torrentEngine.bufferReady || url.length === 0
-                || url === window.launchedStreamUrl)
+                || url === window.launchedStreamUrl
+                || url === window.stoppedStreamUrl)
             return
         window.launchedStreamUrl = url
         videoPlayer.play(url, window.torrentEngine.title)
@@ -44,8 +46,12 @@ ApplicationWindow {
         visible: true
         z: window.showingPlayer ? 10 : -1
         onActivePlaybackChanged: {
-            if (!hasActivePlayback)
+            if (!hasActivePlayback) {
+                if (window.launchedStreamUrl.length > 0)
+                    window.stoppedStreamUrl = window.launchedStreamUrl
                 window.showingPlayer = false
+                window.launchedStreamUrl = ""
+            }
         }
     }
 
@@ -61,6 +67,26 @@ ApplicationWindow {
             window.launchedStreamUrl = ""
             videoPlayer.play(fileUrl, title)
             window.showingPlayer = true
+        }
+    }
+
+    Connections {
+        target: window.downloadManager
+        function onLocalPlaybackRequested(fileUrl, title) {
+            window.stoppedStreamUrl = ""
+            window.launchedStreamUrl = ""
+            videoPlayer.play(fileUrl, title)
+            window.showingPlayer = true
+        }
+        function onTorrentPlaybackRequested() {
+            if (videoPlayer.hasActivePlayback
+                    && window.torrentEngine.streamUrl === window.launchedStreamUrl) {
+                window.showingPlayer = true
+                return
+            }
+            window.stoppedStreamUrl = ""
+            window.launchedStreamUrl = ""
+            window.openReadyStream()
         }
     }
 

@@ -227,7 +227,11 @@ void TorrServerManager::resumeStoredTorrent(const QString &title, const QString 
                                             qint64 expectedSize)
 {
     if (!m_networkReady || torrentHash.isEmpty() || fileIndex < 0 || expectedSize <= 0) return;
-    if (m_active && m_hash == torrentHash && m_selectedFileId == fileIndex) return;
+    if (m_active && m_hash == torrentHash && m_selectedFileId == fileIndex) {
+        emit statisticsChanged();
+        emit stateChanged();
+        return;
+    }
     clearTransferState();
     m_title = title;
     m_hash = torrentHash;
@@ -448,13 +452,18 @@ void TorrServerManager::startPreload()
 
 void TorrServerManager::cancel()
 {
-    if (m_daemonReady && !m_hash.isEmpty() && !m_reply) {
-        postJson(QStringLiteral("torrents"),
-                 QJsonObject{{QStringLiteral("action"), QStringLiteral("drop")},
-                             {QStringLiteral("hash"), m_hash}},
-                 [](QNetworkReply *) {});
-    }
     clearTransferState();
+}
+
+void TorrServerManager::removeStoredTorrent(const QString &torrentHash)
+{
+    if (torrentHash.isEmpty()) return;
+    if (m_hash.compare(torrentHash, Qt::CaseInsensitive) == 0) clearTransferState();
+    if (!m_networkReady || !m_daemonReady || m_reply) return;
+    postJson(QStringLiteral("torrents"),
+             QJsonObject{{QStringLiteral("action"), QStringLiteral("drop")},
+                         {QStringLiteral("hash"), torrentHash}},
+             [](QNetworkReply *) {});
 }
 
 void TorrServerManager::shutdown()
@@ -466,6 +475,12 @@ void TorrServerManager::shutdown()
 
 void TorrServerManager::clearTransferState()
 {
+    if (m_reply) {
+        QNetworkReply *reply = m_reply;
+        m_reply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     if (m_preloadReply) {
         QNetworkReply *reply = m_preloadReply;
         m_preloadReply = nullptr;

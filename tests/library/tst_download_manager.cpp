@@ -159,6 +159,99 @@ private slots:
         QCOMPARE(database.transfer(QStringLiteral("hash-three"), 4)->state,
                  QStringLiteral("completed"));
     }
+
+    void playsCompletedDownloadLocally()
+    {
+        QTemporaryDir root;
+        const QByteArray payload("complete movie");
+        AppSettings settings(root.filePath(QStringLiteral("settings.ini")));
+        LibraryDatabase database(root.filePath(QStringLiteral("library.sqlite")),
+                                 QStringLiteral("download-play-complete-test"));
+        QVERIFY(database.open());
+        const QString libraryPath = root.filePath(QStringLiteral("Movies"));
+        QDir().mkpath(libraryPath);
+        const QString finalPath = QDir(libraryPath).filePath(QStringLiteral("complete.mkv"));
+        QFile completed(finalPath);
+        QVERIFY(completed.open(QIODevice::WriteOnly));
+        QCOMPARE(completed.write(payload), payload.size());
+        completed.close();
+        QVERIFY(database.saveTransfer({QString(40, QLatin1Char('a')), 0,
+            QStringLiteral("Complete movie"), QStringLiteral("complete.mkv"), payload.size(),
+            finalPath + QStringLiteral(".dostflix.part"), finalPath, payload.size(),
+            QStringLiteral("completed")}));
+
+        LibraryManager library(settings, database, libraryPath);
+        DownloadManager download(database, library);
+        QSignalSpy playbackSpy(&download, &DownloadManager::localPlaybackRequested);
+        QVERIFY(download.hasTransfer());
+        QVERIFY(download.playable());
+        download.play();
+        QCOMPARE(playbackSpy.size(), 1);
+        QCOMPARE(playbackSpy.first().first().toUrl(), QUrl::fromLocalFile(finalPath));
+    }
+
+    void reusesMatchingMagnetAndExistingPartial()
+    {
+        QTemporaryDir root;
+        AppSettings settings(root.filePath(QStringLiteral("settings.ini")));
+        LibraryDatabase database(root.filePath(QStringLiteral("library.sqlite")),
+                                 QStringLiteral("download-reuse-test"));
+        QVERIFY(database.open());
+        const QString libraryPath = root.filePath(QStringLiteral("Movies"));
+        QDir().mkpath(libraryPath);
+        const QString finalPath = QDir(libraryPath).filePath(QStringLiteral("partial.mkv"));
+        QFile partial(finalPath + QStringLiteral(".dostflix.part"));
+        QVERIFY(partial.open(QIODevice::WriteOnly));
+        QCOMPARE(partial.write("buffered"), 8);
+        partial.close();
+        const QString hash(40, QLatin1Char('a'));
+        QVERIFY(database.saveTransfer({hash, 7, QStringLiteral("Partial movie"),
+            QStringLiteral("partial.mkv"), 100, partial.fileName(), finalPath, 8,
+            QStringLiteral("paused")}));
+
+        LibraryManager library(settings, database, libraryPath);
+        DownloadManager download(database, library);
+        download.setNetworkReady(true);
+        QSignalSpy playbackSpy(&download, &DownloadManager::torrentPlaybackRequested);
+        QVERIFY(download.playMatchingRelease(
+            QStringLiteral("Selected title"),
+            QStringLiteral("magnet:?xt=urn:btih:") + hash.toUpper()));
+        QCOMPARE(playbackSpy.size(), 1);
+        QCOMPARE(playbackSpy.first().at(1).toString(), hash);
+        QCOMPARE(playbackSpy.first().at(2).toInt(), 7);
+        QCOMPARE(download.bytesWritten(), 8);
+    }
+
+    void removesFilesAndTransferHistory()
+    {
+        QTemporaryDir root;
+        AppSettings settings(root.filePath(QStringLiteral("settings.ini")));
+        LibraryDatabase database(root.filePath(QStringLiteral("library.sqlite")),
+                                 QStringLiteral("download-remove-test"));
+        QVERIFY(database.open());
+        const QString libraryPath = root.filePath(QStringLiteral("Movies"));
+        QDir().mkpath(libraryPath);
+        const QString finalPath = QDir(libraryPath).filePath(QStringLiteral("remove.mkv"));
+        QFile file(finalPath);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        QCOMPARE(file.write("remove me"), 9);
+        file.close();
+        QVERIFY(database.upsertMovie(QStringLiteral("Remove"), finalPath));
+        QVERIFY(database.saveTransfer({QStringLiteral("remove-hash"), 2,
+            QStringLiteral("Remove"), QStringLiteral("remove.mkv"), 9,
+            finalPath + QStringLiteral(".dostflix.part"), finalPath, 9,
+            QStringLiteral("completed")}));
+
+        LibraryManager library(settings, database, libraryPath);
+        DownloadManager download(database, library);
+        QSignalSpy removalSpy(&download, &DownloadManager::torrentRemovalRequested);
+        download.remove();
+        QVERIFY(!QFileInfo::exists(finalPath));
+        QVERIFY(!database.transfer(QStringLiteral("remove-hash"), 2).has_value());
+        QCOMPARE(database.movies().size(), 0);
+        QVERIFY(!download.hasTransfer());
+        QCOMPARE(removalSpy.size(), 1);
+    }
 };
 
 QTEST_GUILESS_MAIN(DownloadManagerTest)

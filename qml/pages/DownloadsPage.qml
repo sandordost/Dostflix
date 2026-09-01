@@ -9,6 +9,22 @@ Item {
     id: root
     required property var downloadManager
 
+    Dialog {
+        id: removeDialog
+        objectName: "removeDownloadDialog"
+        anchors.centerIn: parent
+        modal: true
+        title: qsTr("Remove download?")
+        standardButtons: Dialog.Yes | Dialog.No
+        onAccepted: root.downloadManager.remove()
+        contentItem: Label {
+            width: 420
+            text: qsTr("This removes the partial or completed movie file and its download history. This cannot be undone.")
+            color: Theme.textPrimary
+            wrapMode: Text.WordWrap
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 12
@@ -21,8 +37,8 @@ Item {
         Label {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: !root.downloadManager.hasPending
-            text: qsTr("No active or resumable downloads")
+            visible: !root.downloadManager.hasTransfer
+            text: qsTr("No saved downloads")
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: Theme.textSecondary
@@ -31,7 +47,7 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: transferContent.implicitHeight + 28
-            visible: root.downloadManager.hasPending
+            visible: root.downloadManager.hasTransfer
             radius: Theme.radius
             color: Theme.raised
 
@@ -63,8 +79,22 @@ Item {
                     Button {
                         objectName: "resumeDownloadButton"
                         text: qsTr("Resume")
-                        visible: !root.downloadManager.active
+                        visible: root.downloadManager.hasPending
+                                 && !root.downloadManager.active
                         onClicked: root.downloadManager.resume()
+                    }
+                    Button {
+                        objectName: "playDownloadButton"
+                        text: qsTr("Play")
+                        icon.name: "media-playback-start-symbolic"
+                        enabled: root.downloadManager.playable
+                        onClicked: root.downloadManager.play()
+                    }
+                    Button {
+                        objectName: "removeDownloadButton"
+                        text: qsTr("Remove")
+                        icon.name: "edit-delete-symbolic"
+                        onClicked: removeDialog.open()
                     }
                 }
                 ProgressBar {
@@ -93,7 +123,7 @@ Item {
         }
         Item {
             Layout.fillHeight: true
-            visible: root.downloadManager.hasPending
+            visible: root.downloadManager.hasTransfer
         }
     }
 }
