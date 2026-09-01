@@ -11,6 +11,7 @@ Item {
     required property var vpnManager
     required property var providerManager
     required property var prowlarrManager
+    required property var subtitleManager
 
     FileDialog {
         id: profileDialog
@@ -307,6 +308,69 @@ Item {
                     }
                 }
             }
+        }
+
+        Label {
+            text: qsTr("OpenSubtitles")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.titleSize
+            font.weight: Font.DemiBold
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Add your OpenSubtitles.com API key and account. Credentials are stored together in the desktop secret store; login tokens remain in memory only.")
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            TextField {
+                id: openSubtitlesApiKey
+                Layout.fillWidth: true
+                placeholderText: root.subtitleManager.configured
+                                 ? qsTr("OpenSubtitles API key saved")
+                                 : qsTr("API key")
+                echoMode: TextInput.Password
+            }
+            TextField {
+                id: openSubtitlesUsername
+                Layout.preferredWidth: 210
+                placeholderText: root.subtitleManager.username.length > 0
+                                 ? root.subtitleManager.username : qsTr("Username")
+            }
+            TextField {
+                id: openSubtitlesPassword
+                Layout.preferredWidth: 210
+                placeholderText: qsTr("Password")
+                echoMode: TextInput.Password
+            }
+            Button {
+                text: qsTr("Save")
+                onClicked: {
+                    if (root.subtitleManager.saveCredentials(openSubtitlesApiKey.text,
+                                                             openSubtitlesUsername.text,
+                                                             openSubtitlesPassword.text)) {
+                        openSubtitlesApiKey.clear()
+                        openSubtitlesUsername.clear()
+                        openSubtitlesPassword.clear()
+                    }
+                }
+            }
+            Button {
+                text: qsTr("Remove")
+                visible: root.subtitleManager.configured
+                onClicked: root.subtitleManager.clearCredentials()
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.subtitleManager.errorMessage.length > 0
+            text: root.subtitleManager.errorMessage
+            color: "#ff9b9b"
+            wrapMode: Text.WordWrap
         }
 
         Item { implicitHeight: 1 }

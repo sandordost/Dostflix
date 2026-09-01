@@ -26,8 +26,10 @@ startup error instead of waiting indefinitely. Backend diagnostics are stored in
 Ready TorrServer streams now open in an embedded libmpv render surface with
 pause, seek, volume, fullscreen, buffering feedback, and a return-to-movie flow.
 The player lists embedded subtitle tracks, accepts local `.srt`, `.ass`, and
-`.vtt` files, and supports subtitle delay. OpenSubtitles search remains a later
-networked phase; its menu entry is already reserved at the bottom of the list.
+`.vtt` files, and supports subtitle delay. Its final subtitle-menu action can
+search Dutch and English releases through a user-configured OpenSubtitles.com
+account, download the selected subtitle, and load it directly into mpv. These
+requests are disabled until VPN protection is verified.
 
 ## Arch installation and dependencies
 
@@ -96,7 +98,9 @@ changing cross-component behavior:
   player implementation, lifecycle invariants, verification, and the next
   subtitle increment.
 - `docs/superpowers/plans/2026-09-01-dostflix-subtitle-controls.md` — embedded
-  and local subtitle implementation plus the handoff contract for OpenSubtitles.
+  and local subtitle implementation and its networked handoff boundary.
+- `docs/superpowers/plans/2026-09-01-dostflix-opensubtitles.md` — OpenSubtitles
+  API, secret-storage, VPN gating, fake-server tests, and future enhancements.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 

@@ -11,6 +11,7 @@ ApplicationWindow {
     required property var providerManager
     required property var prowlarrManager
     required property var torrentEngine
+    required property var subtitleManager
     width: 1280
     height: 760
     minimumWidth: 900
@@ -105,6 +106,7 @@ ApplicationWindow {
                         vpnManager: window.vpnManager
                         providerManager: window.providerManager
                         prowlarrManager: window.prowlarrManager
+                        subtitleManager: window.subtitleManager
                     }
                 }
             }
@@ -131,20 +133,19 @@ ApplicationWindow {
             window.visibility = window.visibility === Window.FullScreen
                               ? Window.Windowed : Window.FullScreen
         }
-        onFindSubtitlesRequested: subtitleSearchNotice.open()
+        onFindSubtitlesRequested: {
+            subtitleSearch.query = videoPlayer.activeTitle
+            subtitleSearch.open()
+        }
     }
 
-    Dialog {
-        id: subtitleSearchNotice
-        anchors.centerIn: parent
-        title: qsTr("Find subtitles")
-        modal: true
-        standardButtons: Dialog.Ok
-        Label {
-            width: 420
-            text: qsTr("OpenSubtitles search is the next integration step. Embedded and local subtitle files already work without an account.")
-            wrapMode: Text.WordWrap
-            color: Theme.textPrimary
+    SubtitleSearchDialog {
+        id: subtitleSearch
+        manager: window.subtitleManager
+        onSettingsRequested: {
+            close()
+            window.showingPlayer = false
+            window.pageIndex = 3
         }
     }
 }

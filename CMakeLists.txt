@@ -32,6 +32,7 @@ qt_add_executable(dostflix
     src/streaming/TorrServerManager.cpp
     src/streaming/StreamServer.cpp
     src/streaming/TorrentFileModel.cpp
+    src/subtitles/OpenSubtitlesManager.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp
@@ -55,6 +56,7 @@ qt_add_qml_module(dostflix_ui
         qml/components/MovieGrid.qml
         qml/components/NowWatchingCard.qml
         qml/components/SidePanel.qml
+        qml/components/SubtitleSearchDialog.qml
         qml/pages/DiscoverPage.qml
         qml/pages/DownloadsPage.qml
         qml/pages/LibraryPage.qml
