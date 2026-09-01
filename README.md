@@ -42,6 +42,11 @@ file. Its exact transfer identity and progress survive restarts; only an exact,
 fsynced, atomically finalized video becomes visible in the Library. Downloads
 can be played or removed directly, and selecting the same release again reuses
 its existing torrent cache and partial-file progress.
+Before a new or resumed writer starts, Dostflix verifies that the library
+filesystem can hold every remaining byte while retaining a 512 MiB safety
+margin. Insufficient space pauses the transfer before any request is made;
+Downloads shows the `.dostflix.part` filename, bytes remaining, free space, and
+a recovery message instead of failing silently mid-transfer.
 Local filenames are normalized into a title and year before registration. When
 a TMDB Read Access Token is configured, Dostflix enriches unmatched local films
 only while VPN protection is verified, then stores the canonical title, year,
@@ -131,6 +136,8 @@ changing cross-component behavior:
 - `docs/superpowers/plans/2026-09-01-dostflix-durable-retention.md` — resumable
   loopback writer, playback/removal lifecycle, cache reuse, atomic completion,
   and security rules.
+- `docs/superpowers/plans/2026-09-01-dostflix-download-disk-safety.md` — free-space
+  preflight, safety margin, disk-full handling, incomplete-file UX, and tests.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 

@@ -7,6 +7,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QHostAddress>
+#include <QStorageInfo>
 #include <QUrlQuery>
 #include <algorithm>
 #include <iterator>
@@ -15,6 +16,8 @@
 #include <unistd.h>
 
 namespace {
+constexpr qint64 DiskSafetyMargin = 512LL * 1024 * 1024;
+
 QString magnetInfoHash(const QString &magnetUrl)
 {
     const QUrl url(magnetUrl);
@@ -50,6 +53,7 @@ DownloadManager::DownloadManager(LibraryDatabase &database, LibraryManager &libr
     : QObject(parent), m_database(database), m_library(library)
 {
     loadPending();
+    refreshDiskSpace();
 }
 
 DownloadManager::~DownloadManager() { pause(); }
@@ -68,6 +72,11 @@ bool DownloadManager::playable() const
 QString DownloadManager::title() const { return m_transfer.title; }
 qint64 DownloadManager::bytesWritten() const { return m_transfer.bytesWritten; }
 qint64 DownloadManager::expectedSize() const { return m_transfer.expectedSize; }
+qint64 DownloadManager::bytesRemaining() const { return m_bytesRemaining; }
+qint64 DownloadManager::availableBytes() const { return m_availableBytes; }
+bool DownloadManager::diskSpaceReady() const { return m_diskSpaceReady; }
+QString DownloadManager::partialFileName() const
+{ return QFileInfo(m_transfer.partialPath).fileName(); }
 double DownloadManager::progress() const
 {
     return m_transfer.expectedSize > 0
@@ -112,6 +121,8 @@ void DownloadManager::beginTransfer(const QString &title, const QString &torrent
         && QFileInfo(existing->finalPath).isFile()
         && QFileInfo(existing->finalPath).size() == expectedSize) {
         m_transfer = *existing;
+        m_transfer.bytesWritten = expectedSize;
+        refreshDiskSpace();
         m_stateLabel = tr("Already saved to library");
         m_error.clear();
         m_library.refresh();
@@ -153,6 +164,7 @@ void DownloadManager::beginTransfer(const QString &title, const QString &torrent
         fail(tr("The partial download is larger than the expected video"));
         return;
     }
+    refreshDiskSpace();
     if (!persist(QStringLiteral("pending"))) {
         m_stateLabel = tr("Could not save download state");
         emit stateChanged();
@@ -193,6 +205,7 @@ void DownloadManager::resume()
         return;
     }
     m_error.clear();
+    if (!ensureDiskSpace()) return;
     if (!m_sourceUrl.isEmpty()) {
         startRequest();
         return;
@@ -248,6 +261,7 @@ void DownloadManager::remove()
     m_sourceUrl.clear();
     m_stateLabel.clear();
     m_error.clear();
+    refreshDiskSpace();
     m_library.refresh();
     emit torrentRemovalRequested(removedHash);
     emit stateChanged();
@@ -265,6 +279,7 @@ bool DownloadManager::playMatchingRelease(const QString &title, const QString &m
     const QFileInfo partial(m_transfer.partialPath);
     m_transfer.bytesWritten = partial.isFile() ? partial.size()
         : (QFileInfo(m_transfer.finalPath).isFile() ? m_transfer.expectedSize : 0);
+    refreshDiskSpace();
     if (!playable()) return false;
     if (!title.isEmpty()) m_transfer.title = title;
     play();
@@ -278,9 +293,11 @@ void DownloadManager::loadPending()
     m_transfer = *stored;
     const QFileInfo partial(m_transfer.partialPath);
     m_transfer.bytesWritten = partial.isFile() ? partial.size() : 0;
+    refreshDiskSpace();
     if (QFileInfo(m_transfer.finalPath).isFile()
         && QFileInfo(m_transfer.finalPath).size() == m_transfer.expectedSize) {
         m_transfer.bytesWritten = m_transfer.expectedSize;
+        refreshDiskSpace();
         persist(QStringLiteral("completed"));
         m_stateLabel = tr("Saved to library");
         m_library.refresh();
@@ -300,16 +317,20 @@ void DownloadManager::startRequest()
         fail(tr("Could not create the movie library folder"));
         return;
     }
+    m_requestOffset = QFileInfo(m_transfer.partialPath).isFile()
+        ? QFileInfo(m_transfer.partialPath).size() : 0;
+    m_transfer.bytesWritten = m_requestOffset;
+    if (m_requestOffset == m_transfer.expectedSize) {
+        completeTransfer();
+        return;
+    }
+    if (!ensureDiskSpace()) return;
     m_file.setFileName(m_transfer.partialPath);
     if (!m_file.open(QIODevice::WriteOnly | QIODevice::Append)) {
         fail(tr("Could not open the partial movie file: %1").arg(m_file.errorString()));
         return;
     }
     m_requestOffset = m_file.size();
-    if (m_requestOffset == m_transfer.expectedSize) {
-        completeTransfer();
-        return;
-    }
     QNetworkRequest request(m_sourceUrl);
     request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
                          QNetworkRequest::AlwaysNetwork);
@@ -352,10 +373,17 @@ void DownloadManager::writeAvailable()
     if (!validateResponse() || !m_reply || !m_file.isOpen()) return;
     const QByteArray data = m_reply->readAll();
     if (!data.isEmpty() && m_file.write(data) != data.size()) {
-        fail(tr("Could not write the movie: %1").arg(m_file.errorString()));
+        fail(m_file.error() == QFileDevice::ResourceError
+                 ? tr("The movie library ran out of disk space while saving the movie")
+                 : tr("Could not write the movie: %1").arg(m_file.errorString()));
         return;
     }
     m_transfer.bytesWritten = m_file.size();
+    refreshDiskSpace();
+    if (!m_diskSpaceReady) {
+        fail(tr("The movie library no longer has enough free space to finish safely"));
+        return;
+    }
     if (m_transfer.bytesWritten > m_transfer.expectedSize) {
         fail(tr("TorrServer sent more data than the selected video contains"));
         return;
@@ -426,6 +454,7 @@ void DownloadManager::completeTransfer()
         ::close(directoryFd);
     }
     m_transfer.bytesWritten = m_transfer.expectedSize;
+    refreshDiskSpace();
     const bool stateSaved = persist(QStringLiteral("completed"));
     m_active = false;
     m_stateLabel = tr("Saved to library");
@@ -442,6 +471,35 @@ bool DownloadManager::persist(const QString &state)
     return false;
 }
 
+void DownloadManager::refreshDiskSpace()
+{
+    const QString path = m_transfer.partialPath.isEmpty()
+        ? m_library.directory() : QFileInfo(m_transfer.partialPath).absolutePath();
+    const QStorageInfo storage(path);
+    m_availableBytes = storage.isValid() && storage.isReady()
+        ? qMax<qint64>(0, storage.bytesAvailable()) : 0;
+    m_bytesRemaining = qMax<qint64>(0, m_transfer.expectedSize - m_transfer.bytesWritten);
+    m_diskSpaceReady = m_bytesRemaining == 0
+        || (storage.isValid() && storage.isReady()
+            && m_availableBytes >= m_bytesRemaining
+            && m_availableBytes - m_bytesRemaining >= DiskSafetyMargin);
+}
+
+bool DownloadManager::ensureDiskSpace()
+{
+    refreshDiskSpace();
+    if (m_diskSpaceReady) return true;
+    persist(QStringLiteral("paused"));
+    m_active = false;
+    m_stateLabel = tr("Waiting for disk space");
+    m_error = tr("Not enough free space in the movie library. %1 GiB remains to be saved "
+                 "and Dostflix keeps a 0.50 GiB safety margin, but only %2 GiB is available.")
+                  .arg(static_cast<double>(m_bytesRemaining) / 1073741824.0, 0, 'f', 2)
+                  .arg(static_cast<double>(m_availableBytes) / 1073741824.0, 0, 'f', 2);
+    emit stateChanged();
+    return false;
+}
+
 void DownloadManager::fail(QString error)
 {
     if (m_reply) {
@@ -455,6 +513,7 @@ void DownloadManager::fail(QString error)
         m_file.close();
     }
     m_transfer.bytesWritten = QFileInfo(m_transfer.partialPath).size();
+    refreshDiskSpace();
     persist(QStringLiteral("paused"));
     m_active = false;
     m_error = std::move(error);
