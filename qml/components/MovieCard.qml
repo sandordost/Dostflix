@@ -9,6 +9,8 @@ Item {
     required property string quality
     required property int seederCount
     required property url posterUrl
+    required property string sourceLabel
+    signal selected()
     width: 170
     height: width / Theme.posterAspectRatio + 62
 
@@ -59,5 +61,9 @@ Item {
             font.pixelSize: 11
             elide: Text.ElideRight
         }
+    }
+
+    TapHandler {
+        onTapped: root.selected()
     }
 }

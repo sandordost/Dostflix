@@ -21,6 +21,8 @@ class ProwlarrManager final : public QObject
     Q_PROPERTY(QString webUrl READ webUrl CONSTANT)
     Q_PROPERTY(bool searchBusy READ searchBusy NOTIFY searchStateChanged)
     Q_PROPERTY(QString searchError READ searchError NOTIFY searchStateChanged)
+    Q_PROPERTY(bool releaseBusy READ releaseBusy NOTIFY releaseStateChanged)
+    Q_PROPERTY(QString releaseError READ releaseError NOTIFY releaseStateChanged)
 
 public:
     explicit ProwlarrManager(QString dataDir, MovieListModel &movieModel,
@@ -36,15 +38,22 @@ public:
     [[nodiscard]] QString apiKey() const;
     [[nodiscard]] bool searchBusy() const;
     [[nodiscard]] QString searchError() const;
+    [[nodiscard]] bool releaseBusy() const;
+    [[nodiscard]] QString releaseError() const;
 
     void setNetworkReady(bool ready);
     void shutdown();
     Q_INVOKABLE void openWebInterface();
     Q_INVOKABLE void search(const QString &query);
+    Q_INVOKABLE void prepareRelease(const QString &title, const QString &magnetUrl,
+                                    const QString &downloadUrl);
 
 signals:
     void stateChanged();
     void searchStateChanged();
+    void releaseStateChanged();
+    void releasePrepared(const QString &title, const QString &magnetUrl,
+                         const QByteArray &torrentData);
 
 private:
     bool ensureConfig();
@@ -62,6 +71,7 @@ private:
     QNetworkAccessManager m_network;
     QPointer<QNetworkReply> m_searchReply;
     QPointer<QNetworkReply> m_metadataReply;
+    QPointer<QNetworkReply> m_releaseReply;
     QProcess m_process;
     QTimer m_probeTimer;
     bool m_networkReady = false;
@@ -69,4 +79,5 @@ private:
     QString m_error;
     QString m_searchError;
     QString m_searchQuery;
+    QString m_releaseError;
 };

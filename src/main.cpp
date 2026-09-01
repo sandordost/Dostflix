@@ -6,6 +6,8 @@
 #include "providers/ProviderManager.h"
 #include "providers/ProwlarrManager.h"
 #include "providers/SecretStore.h"
+#include "streaming/TorrentEngine.h"
+#include "streaming/StreamServer.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -50,9 +52,36 @@ int main(int argc, char *argv[])
     });
     ProwlarrManager prowlarrManager(
         QDir(paths.dataDir()).filePath(QStringLiteral("prowlarr")), movies, providerManager);
+    TorrentEngine torrentEngine(
+        QDir(paths.dataDir()).filePath(QStringLiteral("downloads")));
+    StreamServer streamServer;
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &prowlarrManager,
                      [&] { prowlarrManager.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&vpnManager, &VpnManager::stateChanged, &torrentEngine,
+                     [&] { torrentEngine.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&prowlarrManager, &ProwlarrManager::releasePrepared,
+                     &torrentEngine,
+                     [&](const QString &title, const QString &magnetUrl,
+                         const QByteArray &torrentData) {
+        if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
+        else torrentEngine.startTorrentData(title, torrentData);
+    });
+    QObject::connect(&torrentEngine, &TorrentEngine::stateChanged, &streamServer, [&] {
+        if (!torrentEngine.active()) {
+            streamServer.stop();
+        } else if (!torrentEngine.selectedFilePath().isEmpty() && !streamServer.running()) {
+            streamServer.start(torrentEngine.selectedFilePath(),
+                               torrentEngine.selectedFileSize(),
+                               [&](qint64 offset, qint64 length) {
+                return torrentEngine.isRangeAvailable(offset, length);
+            }, [&](qint64 offset, qint64 length) {
+                torrentEngine.prioritizeRange(offset, length);
+            });
+        }
+    });
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&] {
+        streamServer.stop();
+        torrentEngine.shutdown();
         prowlarrManager.shutdown();
         vpnManager.shutdown();
     });
@@ -64,6 +93,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
         {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
         {QStringLiteral("prowlarrManager"), QVariant::fromValue(&prowlarrManager)},
+        {QStringLiteral("torrentEngine"), QVariant::fromValue(&torrentEngine)},
     });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },

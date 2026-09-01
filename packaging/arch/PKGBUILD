@@ -1,6 +1,6 @@
 pkgname=dostflix-git
 pkgver=0.1.0
-pkgrel=11
+pkgrel=12
 pkgdesc='Native VPN-protected movie library and streaming client'
 arch=('x86_64')
 url='https://github.com/sandordost/Dostflix'
@@ -23,7 +23,7 @@ depends=(
   'sqlite'
   'systemd'
 )
-makedepends=('cmake' 'ninja' 'qt6-tools')
+makedepends=('boost' 'cmake' 'ninja' 'qt6-tools')
 checkdepends=('iproute2' 'socat' 'util-linux')
 source=()
 sha256sums=()

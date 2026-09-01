@@ -118,3 +118,43 @@ target_include_directories(tst_secret_store PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_secret_store PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_secret_store)
 add_test(NAME secret_store COMMAND tst_secret_store)
+
+qt_add_executable(tst_buffer_controller
+    streaming/tst_buffer_controller.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/BufferController.cpp
+)
+target_include_directories(tst_buffer_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_buffer_controller PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_buffer_controller)
+add_test(NAME buffer_controller COMMAND tst_buffer_controller)
+
+qt_add_executable(tst_torrent_file_model
+    streaming/tst_torrent_file_model.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrentFileModel.cpp
+)
+target_include_directories(tst_torrent_file_model PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torrent_file_model PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_torrent_file_model)
+add_test(NAME torrent_file_model COMMAND tst_torrent_file_model)
+
+qt_add_executable(tst_torrent_engine
+    streaming/tst_torrent_engine.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/BufferController.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrentEngine.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrentFileModel.cpp
+)
+target_include_directories(tst_torrent_engine PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torrent_engine PRIVATE
+    Qt6::Core Qt6::Test LibtorrentRasterbar::torrent-rasterbar
+)
+dostflix_enable_warnings(tst_torrent_engine)
+add_test(NAME torrent_engine COMMAND tst_torrent_engine)
+
+qt_add_executable(tst_stream_server
+    streaming/tst_stream_server.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/StreamServer.cpp
+)
+target_include_directories(tst_stream_server PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_stream_server PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_stream_server)
+add_test(NAME stream_server COMMAND tst_stream_server)

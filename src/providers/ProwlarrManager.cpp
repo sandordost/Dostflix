@@ -62,6 +62,8 @@ bool ProwlarrManager::searchBusy() const
     return !m_searchReply.isNull() || !m_metadataReply.isNull();
 }
 QString ProwlarrManager::searchError() const { return m_searchError; }
+bool ProwlarrManager::releaseBusy() const { return !m_releaseReply.isNull(); }
+QString ProwlarrManager::releaseError() const { return m_releaseError; }
 
 QString ProwlarrManager::stateLabel() const
 {
@@ -225,6 +227,44 @@ void ProwlarrManager::fetchMetadata(const QString &query)
     });
 }
 
+void ProwlarrManager::prepareRelease(const QString &title, const QString &magnetUrl,
+                                     const QString &downloadUrl)
+{
+    if (!m_ready || releaseBusy()) return;
+    m_releaseError.clear();
+    if (!magnetUrl.isEmpty()) {
+        emit releasePrepared(title, magnetUrl, {});
+        emit releaseStateChanged();
+        return;
+    }
+    const QUrl url(downloadUrl);
+    if (!url.isValid() || url.scheme().isEmpty()) {
+        m_releaseError = tr("This release has no usable magnet or torrent link");
+        emit releaseStateChanged();
+        return;
+    }
+    QNetworkRequest request(url);
+    request.setRawHeader("X-Api-Key", m_apiKey.toUtf8());
+    request.setTransferTimeout(30'000);
+    m_releaseReply = m_network.get(request);
+    QNetworkReply *releaseReply = m_releaseReply;
+    emit releaseStateChanged();
+    connect(releaseReply, &QNetworkReply::finished, this, [this, releaseReply, title] {
+        if (m_releaseReply != releaseReply) return;
+        const QByteArray torrentData = releaseReply->readAll();
+        if (releaseReply->error() != QNetworkReply::NoError || torrentData.isEmpty()) {
+            m_releaseError = releaseReply->error() == QNetworkReply::NoError
+                ? tr("Prowlarr returned an empty torrent file")
+                : releaseReply->errorString();
+        } else {
+            emit releasePrepared(title, {}, torrentData);
+        }
+        releaseReply->deleteLater();
+        m_releaseReply = nullptr;
+        emit releaseStateChanged();
+    });
+}
+
 void ProwlarrManager::openWebInterface()
 {
     if (m_ready) QDesktopServices::openUrl(QUrl(webUrl()));
@@ -316,7 +356,14 @@ void ProwlarrManager::stop()
         reply->abort();
         reply->deleteLater();
     }
+    if (m_releaseReply) {
+        QNetworkReply *reply = m_releaseReply;
+        m_releaseReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     emit searchStateChanged();
+    emit releaseStateChanged();
     m_probeTimer.stop();
     m_ready = false;
     if (!running()) return;
