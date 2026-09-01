@@ -1,5 +1,7 @@
 #include "streaming/TorrServerManager.h"
 
+#include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QEventLoop>
 #include <QJsonArray>
@@ -8,6 +10,8 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QProcess>
+#include <QTcpServer>
 #include <QTemporaryDir>
 #include <QUrlQuery>
 #include <QtTest>
@@ -78,6 +82,8 @@ private slots:
         manager.setNetworkReady(true);
         QTRY_VERIFY_WITH_TIMEOUT(manager.backendReady(), 10'000);
         QVERIFY(QFileInfo::exists(directory.filePath(
+            QStringLiteral("data/torrserver.pid"))));
+        QVERIFY(QFileInfo::exists(directory.filePath(
             QStringLiteral("data/torrserver.log"))));
         manager.startTorrentData(QStringLiteral("Fixture"), videoTorrentFixture());
         QTRY_COMPARE_WITH_TIMEOUT(manager.selectedFileName(), QStringLiteral("sample.mp4"), 5'000);
@@ -89,6 +95,38 @@ private slots:
         QVERIFY(manager.errorMessage().isEmpty());
         manager.shutdown();
         QVERIFY(!manager.backendReady());
+        QVERIFY(!QFileInfo::exists(directory.filePath(
+            QStringLiteral("data/torrserver.pid"))));
+    }
+
+    void recoversDaemonLeftByCrashedInstance()
+    {
+        QTemporaryDir directory;
+        const QString dataDir = directory.filePath(QStringLiteral("data"));
+        QVERIFY(QDir().mkpath(dataDir));
+        QTcpServer portProbe;
+        QVERIFY(portProbe.listen(QHostAddress::LocalHost, 0));
+        const quint16 port = portProbe.serverPort();
+        portProbe.close();
+        QProcess orphan;
+        orphan.start(QStringLiteral("/usr/bin/torrserver"),
+                     {QStringLiteral("--ip"), QStringLiteral("127.0.0.1"),
+                      QStringLiteral("--port"), QString::number(port),
+                      QStringLiteral("--path"), dataDir,
+                      QStringLiteral("--logpath"),
+                      directory.filePath(QStringLiteral("orphan.log"))});
+        QVERIFY(orphan.waitForStarted(3'000));
+        QFile pidFile(QDir(dataDir).filePath(QStringLiteral("torrserver.pid")));
+        QVERIFY(pidFile.open(QIODevice::WriteOnly));
+        pidFile.write("2000000000 " + QByteArray::number(orphan.processId()) + "\n");
+        pidFile.close();
+
+        TorrServerManager manager(dataDir);
+        manager.setNetworkReady(true);
+        QTRY_VERIFY_WITH_TIMEOUT(manager.backendReady(), 10'000);
+        QTRY_COMPARE_WITH_TIMEOUT(orphan.state(), QProcess::NotRunning, 3'000);
+        QVERIFY(manager.errorMessage().isEmpty());
+        manager.shutdown();
     }
 
     void magnetWithoutPeersRemainsInMetadataAcquisition()

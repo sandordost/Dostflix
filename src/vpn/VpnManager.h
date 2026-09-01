@@ -55,6 +55,8 @@ private:
     bool installBootstrapGuard();
     bool installProtectedGuard();
     bool removeGuard();
+    bool recoverableOwnedConnection() const;
+    void rememberOwnership();
     void setState(State state, QString error = {});
 
     AppSettings &m_settings;

@@ -8,7 +8,9 @@
 
 - `NetworkManagerBackend` is the operating-system boundary. It uses fixed-argument `nmcli` calls for OpenVPN import/profile discovery and NetworkManager's D-Bus API for activation and deactivation.
 - `VpnManager` owns the UI-facing state machine, selected profile UUID, connection ownership, refresh polling, startup activation, and shutdown cleanup.
-- `AppSettings` persists only the NetworkManager UUID. Dostflix never copies the `.ovpn` file or private keys into its own data directories.
+- `AppSettings` persists the NetworkManager UUID plus a non-secret ownership
+  marker containing the owning Dostflix PID. Dostflix never copies the `.ovpn`
+  file or private keys into its own data directories.
 - `VpnProfileModel` exposes suitable NetworkManager VPN profiles to QML.
 - The Settings page imports, selects, connects, and disconnects profiles. The header reflects real state.
 
@@ -16,9 +18,13 @@
 
 1. Import accepts only an existing local `.ovpn` file and invokes no shell.
 2. All external networking remains disabled in this increment, even when the VPN reports connected.
-3. Dostflix disconnects on exit only when it activated that connection during the current process.
+3. Dostflix disconnects on exit only when it activated that connection during
+   the current process, or when a persisted UUID/PID marker proves that a crashed
+   Dostflix instance activated it.
 4. A VPN that was already active before startup is observed but never claimed or disconnected.
 5. Errors shown to the user contain no profile file contents or secrets.
+6. A genuinely external active VPN has no matching dead-owner marker and remains
+   observed but unclaimed.
 
 ## Implementation order
 

@@ -75,6 +75,9 @@ signals:
 
 private:
     void startDaemon();
+    bool recoverOrphanDaemon();
+    void writeDaemonPidFile();
+    void removeOwnedDaemonPidFile();
     void stopDaemon(bool force);
     void poll();
     void probeApi();

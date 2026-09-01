@@ -25,6 +25,30 @@ void AppSettings::setVpnConnectionUuid(const QString &value)
     m_settings.setValue(QStringLiteral("vpn/connectionUuid"), value);
 }
 
+QString AppSettings::ownedVpnConnectionUuid() const
+{
+    return m_settings.value(QStringLiteral("vpn/ownedConnectionUuid")).toString();
+}
+
+qint64 AppSettings::vpnOwnerPid() const
+{
+    return m_settings.value(QStringLiteral("vpn/ownerPid"), 0).toLongLong();
+}
+
+void AppSettings::setVpnOwnership(const QString &uuid, qint64 ownerPid)
+{
+    m_settings.setValue(QStringLiteral("vpn/ownedConnectionUuid"), uuid);
+    m_settings.setValue(QStringLiteral("vpn/ownerPid"), ownerPid);
+    m_settings.sync();
+}
+
+void AppSettings::clearVpnOwnership()
+{
+    m_settings.remove(QStringLiteral("vpn/ownedConnectionUuid"));
+    m_settings.remove(QStringLiteral("vpn/ownerPid"));
+    m_settings.sync();
+}
+
 QList<ProviderConfig> AppSettings::providers() const
 {
     QList<ProviderConfig> result;

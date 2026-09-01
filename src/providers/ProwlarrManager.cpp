@@ -21,6 +21,9 @@
 #include <QUrlQuery>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#include <csignal>
+#include <sys/prctl.h>
+#include <unistd.h>
 
 ProwlarrManager::ProwlarrManager(QString dataDir, MovieListModel &movieModel,
                                  ProviderManager &providerManager, QObject *parent)
@@ -372,6 +375,10 @@ void ProwlarrManager::start()
     m_process.setArguments({QStringLiteral("-nobrowser"),
                             QStringLiteral("-data=%1").arg(m_dataDir)});
     m_process.setProcessChannelMode(QProcess::MergedChannels);
+    m_process.setChildProcessModifier([] {
+        ::prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (::getppid() == 1) ::_exit(EXIT_FAILURE);
+    });
     m_process.start();
 }
 
