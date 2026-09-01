@@ -17,12 +17,21 @@ TestCase {
         property bool buffering: false
         property real volume: 80
         property string errorMessage: ""
+        property var subtitleTracks: [
+            { id: "2", label: "English", language: "eng", selected: true, external: false }
+        ]
+        property string selectedSubtitleId: "2"
+        property real subtitleDelay: 0
         property int pauseCalls: 0
+        property int subtitleCalls: 0
         function stop() {}
         function seek(offset) {}
         function setPosition(seconds) {}
         function setVolume(value) {}
         function togglePaused() { pauseCalls += 1 }
+        function selectSubtitle(id) { selectedSubtitleId = id; subtitleCalls += 1 }
+        function addSubtitleFile(url) {}
+        function setSubtitleDelay(seconds) { subtitleDelay = seconds }
     }
 
     ApplicationWindow {
@@ -47,6 +56,13 @@ TestCase {
         verify(button !== null)
         mouseClick(button)
         compare(fakePlayer.pauseCalls, 1)
+    }
+
+    function test_subtitle_controls_exist() {
+        verify(findChild(page, "subtitleButton") !== null)
+        verify(findChild(page, "subtitleDelayControl") !== null)
+        verify(findChild(page, "localSubtitleButton") !== null)
+        verify(findChild(page, "findSubtitlesButton") !== null)
     }
 
 }

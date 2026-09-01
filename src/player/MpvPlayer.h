@@ -2,6 +2,8 @@
 
 #include <QQuickFramebufferObject>
 #include <QString>
+#include <QUrl>
+#include <QVariantList>
 #include <QtQmlIntegration>
 #include <memory>
 
@@ -22,6 +24,9 @@ class MpvPlayer : public QQuickFramebufferObject
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorChanged)
     Q_PROPERTY(bool renderReady READ renderReady NOTIFY renderReadyChanged)
+    Q_PROPERTY(QVariantList subtitleTracks READ subtitleTracks NOTIFY subtitleTracksChanged)
+    Q_PROPERTY(QString selectedSubtitleId READ selectedSubtitleId NOTIFY subtitleTracksChanged)
+    Q_PROPERTY(double subtitleDelay READ subtitleDelay WRITE setSubtitleDelay NOTIFY subtitleDelayChanged)
 
 public:
     explicit MpvPlayer(QQuickItem *parent = nullptr);
@@ -38,12 +43,18 @@ public:
     double volume() const;
     QString errorMessage() const;
     bool renderReady() const;
+    QVariantList subtitleTracks() const;
+    QString selectedSubtitleId() const;
+    double subtitleDelay() const;
 
     Q_INVOKABLE void play(const QString &url, const QString &title);
     Q_INVOKABLE void togglePaused();
     Q_INVOKABLE void seek(double offsetSeconds);
     Q_INVOKABLE void setPosition(double seconds);
     Q_INVOKABLE void setVolume(double value);
+    Q_INVOKABLE void selectSubtitle(const QString &trackId);
+    Q_INVOKABLE void addSubtitleFile(const QUrl &fileUrl);
+    Q_INVOKABLE void setSubtitleDelay(double seconds);
     Q_INVOKABLE void stop();
     void processEvents();
 
@@ -56,6 +67,8 @@ signals:
     void volumeChanged();
     void errorChanged();
     void renderReadyChanged();
+    void subtitleTracksChanged();
+    void subtitleDelayChanged();
 
 private:
     friend class MpvRenderer;
@@ -63,15 +76,19 @@ private:
     void setRenderReady();
     void submitPendingLoad();
     void setError(const QString &message);
+    void updateSubtitleTracks(const struct mpv_node *node);
 
     mpv_handle *m_handle = nullptr;
     std::shared_ptr<MpvSharedState> m_state;
     QString m_pendingUrl;
     QString m_activeTitle;
     QString m_error;
+    QVariantList m_subtitleTracks;
+    QString m_selectedSubtitleId = QStringLiteral("no");
     double m_position = 0.0;
     double m_duration = 0.0;
     double m_volume = 100.0;
+    double m_subtitleDelay = 0.0;
     bool m_renderReady = false;
     bool m_active = false;
     bool m_paused = false;
