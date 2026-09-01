@@ -20,7 +20,9 @@ If its local API does not become ready within 20 seconds, Dostflix reports a
 startup error instead of waiting indefinitely. Backend diagnostics are stored in
 `$XDG_DATA_HOME/dostflix/torrserver/torrserver.log` (normally
 `~/.local/share/dostflix/torrserver/torrserver.log`).
-The embedded mpv player and subtitle behavior remain later phases.
+Ready TorrServer streams now open in an embedded libmpv render surface with
+pause, seek, volume, fullscreen, buffering feedback, and a return-to-movie flow.
+Embedded, local, and OpenSubtitles behavior remains a later phase.
 
 ## Arch installation and dependencies
 

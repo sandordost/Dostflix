@@ -19,6 +19,38 @@ ApplicationWindow {
     title: qsTr("Dostflix")
     color: Theme.canvas
     property int pageIndex: 0
+    property bool showingPlayer: false
+    property string launchedStreamUrl: ""
+
+    function openReadyStream() {
+        const url = window.torrentEngine.streamUrl
+        if (!window.torrentEngine.bufferReady || url.length === 0
+                || url === window.launchedStreamUrl)
+            return
+        window.launchedStreamUrl = url
+        videoPlayer.play(url, window.torrentEngine.title)
+        window.showingPlayer = true
+    }
+
+    onClosing: videoPlayer.stop()
+
+    MpvPlayer {
+        id: videoPlayer
+        objectName: "videoPlayer"
+        anchors.fill: parent
+        visible: true
+        z: window.showingPlayer ? 10 : -1
+        onActivePlaybackChanged: {
+            if (!hasActivePlayback)
+                window.showingPlayer = false
+        }
+    }
+
+    Connections {
+        target: window.torrentEngine
+        function onStatisticsChanged() { window.openReadyStream() }
+        function onStateChanged() { window.openReadyStream() }
+    }
 
     Image {
         anchors.fill: parent
@@ -83,7 +115,21 @@ ApplicationWindow {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 24
-        controller: window.appController
-        onReturnRequested: window.pageIndex = 0
+        z: 3
+        visible: videoPlayer.hasActivePlayback && !window.showingPlayer
+        controller: videoPlayer
+        onReturnRequested: window.showingPlayer = true
+    }
+
+    PlayerPage {
+        anchors.fill: parent
+        visible: window.showingPlayer
+        z: 11
+        player: videoPlayer
+        onBrowseRequested: window.showingPlayer = false
+        onFullscreenRequested: {
+            window.visibility = window.visibility === Window.FullScreen
+                              ? Window.Windowed : Window.FullScreen
+        }
     }
 }

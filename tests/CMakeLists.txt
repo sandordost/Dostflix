@@ -49,7 +49,7 @@ add_test(NAME qml_component_tests COMMAND tst_qml_components
     -input ${CMAKE_CURRENT_SOURCE_DIR}/qml
 )
 set_tests_properties(qml_component_tests PROPERTIES
-    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_CONTROLS_STYLE=Basic"
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_CONTROLS_STYLE=Basic;QSG_RHI_BACKEND=opengl"
 )
 
 qt_add_executable(tst_app_controller
@@ -60,6 +60,15 @@ target_include_directories(tst_app_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_app_controller PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_app_controller)
 add_test(NAME app_controller COMMAND tst_app_controller)
+
+qt_add_executable(tst_mpv_player player/tst_mpv_player.cpp)
+target_include_directories(tst_mpv_player PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_mpv_player PRIVATE
+    Qt6::Core Qt6::Gui Qt6::Quick Qt6::Test PkgConfig::MPV dostflix_ui
+)
+dostflix_enable_warnings(tst_mpv_player)
+add_test(NAME mpv_player COMMAND tst_mpv_player)
+set_tests_properties(mpv_player PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 qt_add_executable(tst_network_manager_backend
     vpn/tst_network_manager_backend.cpp
