@@ -121,6 +121,15 @@ target_link_libraries(tst_app_controller PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_app_controller)
 add_test(NAME app_controller COMMAND tst_app_controller)
 
+qt_add_executable(tst_display_environment
+    ui/tst_display_environment.cpp
+    ${PROJECT_SOURCE_DIR}/src/ui/DisplayEnvironment.cpp
+)
+target_include_directories(tst_display_environment PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_display_environment PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_display_environment)
+add_test(NAME display_environment COMMAND tst_display_environment)
+
 qt_add_executable(tst_mpv_player player/tst_mpv_player.cpp)
 target_include_directories(tst_mpv_player PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_mpv_player PRIVATE

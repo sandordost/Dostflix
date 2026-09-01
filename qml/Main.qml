@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import Dostflix
 
 ApplicationWindow {
@@ -15,11 +16,12 @@ ApplicationWindow {
     required property var prowlarrManager
     required property var torrentEngine
     required property var subtitleManager
-    width: 1280
-    height: 800
-    minimumWidth: 780
-    minimumHeight: 520
-    visible: true
+    required property bool gamescopeSession
+    width: gamescopeSession ? Screen.width : Math.min(1280, Screen.width)
+    height: gamescopeSession ? Screen.height : Math.min(800, Screen.height)
+    minimumWidth: gamescopeSession ? 0 : Math.min(780, Screen.width)
+    minimumHeight: gamescopeSession ? 0 : Math.min(520, Screen.height)
+    visibility: gamescopeSession ? Window.FullScreen : Window.Windowed
     title: qsTr("Dostflix")
     color: Theme.canvas
     palette.window: Theme.panel
