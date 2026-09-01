@@ -76,7 +76,7 @@ Uses a user-supplied TMDB access token to match normalized movie titles and retr
 
 ### 5.5 `QBitTorrentManager`
 
-Starts and supervises a private `qbittorrent-nox` child process after VPN protection is ready. The process inherits Dostflix's protected systemd scope, stores its state below Dostflix's data directory, and exposes its Web API on a random loopback port only. Dostflix uses that API for magnet and torrent submission, metadata acquisition, file selection, sequential download, first/last-piece priority, progress, peer health, piece state, persistence, and seeding. Dostflix does not expose or reuse the user's normal qBittorrent profile.
+Starts and supervises a private `qbittorrent-nox` child process after VPN protection is ready. The process inherits Dostflix's protected systemd scope, stores its state below Dostflix's data directory, and exposes its Web API on a random loopback port only. Dostflix uses that API for magnet and torrent submission, metadata acquisition, file selection, sequential download, first/last-piece priority, progress, peer health, piece state, persistence, and seeding. Persisted downloads are reattached by info hash on the next selection instead of being submitted as duplicates. Dostflix does not expose or reuse the user's normal qBittorrent profile.
 
 If a torrent contains multiple plausible video files, Dostflix asks the user which one to play. The selected video receives maximal priority and non-selected files receive zero priority. qBittorrent remains the sole owner of peer selection, tracker behavior, disk allocation, queue state, and fast-resume data.
 

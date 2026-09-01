@@ -3,6 +3,7 @@
 #include "streaming/BufferController.h"
 
 #include <QDir>
+#include <QCryptographicHash>
 #include <QFileInfo>
 #include <QHostAddress>
 #include <QHttpMultiPart>
@@ -44,6 +45,73 @@ bool successful(const QNetworkReply *reply)
 {
     const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     return reply->error() == QNetworkReply::NoError && status >= 200 && status < 300;
+}
+
+bool readBencodedString(const QByteArray &data, qsizetype &position, QByteArray *value)
+{
+    const qsizetype colon = data.indexOf(':', position);
+    if (colon <= position) return false;
+    bool valid = false;
+    const qsizetype length = data.mid(position, colon - position).toLongLong(&valid);
+    if (!valid || length < 0 || colon + 1 + length > data.size()) return false;
+    position = colon + 1;
+    if (value) *value = data.mid(position, length);
+    position += length;
+    return true;
+}
+
+bool skipBencodedValue(const QByteArray &data, qsizetype &position)
+{
+    if (position >= data.size()) return false;
+    const char marker = data.at(position);
+    if (marker >= '0' && marker <= '9') return readBencodedString(data, position, nullptr);
+    if (marker == 'i') {
+        const qsizetype end = data.indexOf('e', ++position);
+        if (end < 0) return false;
+        position = end + 1;
+        return true;
+    }
+    if (marker != 'l' && marker != 'd') return false;
+    ++position;
+    while (position < data.size() && data.at(position) != 'e') {
+        if (!skipBencodedValue(data, position)) return false;
+    }
+    if (position >= data.size()) return false;
+    ++position;
+    return true;
+}
+
+QString torrentInfoHash(const QByteArray &torrentData)
+{
+    if (torrentData.isEmpty() || torrentData.at(0) != 'd') return {};
+    qsizetype position = 1;
+    while (position < torrentData.size() && torrentData.at(position) != 'e') {
+        QByteArray key;
+        if (!readBencodedString(torrentData, position, &key)) return {};
+        const qsizetype valueStart = position;
+        if (!skipBencodedValue(torrentData, position)) return {};
+        if (key == QByteArrayLiteral("info")) {
+            return QString::fromLatin1(QCryptographicHash::hash(
+                torrentData.mid(valueStart, position - valueStart),
+                QCryptographicHash::Sha1).toHex());
+        }
+    }
+    return {};
+}
+
+QString magnetInfoHash(const QString &magnetUrl)
+{
+    const QString xt = QUrlQuery(QUrl(magnetUrl)).queryItemValue(QStringLiteral("xt"));
+    const QString prefix = QStringLiteral("urn:btih:");
+    if (!xt.startsWith(prefix, Qt::CaseInsensitive)) return {};
+    const QString hash = xt.mid(prefix.size());
+    if (hash.size() != 40) return {};
+    for (const QChar character : hash) {
+        if (!character.isDigit()
+            && (character.toLower() < QLatin1Char('a')
+                || character.toLower() > QLatin1Char('f'))) return {};
+    }
+    return hash.toLower();
 }
 }
 
@@ -167,6 +235,7 @@ bool QBitTorrentManager::writeConfiguration()
     config.setValue(QStringLiteral("Downloads/SavePath"), m_downloadDir + QLatin1Char('/'));
     config.setValue(QStringLiteral("Downloads/TempPath"), m_downloadDir + QLatin1Char('/'));
     config.setValue(QStringLiteral("Downloads/TempPathEnabled"), false);
+    config.setValue(QStringLiteral("Connection/UPnP"), false);
     config.endGroup();
     config.beginGroup(QStringLiteral("BitTorrent"));
     config.setValue(QStringLiteral("Session/LSDEnabled"), false);
@@ -237,6 +306,7 @@ void QBitTorrentManager::startMagnet(const QString &title, const QString &magnet
     m_title = title;
     m_tag = QStringLiteral("dostflix-%1").arg(
         QUuid::createUuid().toString(QUuid::WithoutBraces));
+    m_hash = magnetInfoHash(magnetUrl);
     m_pendingMagnet = magnetUrl;
     m_active = true;
     m_stateLabel = tr("Submitting torrent to qBittorrent…");
@@ -260,6 +330,7 @@ void QBitTorrentManager::startTorrentData(const QString &title, const QByteArray
     m_title = title;
     m_tag = QStringLiteral("dostflix-%1").arg(
         QUuid::createUuid().toString(QUuid::WithoutBraces));
+    m_hash = torrentInfoHash(torrentData);
     m_pendingTorrent = torrentData;
     m_active = true;
     m_stateLabel = tr("Submitting torrent to qBittorrent…");
@@ -272,6 +343,27 @@ void QBitTorrentManager::startTorrentData(const QString &title, const QByteArray
 void QBitTorrentManager::submitPendingRelease()
 {
     if (!m_active || !m_daemonReady || m_reply) return;
+    if (!m_hash.isEmpty() && !m_existingChecked) {
+        m_existingChecked = true;
+        QUrlQuery query{{QStringLiteral("hashes"), m_hash}};
+        get(QStringLiteral("torrents/info"), query, [this](QNetworkReply *reply) {
+            if (!successful(reply)) {
+                fail(reply->errorString());
+                return;
+            }
+            const QJsonArray existing = QJsonDocument::fromJson(reply->readAll()).array();
+            if (existing.isEmpty()) {
+                submitPendingRelease();
+                return;
+            }
+            m_pendingMagnet.clear();
+            m_pendingTorrent.clear();
+            m_stateLabel = tr("Resuming existing qBittorrent download…");
+            emit stateChanged();
+            requestTorrentInfo();
+        });
+        return;
+    }
     if (!m_pendingMagnet.isEmpty()) {
         QUrlQuery form;
         form.addQueryItem(QStringLiteral("urls"), m_pendingMagnet);
@@ -327,7 +419,8 @@ void QBitTorrentManager::submitPendingRelease()
 void QBitTorrentManager::requestTorrentInfo()
 {
     QUrlQuery query;
-    query.addQueryItem(QStringLiteral("tag"), m_tag);
+    if (!m_hash.isEmpty()) query.addQueryItem(QStringLiteral("hashes"), m_hash);
+    else query.addQueryItem(QStringLiteral("tag"), m_tag);
     get(QStringLiteral("torrents/info"), query, [this](QNetworkReply *reply) {
         if (!successful(reply)) return;
         const QJsonArray torrents = QJsonDocument::fromJson(reply->readAll()).array();
@@ -566,6 +659,7 @@ void QBitTorrentManager::clearTransferState()
     m_tag.clear();
     m_pendingMagnet.clear();
     m_pendingTorrent.clear();
+    m_existingChecked = false;
     m_selectedFileName.clear();
     m_stateLabel.clear();
     m_error.clear();

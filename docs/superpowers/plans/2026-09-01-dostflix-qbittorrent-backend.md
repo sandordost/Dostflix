@@ -21,8 +21,8 @@ player integration, and the user interface.
    systemd scope.
 3. Its Web API binds to `127.0.0.1` on a random port and uses a dedicated profile
    below `$XDG_DATA_HOME/dostflix/qbittorrent/`.
-4. Previously persisted jobs are stopped before a new UI-controlled transfer is
-   submitted.
+4. Previously persisted jobs are stopped at startup. Selecting the same release
+   reattaches to its info hash and resumes it instead of submitting a duplicate.
 5. On VPN loss the child is killed immediately while firewall protection remains.
 6. Normal shutdown gives qBittorrent time to persist fast-resume state before the
    guard and Dostflix-owned VPN are removed.
@@ -44,6 +44,8 @@ player integration, and the user interface.
 - Unit tests prove that torrent work is rejected before VPN readiness.
 - A magnet without available peers remains in metadata acquisition instead of
   treating qBittorrent's temporary zero piece size as a fatal error.
+- A restart integration test verifies that a persisted torrent is reattached and
+  resumed without a duplicate-torrent conflict.
 - The managed-daemon integration test runs in a fresh Linux network namespace
   with loopback as its only interface, starts qBittorrent, submits a local torrent
   fixture, discovers its video file, and shuts down cleanly.

@@ -73,6 +73,32 @@ private slots:
         QVERIFY(manager.stateLabel().contains(QStringLiteral("metadata"),
                                               Qt::CaseInsensitive));
     }
+
+    void resumesAPreviouslyAddedTorrentWithoutConflict()
+    {
+        QTemporaryDir directory;
+        const QString data = directory.filePath(QStringLiteral("data"));
+        const QString downloads = directory.filePath(QStringLiteral("downloads"));
+        {
+            QBitTorrentManager first(data, downloads);
+            first.setNetworkReady(true);
+            QTRY_VERIFY_WITH_TIMEOUT(first.backendReady(), 10'000);
+            first.startTorrentData(QStringLiteral("Fixture"), videoTorrentFixture());
+            QTRY_COMPARE_WITH_TIMEOUT(first.selectedFileName(), QStringLiteral("sample.mp4"),
+                                      5'000);
+            first.shutdown();
+        }
+        {
+            QBitTorrentManager resumed(data, downloads);
+            resumed.setNetworkReady(true);
+            QTRY_VERIFY_WITH_TIMEOUT(resumed.backendReady(), 10'000);
+            resumed.startTorrentData(QStringLiteral("Fixture"), videoTorrentFixture());
+            QTRY_COMPARE_WITH_TIMEOUT(resumed.selectedFileName(), QStringLiteral("sample.mp4"),
+                                      5'000);
+            QVERIFY(resumed.active());
+            QVERIFY(resumed.errorMessage().isEmpty());
+        }
+    }
 };
 
 QTEST_GUILESS_MAIN(QBitTorrentManagerTest)

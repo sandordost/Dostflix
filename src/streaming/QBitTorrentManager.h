@@ -116,6 +116,7 @@ private:
     bool m_networkReady = false;
     bool m_daemonReady = false;
     bool m_stopping = false;
+    bool m_existingChecked = false;
     bool m_active = false;
     bool m_needsFileSelection = false;
     bool m_bufferReady = false;
