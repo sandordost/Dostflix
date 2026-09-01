@@ -47,6 +47,8 @@ public:
     bool updateMovieMetadata(const QString &videoPath, int tmdbId, const QString &imdbId,
                              const QString &title, int year, const QString &posterPath,
                              int durationSeconds, const QString &synopsis);
+    bool updateWatchProgress(const QString &videoPath, int watchedSeconds,
+                             int durationSeconds);
     [[nodiscard]] std::optional<LibraryTransfer> transfer(
         const QString &torrentHash, int fileIndex) const;
     [[nodiscard]] std::optional<LibraryTransfer> latestIncompleteTransfer() const;

@@ -210,6 +210,22 @@ bool LibraryDatabase::updateMovieMetadata(const QString &videoPath, int tmdbId,
     return false;
 }
 
+bool LibraryDatabase::updateWatchProgress(const QString &videoPath, int watchedSeconds,
+                                          int durationSeconds)
+{
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "UPDATE movies SET watched_seconds=:watched, "
+        "duration_seconds=CASE WHEN :duration > 0 THEN :duration ELSE duration_seconds END "
+        "WHERE video_path=:path"));
+    query.bindValue(QStringLiteral(":watched"), qMax(0, watchedSeconds));
+    query.bindValue(QStringLiteral(":duration"), qMax(0, durationSeconds));
+    query.bindValue(QStringLiteral(":path"), videoPath);
+    if (query.exec() && query.numRowsAffected() == 1) return true;
+    m_lastError = query.lastError().text();
+    return false;
+}
+
 namespace {
 LibraryTransfer readTransfer(const QSqlQuery &query)
 {

@@ -50,6 +50,10 @@ private slots:
         QCOMPARE(enriched.posterPath, QStringLiteral("/cache/603.jpg"));
         QCOMPARE(enriched.durationSeconds, 8160);
         QCOMPARE(enriched.synopsis, QStringLiteral("A computer hacker discovers the truth."));
+        QVERIFY(database.updateWatchProgress(QStringLiteral("/movies/test.mkv"), 321, 8200));
+        const LibraryMovie progressed = database.movies().first();
+        QCOMPARE(progressed.watchedSeconds, 321);
+        QCOMPARE(progressed.durationSeconds, 8200);
     }
 
     void persistsResumableTransferState()

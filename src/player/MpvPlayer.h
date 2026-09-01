@@ -47,7 +47,8 @@ public:
     QString selectedSubtitleId() const;
     double subtitleDelay() const;
 
-    Q_INVOKABLE void play(const QString &url, const QString &title);
+    Q_INVOKABLE void play(const QString &url, const QString &title,
+                          double startSeconds = 0.0);
     Q_INVOKABLE void togglePaused();
     Q_INVOKABLE void seek(double offsetSeconds);
     Q_INVOKABLE void setPosition(double seconds);
@@ -69,6 +70,7 @@ signals:
     void renderReadyChanged();
     void subtitleTracksChanged();
     void subtitleDelayChanged();
+    void playbackStopping(double position, double duration);
 
 private:
     friend class MpvRenderer;
@@ -81,6 +83,7 @@ private:
     mpv_handle *m_handle = nullptr;
     std::shared_ptr<MpvSharedState> m_state;
     QString m_pendingUrl;
+    double m_pendingStartSeconds = 0.0;
     QString m_activeTitle;
     QString m_error;
     QVariantList m_subtitleTracks;

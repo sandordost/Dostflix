@@ -44,6 +44,22 @@ private slots:
         manager.play(0);
         QCOMPARE(playSpy.size(), 1);
         QCOMPARE(playSpy.first().first().toUrl().toLocalFile(), video.fileName());
+        QCOMPARE(playSpy.first().at(2).toInt(), 0);
+
+        manager.recordPlaybackProgress(125, 600, true);
+        QCOMPARE(database.movies().first().watchedSeconds, 125);
+        QCOMPARE(database.movies().first().durationSeconds, 600);
+        manager.clearPlaybackSession();
+        manager.recordPlaybackProgress(250, 600, true);
+        QCOMPARE(database.movies().first().watchedSeconds, 125);
+
+        manager.play(0);
+        QCOMPARE(playSpy.last().at(2).toInt(), 125);
+        manager.recordPlaybackProgress(0, 600);
+        QCOMPARE(database.movies().first().watchedSeconds, 125);
+        manager.play(0, true);
+        QCOMPARE(playSpy.last().at(2).toInt(), 0);
+        QCOMPARE(database.movies().first().watchedSeconds, 0);
 
         manager.refresh();
         QCOMPARE(manager.count(), 1);

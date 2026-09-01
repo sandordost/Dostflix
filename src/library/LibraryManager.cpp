@@ -71,7 +71,7 @@ void LibraryManager::refresh()
     emit stateChanged();
 }
 
-void LibraryManager::play(int row)
+void LibraryManager::play(int row, bool restart)
 {
     const LibraryMovie *movie = m_model.at(row);
     if (!movie || !QFileInfo::exists(movie->videoPath)) {
@@ -79,7 +79,44 @@ void LibraryManager::play(int row)
         emit stateChanged();
         return;
     }
-    emit playbackRequested(QUrl::fromLocalFile(movie->videoPath), movie->title);
+    const int startSeconds = restart ? 0 : movie->watchedSeconds;
+    if (restart && !m_database.updateWatchProgress(movie->videoPath, 0,
+                                                   movie->durationSeconds)) {
+        m_error = m_database.lastError();
+        emit stateChanged();
+        return;
+    }
+    m_activeVideoPath = movie->videoPath;
+    m_lastPersistedSeconds = startSeconds;
+    if (restart) reload();
+    emit playbackRequested(QUrl::fromLocalFile(movie->videoPath), movie->title, startSeconds);
+}
+
+void LibraryManager::recordPlaybackProgress(int watchedSeconds, int durationSeconds, bool force)
+{
+    if (m_activeVideoPath.isEmpty() || watchedSeconds < 0) return;
+    int storedSeconds = watchedSeconds;
+    if (durationSeconds > 0
+        && (durationSeconds - watchedSeconds <= 60
+            || watchedSeconds >= static_cast<int>(durationSeconds * 0.95))) storedSeconds = 0;
+    // Mpv reports zero while a newly requested file is still loading. Do not let
+    // that transient event erase the position that is about to be resumed.
+    if (!force && watchedSeconds == 0) return;
+    if (!force && storedSeconds != 0
+        && qAbs(storedSeconds - m_lastPersistedSeconds) < 5) return;
+    if (!m_database.updateWatchProgress(m_activeVideoPath, storedSeconds, durationSeconds)) {
+        m_error = m_database.lastError();
+        emit stateChanged();
+        return;
+    }
+    m_lastPersistedSeconds = storedSeconds;
+    m_model.updateProgress(m_activeVideoPath, storedSeconds, durationSeconds);
+}
+
+void LibraryManager::clearPlaybackSession()
+{
+    m_activeVideoPath.clear();
+    m_lastPersistedSeconds = 0;
 }
 
 void LibraryManager::reload()

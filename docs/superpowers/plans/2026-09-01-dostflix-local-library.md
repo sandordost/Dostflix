@@ -15,6 +15,8 @@ Durable transfer completion and resume are implemented by the follow-up in
 `2026-09-01-dostflix-durable-retention.md`.
 Metadata enrichment is implemented by the follow-up in
 `2026-09-01-dostflix-library-metadata.md`.
+Local watch-position persistence and resume/start-over behavior are implemented
+by `2026-09-01-dostflix-watch-progress.md`.
 
 ## Implementation map
 
