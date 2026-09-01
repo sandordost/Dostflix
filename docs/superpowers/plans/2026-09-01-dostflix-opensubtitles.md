@@ -34,6 +34,11 @@
 - Requests identify Dostflix with `User-Agent: Dostflix v0.1.0`. Search carries
   the API key; prepared downloads carry both the API key and in-memory bearer
   token.
+- The required login `base_url` (`api.opensubtitles.com` or
+  `vip-api.opensubtitles.com`) becomes the validated base for authenticated
+  search and download requests. Requests explicitly accept JSON. A 503 is
+  reported as an upstream download-service failure and is not automatically
+  retried because OpenSubtitles may already charge the request to the quota.
 - The API key, username, and password are stored as one JSON secret under
   `subtitles-opensubtitles` using `SecretStore`. The bearer token is never
   persisted. None of these values may be logged or placed in `settings.ini`.

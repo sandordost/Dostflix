@@ -59,11 +59,14 @@ private:
     void clearReply();
     QNetworkReply *sendJson(const QString &path, const QByteArray &method,
                             const QByteArray &body = {});
+    QUrl authenticatedApiBase() const;
+    void applyLoginBaseUrl(const QString &host);
     QString responseError(QNetworkReply *reply) const;
 
     SecretStore &m_secrets;
     QString m_dataDir;
     QUrl m_apiBase;
+    QUrl m_loginApiBase;
     QNetworkAccessManager *m_network;
     QPointer<QNetworkReply> m_reply;
     QString m_apiKey;

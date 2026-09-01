@@ -7,6 +7,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QHostAddress>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -57,6 +58,7 @@ void OpenSubtitlesManager::setNetworkReady(bool ready)
     if (!ready) {
         cancel();
         m_token.clear();
+        m_loginApiBase.clear();
         m_status = tr("Waiting for VPN protection");
     } else {
         m_status.clear();
@@ -85,6 +87,7 @@ bool OpenSubtitlesManager::saveCredentials(const QString &apiKey, const QString 
     m_username = username.trimmed();
     m_password = password;
     m_token.clear();
+    m_loginApiBase.clear();
     setError({});
     emit configurationChanged();
     return true;
@@ -99,6 +102,7 @@ void OpenSubtitlesManager::clearCredentials()
     }
     cancel();
     m_apiKey.clear(); m_username.clear(); m_password.clear(); m_token.clear();
+    m_loginApiBase.clear();
     m_results.clear();
     setError({});
     emit configurationChanged();
@@ -144,8 +148,9 @@ void OpenSubtitlesManager::authenticate()
         if (!successful(reply)) {
             setError(tr("OpenSubtitles login failed: %1").arg(responseError(reply)));
         } else {
-            m_token = QJsonDocument::fromJson(reply->readAll()).object()
-                          .value(QStringLiteral("token")).toString();
+            const QJsonObject response = QJsonDocument::fromJson(reply->readAll()).object();
+            m_token = response.value(QStringLiteral("token")).toString();
+            applyLoginBaseUrl(response.value(QStringLiteral("base_url")).toString());
             if (m_token.isEmpty()) setError(tr("OpenSubtitles returned no login token"));
             else continuePendingAction();
         }
@@ -163,7 +168,7 @@ void OpenSubtitlesManager::continuePendingAction()
 void OpenSubtitlesManager::performSearch()
 {
     m_status = tr("Searching OpenSubtitles…");
-    QUrl url = m_apiBase.resolved(QUrl(QStringLiteral("subtitles")));
+    QUrl url = authenticatedApiBase().resolved(QUrl(QStringLiteral("subtitles")));
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("query"), m_query);
     query.addQueryItem(QStringLiteral("languages"), m_languages);
@@ -173,6 +178,7 @@ void OpenSubtitlesManager::performSearch()
     QNetworkRequest request(url);
     request.setRawHeader("Api-Key", m_apiKey.toUtf8());
     request.setRawHeader("User-Agent", "Dostflix v0.1.0");
+    request.setRawHeader("Accept", "application/json");
     request.setTransferTimeout(15'000);
     QNetworkReply *reply = m_network->get(request);
     m_reply = reply;
@@ -231,7 +237,12 @@ void OpenSubtitlesManager::requestDownload()
         if (!successful(reply)) {
             if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 401)
                 m_token.clear();
-            setError(tr("Could not prepare subtitle download: %1").arg(responseError(reply)));
+            const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (status == 503) {
+                setError(tr("OpenSubtitles accepted the login, but its download service is unavailable (503). Try again later."));
+            } else {
+                setError(tr("Could not prepare subtitle download: %1").arg(responseError(reply)));
+            }
             m_pendingAction = PendingAction::None;
             m_pendingRow = -1;
             reply->deleteLater();
@@ -323,16 +334,42 @@ void OpenSubtitlesManager::clearReply()
 QNetworkReply *OpenSubtitlesManager::sendJson(const QString &path, const QByteArray &method,
                                               const QByteArray &body)
 {
-    QNetworkRequest request(m_apiBase.resolved(QUrl(path)));
+    const QUrl base = path == QStringLiteral("login") ? m_apiBase : authenticatedApiBase();
+    QNetworkRequest request(base.resolved(QUrl(path)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
     request.setRawHeader("Api-Key", m_apiKey.toUtf8());
     request.setRawHeader("User-Agent", "Dostflix v0.1.0");
+    request.setRawHeader("Accept", "application/json");
     if (!m_token.isEmpty()) request.setRawHeader("Authorization", QByteArrayLiteral("Bearer ") + m_token.toUtf8());
     request.setTransferTimeout(15'000);
     QNetworkReply *reply = m_network->sendCustomRequest(request, method, body);
     m_reply = reply;
     emit stateChanged();
     return reply;
+}
+
+QUrl OpenSubtitlesManager::authenticatedApiBase() const
+{
+    return m_loginApiBase.isValid() && !m_loginApiBase.isEmpty()
+        ? m_loginApiBase : m_apiBase;
+}
+
+void OpenSubtitlesManager::applyLoginBaseUrl(const QString &host)
+{
+    const QString normalized = host.trimmed().toLower();
+    const bool official = normalized == QStringLiteral("api.opensubtitles.com")
+        || normalized == QStringLiteral("vip-api.opensubtitles.com");
+    const bool localTestRoute = QHostAddress(m_apiBase.host()).isLoopback()
+        && QHostAddress(normalized).isLoopback();
+    if (!official && normalized != m_apiBase.host().toLower() && !localTestRoute) return;
+    QUrl routed = m_apiBase;
+    routed.setHost(normalized);
+    if (official) {
+        routed.setScheme(QStringLiteral("https"));
+        routed.setPort(-1);
+        routed.setPath(QStringLiteral("/api/v1/"));
+    }
+    m_loginApiBase = routed;
 }
 
 QString OpenSubtitlesManager::responseError(QNetworkReply *reply) const

@@ -49,7 +49,7 @@ public:
         });
     }
 
-    bool listen() { return server.listen(QHostAddress::LocalHost); }
+    bool listen() { return server.listen(QHostAddress::AnyIPv4); }
     QUrl apiBase() const
     {
         return QUrl(QStringLiteral("http://127.0.0.1:%1/api/v1/").arg(server.serverPort()));
@@ -63,7 +63,7 @@ private:
         QByteArray body;
         QByteArray contentType = "application/json";
         if (requestLine.startsWith("POST /api/v1/login ")) {
-            body = R"({"token":"test-token"})";
+            body = R"({"token":"test-token","base_url":"127.0.0.2"})";
         } else if (requestLine.startsWith("GET /api/v1/subtitles?")) {
             body = R"({"data":[{"attributes":{"language":"nl","release":"Test.Release.1080p","download_count":123,"hearing_impaired":false,"from_trusted":true,"files":[{"file_id":42,"file_name":"Test.Release.nl.srt"}]}}]})";
         } else if (requestLine.startsWith("POST /api/v1/download ")) {
@@ -121,13 +121,16 @@ private slots:
         QCOMPARE(manager.results().first().toMap().value("fileId").toInt(), 42);
         QCOMPARE(manager.results().first().toMap().value("language").toString(), QString("nl"));
         QVERIFY(server.requests.at(0).contains("Api-Key: api-key"));
+        QVERIFY(server.requests.at(0).contains("Accept: application/json"));
         QVERIFY(server.requests.at(1).contains("languages=nl,en"));
+        QVERIFY(server.requests.at(1).contains("Host: 127.0.0.2:"));
 
         QSignalSpy readySpy(&manager, &OpenSubtitlesManager::subtitleReady);
         manager.download(0);
         QTRY_COMPARE_WITH_TIMEOUT(readySpy.size(), 1, 3000);
         QCOMPARE(server.requests.size(), 4);
         QVERIFY(server.requests.at(2).contains("Authorization: Bearer test-token"));
+        QVERIFY(server.requests.at(2).contains("Accept: application/json"));
         const QUrl result = readySpy.first().first().toUrl();
         QCOMPARE(result.toLocalFile(), data.path() + "/subtitles/Test.Release.nl.srt");
         QFile file(result.toLocalFile());
