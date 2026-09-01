@@ -117,17 +117,15 @@ Item {
                     Layout.fillWidth: true
                     visible: root.torrentEngine.active
                     text: root.torrentEngine.downloadRate < 104857
-                          ? qsTr("%1 KiB/s · %2 peers (%3 seeds) · %4 copies · %5 seconds buffered")
+                          ? qsTr("%1 KiB/s · %2 peers (%3 seeds) · %4 seconds buffered")
                               .arg((root.torrentEngine.downloadRate / 1024).toFixed(1))
                               .arg(root.torrentEngine.peerCount)
                               .arg(root.torrentEngine.seedCount)
-                              .arg(root.torrentEngine.distributedCopies.toFixed(1))
                               .arg(Math.min(root.torrentEngine.bufferSeconds, 999).toFixed(0))
-                          : qsTr("%1 MiB/s · %2 peers (%3 seeds) · %4 copies · %5 seconds buffered")
+                          : qsTr("%1 MiB/s · %2 peers (%3 seeds) · %4 seconds buffered")
                               .arg((root.torrentEngine.downloadRate / 1048576).toFixed(1))
                               .arg(root.torrentEngine.peerCount)
                               .arg(root.torrentEngine.seedCount)
-                              .arg(root.torrentEngine.distributedCopies.toFixed(1))
                               .arg(Math.min(root.torrentEngine.bufferSeconds, 999).toFixed(0))
                     color: Theme.textSecondary
                 }

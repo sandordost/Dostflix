@@ -146,18 +146,18 @@ target_link_libraries(tst_torrent_file_model PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_torrent_file_model)
 add_test(NAME torrent_file_model COMMAND tst_torrent_file_model)
 
-qt_add_executable(tst_qbittorrent_manager
-    streaming/tst_qbittorrent_manager.cpp
+qt_add_executable(tst_torrserver_manager
+    streaming/tst_torrserver_manager.cpp
     ${PROJECT_SOURCE_DIR}/src/streaming/BufferController.cpp
-    ${PROJECT_SOURCE_DIR}/src/streaming/QBitTorrentManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrServerManager.cpp
     ${PROJECT_SOURCE_DIR}/src/streaming/TorrentFileModel.cpp
 )
-target_include_directories(tst_qbittorrent_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(tst_qbittorrent_manager PRIVATE Qt6::Core Qt6::Network Qt6::Test)
-dostflix_enable_warnings(tst_qbittorrent_manager)
-add_test(NAME qbittorrent_manager
+target_include_directories(tst_torrserver_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torrserver_manager PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_torrserver_manager)
+add_test(NAME torrserver_manager
     COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
-            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_qbittorrent_manager>'"
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_torrserver_manager>'"
 )
 
 qt_add_executable(tst_stream_server

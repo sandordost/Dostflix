@@ -27,7 +27,7 @@ qt_add_executable(dostflix
     src/providers/ReleaseResolver.cpp
     src/providers/SecretStore.cpp
     src/streaming/BufferController.cpp
-    src/streaming/QBitTorrentManager.cpp
+    src/streaming/TorrServerManager.cpp
     src/streaming/StreamServer.cpp
     src/streaming/TorrentFileModel.cpp
     src/ui/AppController.cpp

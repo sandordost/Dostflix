@@ -6,8 +6,7 @@
 #include "providers/ProviderManager.h"
 #include "providers/ProwlarrManager.h"
 #include "providers/SecretStore.h"
-#include "streaming/QBitTorrentManager.h"
-#include "streaming/StreamServer.h"
+#include "streaming/TorrServerManager.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -52,10 +51,8 @@ int main(int argc, char *argv[])
     });
     ProwlarrManager prowlarrManager(
         QDir(paths.dataDir()).filePath(QStringLiteral("prowlarr")), movies, providerManager);
-    QBitTorrentManager torrentEngine(
-        QDir(paths.dataDir()).filePath(QStringLiteral("qbittorrent")),
-        QDir(paths.dataDir()).filePath(QStringLiteral("downloads")));
-    StreamServer streamServer;
+    TorrServerManager torrentEngine(
+        QDir(paths.dataDir()).filePath(QStringLiteral("torrserver")));
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &prowlarrManager,
                      [&] { prowlarrManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &torrentEngine,
@@ -67,21 +64,7 @@ int main(int argc, char *argv[])
         if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
         else torrentEngine.startTorrentData(title, torrentData);
     });
-    QObject::connect(&torrentEngine, &QBitTorrentManager::stateChanged, &streamServer, [&] {
-        if (!torrentEngine.active()) {
-            streamServer.stop();
-        } else if (!torrentEngine.selectedFilePath().isEmpty() && !streamServer.running()) {
-            streamServer.start(torrentEngine.selectedFilePath(),
-                               torrentEngine.selectedFileSize(),
-                               [&](qint64 offset, qint64 length) {
-                return torrentEngine.isRangeAvailable(offset, length);
-            }, [&](qint64 offset, qint64 length) {
-                torrentEngine.prioritizeRange(offset, length);
-            });
-        }
-    });
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&] {
-        streamServer.stop();
         torrentEngine.shutdown();
         prowlarrManager.shutdown();
         vpnManager.shutdown();
