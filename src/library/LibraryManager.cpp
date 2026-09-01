@@ -2,6 +2,7 @@
 
 #include "app/AppSettings.h"
 #include "library/LibraryDatabase.h"
+#include "library/MovieFilenameParser.h"
 
 #include <QDir>
 #include <QDirIterator>
@@ -58,9 +59,12 @@ void LibraryManager::refresh()
                           QDirIterator::Subdirectories);
     while (iterator.hasNext()) {
         const QString path = QFileInfo(iterator.next()).canonicalFilePath();
-        if (isVideoFile(path) && !m_database.upsertMovie(displayTitle(path), path)) {
-            m_error = m_database.lastError();
-            break;
+        if (isVideoFile(path)) {
+            const ParsedMovieFilename parsed = parseMovieFilename(path);
+            if (!m_database.upsertMovie(parsed.title, path, parsed.year)) {
+                m_error = m_database.lastError();
+                break;
+            }
         }
     }
     reload();
@@ -99,7 +103,5 @@ bool LibraryManager::isVideoFile(const QString &path)
 
 QString LibraryManager::displayTitle(const QString &path)
 {
-    QString title = QFileInfo(path).completeBaseName();
-    title.replace(QRegularExpression(QStringLiteral("[._]+")), QStringLiteral(" "));
-    return title.simplified();
+    return parseMovieFilename(path).title;
 }

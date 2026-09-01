@@ -37,7 +37,9 @@ private slots:
         QCOMPARE(settings.libraryDirectory(), movieDir);
         QCOMPARE(manager.model()->data(manager.model()->index(0, 0),
                                        LocalLibraryModel::TitleRole).toString(),
-                 QStringLiteral("The Matrix 1999"));
+                 QStringLiteral("The Matrix"));
+        QCOMPARE(manager.model()->data(manager.model()->index(0, 0),
+                                       LocalLibraryModel::YearRole).toInt(), 1999);
         QSignalSpy playSpy(&manager, &LibraryManager::playbackRequested);
         manager.play(0);
         QCOMPARE(playSpy.size(), 1);

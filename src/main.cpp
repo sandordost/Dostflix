@@ -2,6 +2,7 @@
 #include "app/AppSettings.h"
 #include "library/LibraryDatabase.h"
 #include "library/DownloadManager.h"
+#include "library/LibraryMetadataManager.h"
 #include "library/LibraryManager.h"
 #include "movies/MovieListModel.h"
 #include "network/NetworkGuardClient.h"
@@ -61,6 +62,8 @@ int main(int argc, char *argv[])
     VpnManager vpnManager(settings, vpnBackend, &networkGuard);
     LibSecretStore secretStore;
     ProviderManager providerManager(settings, secretStore);
+    LibraryMetadataManager metadataManager(
+        libraryDatabase, libraryManager, providerManager, paths.dataDir());
     OpenSubtitlesManager subtitleManager(secretStore, paths.dataDir());
 
     AppController controller;
@@ -84,6 +87,13 @@ int main(int argc, char *argv[])
                      [&] { downloadManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &subtitleManager,
                      [&] { subtitleManager.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&vpnManager, &VpnManager::stateChanged, &metadataManager,
+                     [&] { metadataManager.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&providerManager, &ProviderManager::tmdbTokenChanged,
+                     &metadataManager, &LibraryMetadataManager::refresh);
+    QObject::connect(&libraryManager, &LibraryManager::stateChanged,
+                     &metadataManager, &LibraryMetadataManager::refresh,
+                     Qt::QueuedConnection);
     QObject::connect(&prowlarrManager, &ProwlarrManager::releasePrepared,
                      &torrentEngine,
                      [&](const QString &title, const QString &magnetUrl,
@@ -111,6 +121,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
         {QStringLiteral("libraryManager"), QVariant::fromValue(&libraryManager)},
+        {QStringLiteral("metadataManager"), QVariant::fromValue(&metadataManager)},
         {QStringLiteral("downloadManager"), QVariant::fromValue(&downloadManager)},
         {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
         {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
@@ -130,6 +141,7 @@ int main(int argc, char *argv[])
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&, player] {
         if (player) player->stop();
         subtitleManager.cancel();
+        metadataManager.cancel();
         downloadManager.pause();
         torrentEngine.shutdown();
         prowlarrManager.shutdown();

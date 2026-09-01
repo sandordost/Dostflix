@@ -19,8 +19,10 @@ qt_add_executable(dostflix
     src/app/AppSettings.cpp
     src/library/LibraryDatabase.cpp
     src/library/DownloadManager.cpp
+    src/library/LibraryMetadataManager.cpp
     src/library/LibraryManager.cpp
     src/library/LocalLibraryModel.cpp
+    src/library/MovieFilenameParser.cpp
     src/movies/Movie.cpp
     src/movies/MovieListModel.cpp
     src/network/NetworkGuardClient.cpp

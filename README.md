@@ -38,6 +38,11 @@ file. Its exact transfer identity and progress survive restarts; only an exact,
 fsynced, atomically finalized video becomes visible in the Library. Downloads
 can be played or removed directly, and selecting the same release again reuses
 its existing torrent cache and partial-file progress.
+Local filenames are normalized into a title and year before registration. When
+a TMDB Read Access Token is configured, Dostflix enriches unmatched local films
+only while VPN protection is verified, then stores the canonical title, year,
+runtime, synopsis, TMDB/IMDb identity, and a locally cached poster. Once cached,
+all library metadata remains available for offline browsing.
 
 ## Arch installation and dependencies
 
@@ -111,6 +116,8 @@ changing cross-component behavior:
   API, secret-storage, VPN gating, fake-server tests, and future enhancements.
 - `docs/superpowers/plans/2026-09-01-dostflix-local-library.md` — local folder,
   SQLite registration, offline playback, tests, and torrent-retention handoff.
+- `docs/superpowers/plans/2026-09-01-dostflix-library-metadata.md` — filename
+  recognition, TMDB matching, poster caching, schema v4, and network invariants.
 - `docs/superpowers/plans/2026-09-01-dostflix-durable-retention.md` — resumable
   loopback writer, playback/removal lifecycle, cache reuse, atomic completion,
   and security rules.

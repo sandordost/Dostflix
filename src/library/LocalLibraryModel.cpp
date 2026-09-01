@@ -21,6 +21,7 @@ QVariant LocalLibraryModel::data(const QModelIndex &index, int role) const
     case VideoUrlRole: return QUrl::fromLocalFile(movie->videoPath);
     case WatchedSecondsRole: return movie->watchedSeconds;
     case DurationSecondsRole: return movie->durationSeconds;
+    case SynopsisRole: return movie->synopsis;
     default: return {};
     }
 }
@@ -30,7 +31,7 @@ QHash<int, QByteArray> LocalLibraryModel::roleNames() const
     return {{MovieIdRole, "movieId"}, {TitleRole, "title"}, {YearRole, "year"},
             {PosterUrlRole, "posterUrl"}, {VideoUrlRole, "videoUrl"},
             {WatchedSecondsRole, "watchedSeconds"},
-            {DurationSecondsRole, "durationSeconds"}};
+            {DurationSecondsRole, "durationSeconds"}, {SynopsisRole, "synopsis"}};
 }
 
 void LocalLibraryModel::replace(QList<LibraryMovie> movies)
