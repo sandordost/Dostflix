@@ -48,6 +48,15 @@ lt::settings_pack torrentSettings()
     settings.set_str(lt::settings_pack::user_agent, "Dostflix/0.1");
     return settings;
 }
+
+void prepareForManualDownload(lt::add_torrent_params &params)
+{
+    params.flags &= ~lt::torrent_flags::paused;
+    params.flags &= ~lt::torrent_flags::auto_managed;
+    // Metadata is still acquired, but payload cannot start before the user has
+    // selected the video and the disk thread has applied its file priorities.
+    params.flags |= lt::torrent_flags::upload_mode;
+}
 }
 
 TorrentEngine::TorrentEngine(QString downloadDir, QObject *parent)
@@ -150,6 +159,7 @@ void TorrentEngine::startMagnet(const QString &title, const QString &magnetUrl)
         return;
     }
     params.save_path = m_downloadDir.toStdString();
+    prepareForManualDownload(params);
     m_impl->session = std::make_unique<lt::session>(torrentSettings());
     m_impl->session->async_add_torrent(std::move(params));
     m_title = title;
@@ -187,6 +197,7 @@ void TorrentEngine::startTorrentData(const QString &title, const QByteArray &tor
         return;
     }
     params.save_path = m_downloadDir.toStdString();
+    prepareForManualDownload(params);
     m_impl->session = std::make_unique<lt::session>(torrentSettings());
     m_impl->session->async_add_torrent(std::move(params));
     m_title = title;
@@ -215,6 +226,7 @@ void TorrentEngine::cancel()
     m_bufferSeconds = 0.0;
     m_estimatedWaitSeconds = 0.0;
     m_bufferReady = false;
+    m_waitingFilePriorities = false;
     m_stateLabel.clear();
     m_error.clear();
     emit stateChanged();
@@ -238,6 +250,14 @@ void TorrentEngine::poll()
             if (m_impl->handle.status().has_metadata) collectVideoFiles();
         } else if (lt::alert_cast<lt::metadata_received_alert>(alert)) {
             collectVideoFiles();
+        } else if (const auto *filePriorities = lt::alert_cast<lt::file_prio_alert>(alert)) {
+            if (filePriorities->handle == m_impl->handle && m_waitingFilePriorities) {
+                if (filePriorities->error) {
+                    fail(QString::fromStdString(filePriorities->error.message()));
+                    return;
+                }
+                finalizeFileSelection();
+            }
         } else if (const auto *torrentError = lt::alert_cast<lt::torrent_error_alert>(alert)) {
             fail(QString::fromStdString(torrentError->error.message()));
             return;
@@ -281,29 +301,46 @@ void TorrentEngine::applyFileSelection(const TorrentVideoFile &file)
     const lt::file_storage &storage = info->layout();
     std::vector<lt::download_priority_t> priorities(
         static_cast<std::size_t>(storage.num_files()), lt::dont_download);
-    const lt::file_index_t fileIndex{file.torrentIndex};
     priorities.at(static_cast<std::size_t>(file.torrentIndex)) = lt::default_priority;
     m_impl->handle.prioritize_files(priorities);
 
+    m_selectedTorrentIndex = file.torrentIndex;
+    m_selectedFileSize = file.sizeBytes;
+    m_selectedFileName = file.path;
+    m_needsFileSelection = false;
+    m_waitingFilePriorities = true;
+    m_stateLabel = tr("Preparing the selected video…");
+    emit stateChanged();
+}
+
+void TorrentEngine::finalizeFileSelection()
+{
+    const std::shared_ptr<const lt::torrent_info> info = m_impl->handle.torrent_file();
+    if (!info || m_selectedTorrentIndex < 0) return;
+    const lt::file_storage &storage = info->layout();
+    const lt::file_index_t fileIndex{m_selectedTorrentIndex};
     const auto prioritizeRange = [&](qint64 offset, qint64 length, int deadlineBase) {
         if (length <= 0) return;
         const lt::peer_request first = storage.map_file(fileIndex, offset, 1);
         const lt::peer_request last = storage.map_file(
-            fileIndex, std::min(file.sizeBytes - 1, offset + length - 1), 1);
+            fileIndex, std::min(m_selectedFileSize - 1, offset + length - 1), 1);
         int deadline = deadlineBase;
         for (lt::piece_index_t piece = first.piece; piece <= last.piece; ++piece) {
             m_impl->handle.set_piece_deadline(piece, deadline);
             deadline += 25;
         }
     };
-    prioritizeRange(0, std::min<qint64>(file.sizeBytes, 16LL * 1024 * 1024), 0);
-    prioritizeRange(std::max<qint64>(0, file.sizeBytes - 4LL * 1024 * 1024),
-                    std::min<qint64>(file.sizeBytes, 4LL * 1024 * 1024), 500);
+    prioritizeRange(0, std::min<qint64>(m_selectedFileSize, 16LL * 1024 * 1024), 0);
+    prioritizeRange(std::max<qint64>(0, m_selectedFileSize - 4LL * 1024 * 1024),
+                    std::min<qint64>(m_selectedFileSize, 4LL * 1024 * 1024), 500);
 
-    m_selectedTorrentIndex = file.torrentIndex;
-    m_selectedFileSize = file.sizeBytes;
-    m_selectedFileName = file.path;
-    m_needsFileSelection = false;
+    m_impl->handle.unset_flags(lt::torrent_flags::upload_mode
+                               | lt::torrent_flags::share_mode
+                               | lt::torrent_flags::auto_managed
+                               | lt::torrent_flags::paused);
+    m_impl->handle.resume();
+    m_impl->handle.force_reannounce(0, lt::torrent_handle::high_priority);
+    m_waitingFilePriorities = false;
     m_stateLabel = tr("Building a safe playback buffer…");
     emit stateChanged();
 }

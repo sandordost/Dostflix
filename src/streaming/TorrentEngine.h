@@ -62,6 +62,7 @@ private:
     void poll();
     void collectVideoFiles();
     void applyFileSelection(const TorrentVideoFile &file);
+    void finalizeFileSelection();
     void updateStatistics();
     void fail(QString error);
 
@@ -84,4 +85,5 @@ private:
     double m_bufferSeconds = 0.0;
     double m_estimatedWaitSeconds = 0.0;
     bool m_bufferReady = false;
+    bool m_waitingFilePriorities = false;
 };
