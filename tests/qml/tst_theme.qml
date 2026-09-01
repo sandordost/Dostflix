@@ -17,4 +17,18 @@ TestCase {
         verify(Theme.controlsTimeout >= 2500)
         verify(Theme.textPrimary !== Theme.panel)
     }
+
+    function test_tokens_scale_from_reference_width() {
+        const previousScale = Theme.scaleFactor
+        try {
+            Theme.scaleFactor = 3.0
+            compare(Theme.bodySize, 42)
+            compare(Theme.headingSize, 66)
+            compare(Theme.iconSize, 60)
+            compare(Theme.posterWidth, 510)
+            compare(Theme.sidebarWidth, 756)
+        } finally {
+            Theme.scaleFactor = previousScale
+        }
+    }
 }

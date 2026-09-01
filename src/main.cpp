@@ -14,12 +14,14 @@
 #include "streaming/TorrServerManager.h"
 #include "subtitles/OpenSubtitlesManager.h"
 #include "ui/AppController.h"
+#include "ui/DisplayEnvironment.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
 
 #include <QDir>
 #include <QGuiApplication>
 #include <QFont>
+#include <QProcessEnvironment>
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QSGRendererInterface>
@@ -69,6 +71,11 @@ int main(int argc, char *argv[])
     LibraryMetadataManager metadataManager(
         libraryDatabase, libraryManager, providerManager, paths.dataDir());
     OpenSubtitlesManager subtitleManager(settings, secretStore, paths.dataDir());
+
+    bool fullscreenSession = DisplayEnvironment::isGamescopeSession(
+        QProcessEnvironment::systemEnvironment());
+    if (app.arguments().contains(QStringLiteral("--fullscreen"))) fullscreenSession = true;
+    if (app.arguments().contains(QStringLiteral("--windowed"))) fullscreenSession = false;
 
     AppController controller;
     MovieListModel movies;
@@ -134,6 +141,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("prowlarrManager"), QVariant::fromValue(&prowlarrManager)},
         {QStringLiteral("torrentEngine"), QVariant::fromValue(&torrentEngine)},
         {QStringLiteral("subtitleManager"), QVariant::fromValue(&subtitleManager)},
+        {QStringLiteral("gamescopeSession"), fullscreenSession},
     });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },

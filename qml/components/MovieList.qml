@@ -11,7 +11,7 @@ ListView {
     signal releaseSelected(string title, string magnetUrl, string downloadUrl, string posterUrl)
 
     model: movieModel
-    spacing: 7
+    spacing: Theme.px(7)
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: true
@@ -20,7 +20,7 @@ ListView {
         id: releaseRow
         required property var model
         width: root.width
-        height: 92
+        height: Theme.px(92)
         radius: Theme.radius
         color: rowHover.hovered ? Theme.raisedHover : Theme.surface
         Accessible.role: Accessible.Button
@@ -32,11 +32,11 @@ ListView {
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 8
-            spacing: 14
+            anchors.margins: Theme.px(8)
+            spacing: Theme.px(14)
 
             Rectangle {
-                Layout.preferredWidth: 50
+                Layout.preferredWidth: Theme.px(50)
                 Layout.fillHeight: true
                 radius: Theme.radiusSmall
                 color: Theme.raised
@@ -49,13 +49,13 @@ ListView {
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true
-                    sourceSize: Qt.size(100, 152)
+                    sourceSize: Qt.size(Theme.px(100), Theme.px(152))
                 }
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 4
+                spacing: Theme.px(4)
                 Label {
                     Layout.fillWidth: true
                     text: releaseRow.model.title
@@ -92,7 +92,7 @@ ListView {
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.captionSize
                 font.weight: Font.DemiBold
-                padding: 9
+                padding: Theme.px(9)
                 background: Rectangle {
                     radius: Theme.radius
                     color: Theme.raised

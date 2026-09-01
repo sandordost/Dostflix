@@ -11,8 +11,8 @@ Dialog {
     property string query: ""
     signal settingsRequested()
     anchors.centerIn: parent
-    width: Math.min(760, parent ? parent.width - 80 : 760)
-    height: Math.min(580, parent ? parent.height - 80 : 580)
+    width: Math.min(Theme.px(760), parent ? parent.width - Theme.px(80) : Theme.px(760))
+    height: Math.min(Theme.px(580), parent ? parent.height - Theme.px(80) : Theme.px(580))
     modal: true
     title: qsTr("Find subtitles")
     background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
@@ -32,7 +32,7 @@ Dialog {
     onClosed: manager.cancel()
 
     contentItem: ColumnLayout {
-        spacing: 12
+        spacing: Theme.px(12)
 
         RowLayout {
             Layout.fillWidth: true
@@ -94,20 +94,20 @@ Dialog {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 6
+            spacing: Theme.px(6)
             model: root.manager.results
             delegate: Rectangle {
                 id: resultDelegate
                 required property int index
                 required property var modelData
                 width: ListView.view.width
-                height: 70
+                height: Theme.px(70)
                 radius: Theme.radius
                 color: Theme.raised
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: 10
+                    anchors.margins: Theme.px(10)
+                    spacing: Theme.px(10)
                     Label {
                         text: resultDelegate.modelData.language.toUpperCase()
                         color: Theme.textPrimary
@@ -115,7 +115,7 @@ Dialog {
                     }
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 2
+                        spacing: Theme.px(2)
                         Label {
                             Layout.fillWidth: true
                             text: resultDelegate.modelData.release

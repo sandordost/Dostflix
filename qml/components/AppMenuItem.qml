@@ -5,22 +5,22 @@ import Dostflix
 
 MenuItem {
     id: root
-    implicitHeight: 40
-    leftPadding: 12
-    rightPadding: 12
+    implicitHeight: Theme.px(40)
+    leftPadding: Theme.px(12)
+    rightPadding: Theme.px(12)
     font.family: Theme.fontFamily
     font.pixelSize: Theme.bodySize
 
     indicator: Item { implicitWidth: 0; implicitHeight: 0 }
 
     contentItem: RowLayout {
-        spacing: 9
+        spacing: Theme.px(9)
         AppIcon {
             visible: root.checkable
             glyph: root.checked ? "\uf00c" : ""
             color: Theme.textPrimary
-            font.pixelSize: 13
-            Layout.preferredWidth: 16
+            font.pixelSize: Theme.px(13)
+            Layout.preferredWidth: Theme.px(16)
         }
         Label {
             Layout.fillWidth: true

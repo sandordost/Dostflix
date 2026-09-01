@@ -24,7 +24,7 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: Theme.px(12)
 
         RowLayout {
             Layout.fillWidth: true
@@ -60,10 +60,10 @@ Item {
             Layout.fillWidth: true
             visible: root.prowlarrManager.searchBusy
                      || root.prowlarrManager.searchError.length > 0
-            spacing: 8
+            spacing: Theme.px(8)
             BusyIndicator {
-                implicitWidth: 22
-                implicitHeight: 22
+                implicitWidth: Theme.px(22)
+                implicitHeight: Theme.px(22)
                 running: root.prowlarrManager.searchBusy
                 visible: running
             }
@@ -80,7 +80,7 @@ Item {
 
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: releaseDetails.implicitHeight + 24
+            implicitHeight: releaseDetails.implicitHeight + Theme.px(24)
             radius: Theme.radiusLarge
             color: Theme.surface
             visible: root.selectionError.length > 0
@@ -89,8 +89,8 @@ Item {
             ColumnLayout {
                 id: releaseDetails
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 8
+                anchors.margins: Theme.px(12)
+                spacing: Theme.px(8)
 
                 Label {
                     Layout.fillWidth: true

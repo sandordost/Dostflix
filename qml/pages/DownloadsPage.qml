@@ -13,13 +13,13 @@ Item {
         id: removeDialog
         objectName: "removeDownloadDialog"
         anchors.centerIn: parent
-        width: Math.min(500, root.width - 48)
-        height: 210
+        width: Math.min(Theme.px(500), root.width - Theme.px(48))
+        height: Theme.px(210)
         modal: true
         title: qsTr("Remove download?")
         background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
         footer: RowLayout {
-            spacing: 8
+            spacing: Theme.px(8)
             Item { Layout.fillWidth: true }
             AppButton {
                 text: qsTr("Cancel")
@@ -44,7 +44,7 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: Theme.px(12)
         Label {
             text: qsTr("Downloads")
             color: Theme.textPrimary
@@ -63,7 +63,7 @@ Item {
         }
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: transferContent.implicitHeight + 28
+            implicitHeight: transferContent.implicitHeight + Theme.px(28)
             visible: root.downloadManager.hasTransfer
             radius: Theme.radiusLarge
             color: Theme.surface
@@ -71,13 +71,13 @@ Item {
             ColumnLayout {
                 id: transferContent
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 8
+                anchors.margins: Theme.px(14)
+                spacing: Theme.px(8)
                 RowLayout {
                     Layout.fillWidth: true
                     BusyIndicator {
-                        implicitWidth: 22
-                        implicitHeight: 22
+                        implicitWidth: Theme.px(22)
+                        implicitHeight: Theme.px(22)
                         running: root.downloadManager.active
                         visible: running
                     }

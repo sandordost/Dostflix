@@ -16,8 +16,8 @@ Dialog {
     signal pathChosen(url path)
 
     modal: true
-    width: Math.min(760, parent ? parent.width - 48 : 760)
-    height: Math.min(620, parent ? parent.height - 48 : 620)
+    width: Math.min(Theme.px(760), parent ? parent.width - Theme.px(48) : Theme.px(760))
+    height: Math.min(Theme.px(620), parent ? parent.height - Theme.px(48) : Theme.px(620))
     padding: 0
     anchors.centerIn: parent
     background: Rectangle {
@@ -50,12 +50,12 @@ Dialog {
     }
 
     header: ColumnLayout {
-        spacing: 10
-        Item { Layout.preferredHeight: 4 }
+        spacing: Theme.px(10)
+        Item { Layout.preferredHeight: Theme.px(4) }
         Label {
             Layout.fillWidth: true
-            Layout.leftMargin: 18
-            Layout.rightMargin: 18
+            Layout.leftMargin: Theme.px(18)
+            Layout.rightMargin: Theme.px(18)
             text: root.title
             color: Theme.textPrimary
             font.family: Theme.fontFamily
@@ -64,9 +64,9 @@ Dialog {
         }
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: 18
-            Layout.rightMargin: 18
-            spacing: 8
+            Layout.leftMargin: Theme.px(18)
+            Layout.rightMargin: Theme.px(18)
+            spacing: Theme.px(8)
             AppToolButton {
                 icon.name: "go-up-symbolic"
                 enabled: folderModel.parentFolder.toString().length > 0
@@ -85,7 +85,7 @@ Dialog {
                 onClicked: folderModel.folder = StandardPaths.writableLocation(StandardPaths.HomeLocation)
             }
         }
-        Item { Layout.preferredHeight: 2 }
+        Item { Layout.preferredHeight: Theme.px(2) }
     }
 
     contentItem: Rectangle {
@@ -94,9 +94,9 @@ Dialog {
         ListView {
             id: fileList
             anchors.fill: parent
-            anchors.margins: 12
+            anchors.margins: Theme.px(12)
             clip: true
-            spacing: 4
+            spacing: Theme.px(4)
             model: folderModel
             boundsBehavior: Flickable.StopAtBounds
 
@@ -106,7 +106,7 @@ Dialog {
                 required property url fileUrl
                 required property bool fileIsDir
                 width: fileList.width
-                height: 48
+                height: Theme.px(48)
                 radius: Theme.radiusSmall
                 color: entry.fileUrl === root.selectedUrl
                        ? Theme.accentSoft
@@ -114,9 +114,9 @@ Dialog {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
-                    spacing: 12
+                    anchors.leftMargin: Theme.px(14)
+                    anchors.rightMargin: Theme.px(14)
+                    spacing: Theme.px(12)
                     AppIcon {
                         glyph: entry.fileIsDir ? "\uf07b" : "\uf15b"
                         color: entry.fileIsDir ? Theme.accent : Theme.textSecondary
@@ -162,10 +162,10 @@ Dialog {
     }
 
     footer: RowLayout {
-        spacing: 8
-        Item { Layout.preferredHeight: 10 }
+        spacing: Theme.px(8)
+        Item { Layout.preferredHeight: Theme.px(10) }
         Label {
-            Layout.leftMargin: 18
+            Layout.leftMargin: Theme.px(18)
             Layout.fillWidth: true
             text: root.folderMode ? qsTr("Choose this folder")
                                   : (root.selectedUrl.toString().length > 0
@@ -181,12 +181,12 @@ Dialog {
             onClicked: root.close()
         }
         AppButton {
-            Layout.rightMargin: 18
+            Layout.rightMargin: Theme.px(18)
             text: root.folderMode ? qsTr("Choose folder") : qsTr("Open file")
             primary: true
             enabled: root.folderMode || root.selectedUrl.toString().length > 0
             onClicked: root.chooseCurrent()
         }
-        Item { Layout.preferredHeight: 10 }
+        Item { Layout.preferredHeight: Theme.px(10) }
     }
 }

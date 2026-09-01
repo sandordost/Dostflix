@@ -12,11 +12,11 @@ Button {
     property bool alignLeft: false
     property int cornerRadius: Theme.radius
 
-    implicitHeight: 42
-    implicitWidth: Math.max(42, contentRow.implicitWidth + leftPadding + rightPadding)
-    leftPadding: text.length > 0 ? 16 : 11
-    rightPadding: text.length > 0 ? 16 : 11
-    spacing: 9
+    implicitHeight: Theme.px(42)
+    implicitWidth: Math.max(Theme.px(42), contentRow.implicitWidth + leftPadding + rightPadding)
+    leftPadding: text.length > 0 ? Theme.px(16) : Theme.px(11)
+    rightPadding: text.length > 0 ? Theme.px(16) : Theme.px(11)
+    spacing: Theme.px(9)
     font.family: Theme.fontFamily
     font.pixelSize: Theme.bodySize
     palette.buttonText: enabled ? Theme.textPrimary : Theme.textMuted

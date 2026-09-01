@@ -39,6 +39,7 @@ qt_add_executable(dostflix
     src/streaming/TorrentFileModel.cpp
     src/subtitles/OpenSubtitlesManager.cpp
     src/ui/AppController.cpp
+    src/ui/DisplayEnvironment.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp
     src/vpn/VpnProfileModel.cpp

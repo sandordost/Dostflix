@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import Dostflix
 
 ApplicationWindow {
@@ -15,11 +16,14 @@ ApplicationWindow {
     required property var prowlarrManager
     required property var torrentEngine
     required property var subtitleManager
-    width: 1280
-    height: 800
-    minimumWidth: 780
-    minimumHeight: 520
-    visible: true
+    required property bool gamescopeSession
+    width: gamescopeSession ? Screen.width : Math.min(1280, Screen.width)
+    height: gamescopeSession ? Screen.height : Math.min(800, Screen.height)
+    minimumWidth: gamescopeSession ? 0 : Math.min(780, Screen.width)
+    minimumHeight: gamescopeSession ? 0 : Math.min(520, Screen.height)
+    visibility: gamescopeSession ? Window.FullScreen : Window.Windowed
+    font.family: Theme.fontFamily
+    font.pixelSize: Theme.bodySize
     title: qsTr("Dostflix")
     color: Theme.canvas
     palette.window: Theme.panel
@@ -34,9 +38,18 @@ ApplicationWindow {
     palette.placeholderText: Theme.textMuted
     property int pageIndex: 0
     property bool showingPlayer: false
-    readonly property bool compactNavigation: width < 980
+    readonly property real uiScale: gamescopeSession
+                                    ? Math.max(1.0, width / Theme.referenceWidth) : 1.0
+    readonly property real referenceLayoutWidth: width / uiScale
+    readonly property bool compactNavigation: referenceLayoutWidth < 980
     property string launchedStreamUrl: ""
     property string stoppedStreamUrl: ""
+
+    Binding {
+        target: Theme
+        property: "scaleFactor"
+        value: window.uiScale
+    }
 
     function openReadyStream() {
         const url = window.torrentEngine.streamUrl
@@ -129,10 +142,10 @@ ApplicationWindow {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.leftMargin: 18
-        anchors.rightMargin: 18
-        anchors.topMargin: 8
-        anchors.bottomMargin: 16
+        anchors.leftMargin: Theme.px(18)
+        anchors.rightMargin: Theme.px(18)
+        anchors.topMargin: Theme.px(8)
+        anchors.bottomMargin: Theme.px(16)
         spacing: Theme.contentGap
 
         AppHeader {
@@ -169,7 +182,8 @@ ApplicationWindow {
 
                 StackLayout {
                     anchors.fill: parent
-                    anchors.margins: window.width < 900 ? 14 : Theme.pagePadding
+                    anchors.margins: window.referenceLayoutWidth < 900
+                                     ? Theme.px(14) : Theme.pagePadding
                     currentIndex: window.pageIndex
                     DiscoverPage {
                         movieModel: window.movieModel
@@ -198,7 +212,7 @@ ApplicationWindow {
     NowWatchingCard {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.margins: 24
+        anchors.margins: Theme.px(24)
         z: 3
         visible: videoPlayer.hasActivePlayback && !window.showingPlayer
         controller: videoPlayer

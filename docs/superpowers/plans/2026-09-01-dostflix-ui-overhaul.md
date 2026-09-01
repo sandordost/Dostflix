@@ -39,6 +39,20 @@ without a redundant confirmation step, and active torrent progress is shown in
 the global header. The local library deliberately uses 132-pixel rows with a
 left-hand 2:3 poster and no synopsis tooltip.
 
+The normal desktop window starts at up to 1280×800. In a Gamescope/Steam session
+`DisplayEnvironment` selects fullscreen mode and `Main.qml` binds its dimensions
+to the active screen instead of that desktop startup size. Output changes are
+therefore followed automatically and 4K sessions render at 3840×2160 rather than
+inside a 1280×800 surface. Gamescope also derives one application-wide scale
+factor from `current width / 1280 reference width`. Every size token and explicit
+component dimension is based on that factor, including Montserrat typography,
+Font Awesome icons, controls, dialogs, navigation, posters, and spacing. At 4K
+the result is 3× the 1280-wide reference UI instead of a tiny unscaled layout;
+responsive breakpoints continue to evaluate against the reference width.
+Environment detection covers
+`STEAM_GAMESCOPE_SESSION`, `GAMESCOPE_WAYLAND_DISPLAY`, and Gamescope desktop
+session names. Command-line overrides are `--fullscreen` and `--windowed`.
+
 ## Motion and render performance
 
 Interactive motion is limited to GPU-friendly opacity, color, and scale changes.

@@ -68,6 +68,17 @@ after 2.8 seconds and return on pointer
 movement, pause, buffering, or keyboard input; only opacity, color, and scale are
 animated to keep frame pacing smooth.
 
+In a Gamescope/Steam session Dostflix detects `STEAM_GAMESCOPE_SESSION`,
+`GAMESCOPE_WAYLAND_DISPLAY`, or a Gamescope desktop-session name and opens on
+the complete output in native fullscreen. Its window dimensions remain bound to
+the active `Screen`, so a 3840×2160 session is not restricted by the normal
+1280×800 desktop startup size. The 1280-pixel reference width also drives the
+complete interface scale: `screen width / 1280`. A 3840-pixel-wide Gamescope
+output therefore renders typography, icons, controls, posters, and spacing at
+3× while preserving the reference layout. The binding updates automatically
+when the output width changes. `dostflix --fullscreen` and
+`dostflix --windowed` provide explicit launch-option overrides.
+
 ## Arch installation and dependencies
 
 The recommended local installation route is the Arch package. `makepkg -si`

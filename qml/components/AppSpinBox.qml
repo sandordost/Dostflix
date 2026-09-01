@@ -4,10 +4,10 @@ import Dostflix
 
 SpinBox {
     id: root
-    implicitWidth: 132
-    implicitHeight: 42
-    leftPadding: 38
-    rightPadding: 38
+    implicitWidth: Theme.px(132)
+    implicitHeight: Theme.px(42)
+    leftPadding: Theme.px(38)
+    rightPadding: Theme.px(38)
     font.family: Theme.fontFamily
     font.pixelSize: Theme.bodySize
 
@@ -28,8 +28,8 @@ SpinBox {
     up.indicator: Rectangle {
         x: root.width - width
         height: root.height
-        implicitWidth: 36
-        implicitHeight: 42
+        implicitWidth: Theme.px(36)
+        implicitHeight: Theme.px(42)
         radius: Theme.radius
         color: root.up.pressed ? Theme.buttonPressed
                                : (root.up.hovered ? Theme.buttonHover : "transparent")
@@ -39,15 +39,15 @@ SpinBox {
             font.family: Theme.fontFamily
             font.styleName: "Regular"
             font.weight: Font.DemiBold
-            font.pixelSize: 18
+            font.pixelSize: Theme.px(18)
         }
     }
 
     down.indicator: Rectangle {
         x: 0
         height: root.height
-        implicitWidth: 36
-        implicitHeight: 42
+        implicitWidth: Theme.px(36)
+        implicitHeight: Theme.px(42)
         radius: Theme.radius
         color: root.down.pressed ? Theme.buttonPressed
                                  : (root.down.hovered ? Theme.buttonHover : "transparent")
@@ -57,7 +57,7 @@ SpinBox {
             font.family: Theme.fontFamily
             font.styleName: "Regular"
             font.weight: Font.DemiBold
-            font.pixelSize: 18
+            font.pixelSize: Theme.px(18)
         }
     }
 
