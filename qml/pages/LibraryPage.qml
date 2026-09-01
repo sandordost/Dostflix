@@ -10,6 +10,55 @@ Item {
     required property var libraryManager
     required property var metadataManager
 
+    function formatTime(seconds) {
+        const total = Math.max(0, Math.floor(seconds))
+        const hours = Math.floor(total / 3600)
+        const minutes = Math.floor((total % 3600) / 60)
+        const remainder = total % 60
+        return hours > 0
+                ? hours + ":" + String(minutes).padStart(2, "0") + ":" + String(remainder).padStart(2, "0")
+                : minutes + ":" + String(remainder).padStart(2, "0")
+    }
+
+    Dialog {
+        id: resumeDialog
+        objectName: "resumePlaybackDialog"
+        anchors.centerIn: parent
+        modal: true
+        title: qsTr("Continue watching?")
+        property int movieIndex: -1
+        property string movieTitle: ""
+        property int watchedSeconds: 0
+
+        contentItem: Label {
+            text: qsTr("Resume %1 at %2, or start from the beginning?")
+                    .arg(resumeDialog.movieTitle)
+                    .arg(root.formatTime(resumeDialog.watchedSeconds))
+            color: Theme.textPrimary
+            wrapMode: Text.WordWrap
+        }
+        footer: DialogButtonBox {
+            Button {
+                objectName: "restartMovieButton"
+                text: qsTr("Start over")
+                DialogButtonBox.buttonRole: DialogButtonBox.ResetRole
+                onClicked: {
+                    resumeDialog.close()
+                    root.libraryManager.play(resumeDialog.movieIndex, true)
+                }
+            }
+            Button {
+                objectName: "resumeMovieButton"
+                text: qsTr("Resume")
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                onClicked: {
+                    resumeDialog.close()
+                    root.libraryManager.play(resumeDialog.movieIndex, false)
+                }
+            }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 12
@@ -79,6 +128,7 @@ Item {
                 required property url posterUrl
                 required property int year
                 required property int durationSeconds
+                required property int watchedSeconds
                 required property string synopsis
                 width: 174
                 height: 339
@@ -135,9 +185,23 @@ Item {
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     anchors.margins: 8
-                    text: qsTr("Play")
+                    text: movieDelegate.watchedSeconds >= 30
+                          ? qsTr("Continue · %1").arg(root.formatTime(movieDelegate.watchedSeconds))
+                          : qsTr("Play")
                     icon.name: "media-playback-start-symbolic"
-                    onClicked: root.libraryManager.play(movieDelegate.index)
+                    onClicked: {
+                        const canResume = movieDelegate.watchedSeconds >= 30
+                                && (movieDelegate.durationSeconds <= 0
+                                    || movieDelegate.durationSeconds - movieDelegate.watchedSeconds > 60)
+                        if (!canResume) {
+                            root.libraryManager.play(movieDelegate.index, true)
+                            return
+                        }
+                        resumeDialog.movieIndex = movieDelegate.index
+                        resumeDialog.movieTitle = movieDelegate.title
+                        resumeDialog.watchedSeconds = movieDelegate.watchedSeconds
+                        resumeDialog.open()
+                    }
                 }
             }
         }

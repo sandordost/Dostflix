@@ -3,6 +3,9 @@
 #include "streaming/BufferController.h"
 
 #include <QDir>
+#include <QCoreApplication>
+#include <QDirIterator>
+#include <QFile>
 #include <QFileInfo>
 #include <QHostAddress>
 #include <QHttpMultiPart>
@@ -11,8 +14,14 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
 #include <QTcpServer>
+#include <QThread>
 #include <utility>
+#include <cerrno>
+#include <csignal>
+#include <sys/prctl.h>
+#include <unistd.h>
 
 namespace {
 bool successful(const QNetworkReply *reply)
@@ -35,6 +44,58 @@ QString replyError(QNetworkReply *reply)
 {
     const QString body = QString::fromUtf8(reply->readAll()).trimmed();
     return body.isEmpty() ? reply->errorString() : body;
+}
+
+QString processCommandLine(qint64 pid)
+{
+    QFile file(QStringLiteral("/proc/%1/cmdline").arg(pid));
+    if (!file.open(QIODevice::ReadOnly)) return {};
+    QByteArray command = file.readAll();
+    command.replace('\0', ' ');
+    return QString::fromUtf8(command).trimmed();
+}
+
+qint64 parentPid(qint64 pid)
+{
+    QFile file(QStringLiteral("/proc/%1/status").arg(pid));
+    if (!file.open(QIODevice::ReadOnly)) return 0;
+    const QRegularExpression expression(QStringLiteral("^PPid:\\s+(\\d+)$"),
+                                         QRegularExpression::MultilineOption);
+    return expression.match(QString::fromUtf8(file.readAll())).captured(1).toLongLong();
+}
+
+bool processRunning(qint64 pid)
+{
+    QFile file(QStringLiteral("/proc/%1/status").arg(pid));
+    if (!file.open(QIODevice::ReadOnly)) return false;
+    const QRegularExpression expression(QStringLiteral("^State:\\s+([A-Z])"),
+                                         QRegularExpression::MultilineOption);
+    const QRegularExpressionMatch match = expression.match(QString::fromUtf8(file.readAll()));
+    return match.hasMatch() && match.captured(1) != QStringLiteral("Z");
+}
+
+bool isMatchingTorrServer(qint64 pid, const QString &dataDir)
+{
+    const QString command = processCommandLine(pid);
+    return (command.startsWith(QStringLiteral("/usr/bin/torrserver "))
+            || command.startsWith(QStringLiteral("torrserver ")))
+        && command.contains(QStringLiteral("--path %1").arg(dataDir));
+}
+
+bool stopTorrServerProcess(qint64 pid, const QString &dataDir)
+{
+    if (pid <= 1 || !isMatchingTorrServer(pid, dataDir)) return false;
+    if (::kill(static_cast<pid_t>(pid), SIGTERM) != 0 && errno != ESRCH) return false;
+    for (int attempt = 0; attempt < 30; ++attempt) {
+        if (!processRunning(pid)) return true;
+        QThread::msleep(100);
+    }
+    if (::kill(static_cast<pid_t>(pid), SIGKILL) != 0 && errno != ESRCH) return false;
+    for (int attempt = 0; attempt < 10; ++attempt) {
+        if (!processRunning(pid)) return true;
+        QThread::msleep(100);
+    }
+    return !processRunning(pid);
 }
 }
 
@@ -125,6 +186,7 @@ void TorrServerManager::startDaemon()
         fail(tr("Could not create the TorrServer data directory"));
         return;
     }
+    if (!recoverOrphanDaemon()) return;
     QTcpServer portProbe;
     if (!portProbe.listen(QHostAddress::LocalHost, 0)) {
         fail(tr("Could not reserve a local TorrServer API port"));
@@ -142,12 +204,17 @@ void TorrServerManager::startDaemon()
                             QStringLiteral("--logpath"), m_logPath});
     m_process.setStandardOutputFile(QProcess::nullDevice());
     m_process.setStandardErrorFile(QProcess::nullDevice());
+    m_process.setChildProcessModifier([] {
+        ::prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (::getppid() == 1) ::_exit(EXIT_FAILURE);
+    });
     m_process.start();
     if (!m_process.waitForStarted(3'000)) {
         fail(tr("Could not start TorrServer: %1. Log: %2")
                  .arg(m_process.errorString(), m_logPath));
         return;
     }
+    writeDaemonPidFile();
     m_startupTimer.start();
     m_pollTimer.start();
     if (!m_active) m_stateLabel = tr("Starting TorrServer…");
@@ -172,7 +239,10 @@ void TorrServerManager::stopDaemon(bool force)
     }
     m_daemonReady = false;
     m_dropInProgress = false;
-    if (m_process.state() == QProcess::NotRunning) return;
+    if (m_process.state() == QProcess::NotRunning) {
+        removeOwnedDaemonPidFile();
+        return;
+    }
     m_stopping = true;
     force ? m_process.kill() : m_process.terminate();
     if (!m_process.waitForFinished(force ? 1'000 : 3'000)) {
@@ -180,6 +250,63 @@ void TorrServerManager::stopDaemon(bool force)
         m_process.waitForFinished(1'000);
     }
     m_stopping = false;
+    removeOwnedDaemonPidFile();
+}
+
+bool TorrServerManager::recoverOrphanDaemon()
+{
+    const QString pidPath = QDir(m_dataDir).filePath(QStringLiteral("torrserver.pid"));
+    QFile pidFile(pidPath);
+    if (pidFile.open(QIODevice::ReadOnly)) {
+        const QList<QByteArray> fields = pidFile.readAll().simplified().split(' ');
+        const qint64 ownerPid = fields.value(0).toLongLong();
+        const qint64 daemonPid = fields.value(1).toLongLong();
+        if (ownerPid > 0 && ownerPid != QCoreApplication::applicationPid()
+            && processRunning(ownerPid)) {
+            fail(tr("Another Dostflix instance is already managing TorrServer"));
+            return false;
+        }
+        if (daemonPid > 1 && processRunning(daemonPid)
+            && !stopTorrServerProcess(daemonPid, m_dataDir)) {
+            fail(tr("Could not stop the TorrServer process left by a crashed Dostflix instance"));
+            return false;
+        }
+        pidFile.close();
+        QFile::remove(pidPath);
+    }
+
+    // Compatibility recovery for versions that predate the PID file. Only an
+    // orphan adopted by PID 1 with Dostflix's exact private data path qualifies.
+    QDirIterator processes(QStringLiteral("/proc"), QDir::Dirs | QDir::NoDotAndDotDot);
+    while (processes.hasNext()) {
+        bool numeric = false;
+        const qint64 pid = QFileInfo(processes.next()).fileName().toLongLong(&numeric);
+        if (!numeric || parentPid(pid) != 1 || !isMatchingTorrServer(pid, m_dataDir)) continue;
+        if (!stopTorrServerProcess(pid, m_dataDir)) {
+            fail(tr("Could not stop the orphaned TorrServer process"));
+            return false;
+        }
+    }
+    return true;
+}
+
+void TorrServerManager::writeDaemonPidFile()
+{
+    QFile file(QDir(m_dataDir).filePath(QStringLiteral("torrserver.pid")));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) return;
+    file.write(QByteArray::number(QCoreApplication::applicationPid()) + ' '
+               + QByteArray::number(m_process.processId()) + '\n');
+    file.flush();
+}
+
+void TorrServerManager::removeOwnedDaemonPidFile()
+{
+    const QString path = QDir(m_dataDir).filePath(QStringLiteral("torrserver.pid"));
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) return;
+    const qint64 ownerPid = file.readAll().simplified().split(' ').value(0).toLongLong();
+    file.close();
+    if (ownerPid == QCoreApplication::applicationPid()) QFile::remove(path);
 }
 
 void TorrServerManager::poll()

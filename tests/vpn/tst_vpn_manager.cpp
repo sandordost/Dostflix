@@ -152,6 +152,26 @@ private slots:
         QCOMPARE(backend.deactivationCount, 0);
     }
 
+    void recoversAConnectionOwnedByACrashedInstance()
+    {
+        QTemporaryDir directory;
+        AppSettings settings(directory.filePath(QStringLiteral("settings.ini")));
+        settings.setVpnConnectionUuid(QStringLiteral("vpn-1"));
+        settings.setVpnOwnership(QStringLiteral("vpn-1"), 2'000'000'000);
+        FakeVpnBackend backend;
+        backend.state = VpnConnectionState::Activated;
+        VpnManager manager(settings, backend);
+
+        manager.start();
+        QVERIFY(manager.connected());
+        QVERIFY(manager.ownsConnection());
+        QCOMPARE(settings.vpnOwnerPid(), QCoreApplication::applicationPid());
+
+        manager.shutdown();
+        QCOMPARE(backend.deactivationCount, 1);
+        QVERIFY(settings.ownedVpnConnectionUuid().isEmpty());
+    }
+
     void stopsOwnedConnectionBeforeChangingProfile()
     {
         QTemporaryDir directory;

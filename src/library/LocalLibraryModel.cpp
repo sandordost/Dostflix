@@ -41,6 +41,20 @@ void LocalLibraryModel::replace(QList<LibraryMovie> movies)
     endResetModel();
 }
 
+void LocalLibraryModel::updateProgress(const QString &videoPath, int watchedSeconds,
+                                       int durationSeconds)
+{
+    for (int row = 0; row < m_movies.size(); ++row) {
+        LibraryMovie &movie = m_movies[row];
+        if (movie.videoPath != videoPath) continue;
+        movie.watchedSeconds = watchedSeconds;
+        if (durationSeconds > 0) movie.durationSeconds = durationSeconds;
+        const QModelIndex changed = index(row, 0);
+        emit dataChanged(changed, changed, {WatchedSecondsRole, DurationSecondsRole});
+        return;
+    }
+}
+
 const LibraryMovie *LocalLibraryModel::at(int row) const
 {
     return row >= 0 && row < m_movies.size() ? &m_movies.at(row) : nullptr;

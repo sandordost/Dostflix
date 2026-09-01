@@ -136,6 +136,21 @@ int main(int argc, char *argv[])
     MpvPlayer *player = engine.rootObjects().isEmpty()
         ? nullptr
         : engine.rootObjects().constFirst()->findChild<MpvPlayer *>(QStringLiteral("videoPlayer"));
+    if (player) {
+        QObject::connect(player, &MpvPlayer::positionChanged, &libraryManager, [&] {
+            libraryManager.recordPlaybackProgress(player->watchedSeconds(),
+                                                   static_cast<int>(player->duration()));
+        });
+        QObject::connect(player, &MpvPlayer::durationChanged, &libraryManager, [&] {
+            libraryManager.recordPlaybackProgress(player->watchedSeconds(),
+                                                   static_cast<int>(player->duration()));
+        });
+        QObject::connect(player, &MpvPlayer::playbackStopping, &libraryManager,
+                         [&](double position, double duration) {
+            libraryManager.recordPlaybackProgress(static_cast<int>(position),
+                                                   static_cast<int>(duration), true);
+        });
+    }
     QObject::connect(&subtitleManager, &OpenSubtitlesManager::subtitleReady,
                      &app, [player](const QUrl &url) { if (player) player->addSubtitleFile(url); });
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&, player] {

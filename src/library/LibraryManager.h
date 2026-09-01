@@ -26,11 +26,13 @@ public:
 
     Q_INVOKABLE bool setDirectory(const QUrl &directoryUrl);
     Q_INVOKABLE void refresh();
-    Q_INVOKABLE void play(int row);
+    Q_INVOKABLE void play(int row, bool restart = false);
+    void recordPlaybackProgress(int watchedSeconds, int durationSeconds, bool force = false);
+    Q_INVOKABLE void clearPlaybackSession();
 
 signals:
     void stateChanged();
-    void playbackRequested(const QUrl &fileUrl, const QString &title);
+    void playbackRequested(const QUrl &fileUrl, const QString &title, int startSeconds);
 
 private:
     void reload();
@@ -41,5 +43,7 @@ private:
     LibraryDatabase &m_database;
     QString m_directory;
     QString m_error;
+    QString m_activeVideoPath;
+    int m_lastPersistedSeconds = 0;
     LocalLibraryModel m_model;
 };

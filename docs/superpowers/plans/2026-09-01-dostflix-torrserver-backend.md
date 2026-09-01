@@ -30,6 +30,18 @@ prioritizes the active playback range and readahead window.
 Startup fails visibly after 20 seconds if the local API does not become ready;
 process launch errors and exit codes include the diagnostic log path.
 
+## Crash recovery
+
+- TorrServer and managed Prowlarr receive a Linux parent-death signal, so an
+  abnormal Dostflix exit terminates both children instead of leaving database or
+  port locks behind.
+- A `torrserver.pid` ownership record is written after launch and removed during
+  normal shutdown. At the next launch, a daemon whose recorded Dostflix owner no
+  longer exists is terminated before a replacement starts.
+- For upgrades from older versions without that record, recovery accepts only a
+  PID-1 orphan whose command line contains TorrServer's exact private Dostflix
+  data path. Unrelated TorrServer processes are never touched.
+
 ## Streaming flow
 
 - Acquire torrent metadata and expose plausible video files for selection.
@@ -58,3 +70,5 @@ process launch errors and exit codes include the diagnostic log path.
   and a loopback-only stream URL is produced without any external traffic.
 - A second local fixture replaces the first; the TorrServer list then contains
   exactly one active torrent while the first remains database-only.
+- A loopback test leaves a real TorrServer process behind with a dead ownership
+  marker and verifies that the next manager cleans it up and becomes ready.

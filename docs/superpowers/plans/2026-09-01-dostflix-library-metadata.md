@@ -52,4 +52,5 @@ No test contacts TMDB, starts a VPN, or transfers torrent data.
 - Add an explicit manual match/correction flow for ambiguous filenames.
 - Store genres and backdrop artwork when the detail page needs them.
 - Add locale selection and stale-metadata refresh policy.
-- Watch-position persistence and resume choice are the next separate roadmap item.
+- Watch-position persistence and resume choice are implemented in
+  `2026-09-01-dostflix-watch-progress.md`.

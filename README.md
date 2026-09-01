@@ -43,6 +43,9 @@ a TMDB Read Access Token is configured, Dostflix enriches unmatched local films
 only while VPN protection is verified, then stores the canonical title, year,
 runtime, synopsis, TMDB/IMDb identity, and a locally cached poster. Once cached,
 all library metadata remains available for offline browsing.
+Local playback position is persisted in five-second increments and once more
+before stopping. Returning to a partially watched movie offers Resume or Start
+over; completed movies automatically lose their resume marker.
 
 ## Arch installation and dependencies
 
@@ -118,6 +121,8 @@ changing cross-component behavior:
   SQLite registration, offline playback, tests, and torrent-retention handoff.
 - `docs/superpowers/plans/2026-09-01-dostflix-library-metadata.md` — filename
   recognition, TMDB matching, poster caching, schema v4, and network invariants.
+- `docs/superpowers/plans/2026-09-01-dostflix-watch-progress.md` — local playback
+  persistence, resume/start-over behavior, completion rules, and tests.
 - `docs/superpowers/plans/2026-09-01-dostflix-durable-retention.md` — resumable
   loopback writer, playback/removal lifecycle, cache reuse, atomic completion,
   and security rules.

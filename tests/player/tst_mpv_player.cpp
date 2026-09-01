@@ -94,8 +94,9 @@ private slots:
              QStringLiteral("-f"), QStringLiteral("lavfi"),
              QStringLiteral("-i"), QStringLiteral("color=c=red:s=320x180:d=5"),
              QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"), videoPath}), 0);
-        player.play(QUrl::fromLocalFile(videoPath).toString(), QStringLiteral("Fixture"));
+        player.play(QUrl::fromLocalFile(videoPath).toString(), QStringLiteral("Fixture"), 2.0);
         QTRY_VERIFY_WITH_TIMEOUT(!player.buffering(), 3'000);
+        QTRY_VERIFY_WITH_TIMEOUT(player.position() >= 1.5, 3'000);
         QVERIFY(player.hasActivePlayback());
         QCOMPARE(player.activeTitle(), QStringLiteral("Fixture"));
         QVERIFY2(player.errorMessage().isEmpty(), qPrintable(player.errorMessage()));
@@ -109,7 +110,10 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(!player.subtitleTracks().isEmpty(), 3'000);
         QVERIFY(player.selectedSubtitleId() != QStringLiteral("no"));
         QVERIFY2(player.errorMessage().isEmpty(), qPrintable(player.errorMessage()));
+        QSignalSpy stoppingSpy(&player, &MpvPlayer::playbackStopping);
         player.stop();
+        QCOMPARE(stoppingSpy.size(), 1);
+        QVERIFY(stoppingSpy.first().first().toDouble() >= 1.5);
         window.releaseResources();
     }
 };

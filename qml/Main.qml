@@ -34,6 +34,7 @@ ApplicationWindow {
                 || url === window.stoppedStreamUrl)
             return
         window.launchedStreamUrl = url
+        window.libraryManager.clearPlaybackSession()
         videoPlayer.play(url, window.torrentEngine.title)
         window.showingPlayer = true
     }
@@ -64,9 +65,9 @@ ApplicationWindow {
 
     Connections {
         target: window.libraryManager
-        function onPlaybackRequested(fileUrl, title) {
+        function onPlaybackRequested(fileUrl, title, startSeconds) {
             window.launchedStreamUrl = ""
-            videoPlayer.play(fileUrl, title)
+            videoPlayer.play(fileUrl, title, startSeconds)
             window.showingPlayer = true
         }
     }
@@ -74,6 +75,7 @@ ApplicationWindow {
     Connections {
         target: window.downloadManager
         function onLocalPlaybackRequested(fileUrl, title) {
+            window.libraryManager.clearPlaybackSession()
             window.stoppedStreamUrl = ""
             window.launchedStreamUrl = ""
             videoPlayer.play(fileUrl, title)

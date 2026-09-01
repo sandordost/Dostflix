@@ -230,10 +230,11 @@ QString MpvPlayer::selectedSubtitleId() const { return m_selectedSubtitleId; }
 double MpvPlayer::subtitleDelay() const { return m_subtitleDelay; }
 mpv_handle *MpvPlayer::handle() const { return m_handle; }
 
-void MpvPlayer::play(const QString &url, const QString &title)
+void MpvPlayer::play(const QString &url, const QString &title, double startSeconds)
 {
     if (!m_handle || url.isEmpty()) return;
     m_pendingUrl = url;
+    m_pendingStartSeconds = std::max(0.0, startSeconds);
     m_activeTitle = title;
     m_position = 0.0;
     m_duration = 0.0;
@@ -337,11 +338,13 @@ void MpvPlayer::setSubtitleDelay(double seconds)
 
 void MpvPlayer::stop()
 {
+    if (m_active) emit playbackStopping(m_position, m_duration);
     if (m_handle) {
         const char *command[] = {"stop", nullptr};
         mpv_command_async(m_handle, 0, command);
     }
     m_pendingUrl.clear();
+    m_pendingStartSeconds = 0.0;
     m_activeTitle.clear();
     m_active = false;
     m_buffering = false;
@@ -387,6 +390,11 @@ void MpvPlayer::processEvents()
         mpv_event *event = mpv_wait_event(m_handle, 0.0);
         if (!event || event->event_id == MPV_EVENT_NONE) return;
         if (event->event_id == MPV_EVENT_FILE_LOADED) {
+            if (m_pendingStartSeconds > 0.0) {
+                double position = m_pendingStartSeconds;
+                mpv_set_property_async(m_handle, 0, "time-pos", MPV_FORMAT_DOUBLE, &position);
+                m_pendingStartSeconds = 0.0;
+            }
             if (m_buffering) {
                 m_buffering = false;
                 emit bufferingChanged();

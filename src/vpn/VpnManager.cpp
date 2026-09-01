@@ -5,6 +5,7 @@
 #include "vpn/VpnBackend.h"
 
 #include <QFileInfo>
+#include <QCoreApplication>
 
 VpnManager::VpnManager(AppSettings &settings, VpnBackend &backend,
                        NetworkGuardBackend *guard, QObject *parent)
@@ -117,7 +118,8 @@ void VpnManager::connectSelected()
     const VpnConnectionState current = m_backend.connectionState(m_selectedUuid, &existingPath, &error);
     if (current == VpnConnectionState::Activated || current == VpnConnectionState::Activating) {
         m_activePath = existingPath;
-        m_ownsConnection = false;
+        m_ownsConnection = recoverableOwnedConnection();
+        if (m_ownsConnection) rememberOwnership();
         m_pollTimer.start();
         setState(State::Connecting);
         if (current == VpnConnectionState::Activated && installProtectedGuard()) {
@@ -129,11 +131,16 @@ void VpnManager::connectSelected()
         setState(State::Error, error);
         return;
     }
+    if (!m_settings.ownedVpnConnectionUuid().isEmpty()
+        && !QFileInfo::exists(QStringLiteral("/proc/%1").arg(m_settings.vpnOwnerPid()))) {
+        m_settings.clearVpnOwnership();
+    }
     if (!m_backend.activate(m_selectedUuid, &m_activePath, &error)) {
         setState(State::Error, error);
         return;
     }
     m_ownsConnection = true;
+    rememberOwnership();
     setState(State::Connecting);
     m_pollTimer.start();
 }
@@ -153,6 +160,7 @@ void VpnManager::disconnectOwned()
     m_pollTimer.stop();
     m_activePath.clear();
     m_ownsConnection = false;
+    m_settings.clearVpnOwnership();
     setState(State::Disconnected);
 }
 
@@ -178,6 +186,7 @@ void VpnManager::updateConnectionState()
     } else {
         m_pollTimer.stop();
         m_activePath.clear();
+        if (m_ownsConnection) m_settings.clearVpnOwnership();
         m_ownsConnection = false;
         m_guardProtected = false;
         setState(State::Disconnected);
@@ -247,4 +256,17 @@ bool VpnManager::removeGuard()
     m_guardProtected = false;
     emit stateChanged();
     return true;
+}
+
+bool VpnManager::recoverableOwnedConnection() const
+{
+    const qint64 ownerPid = m_settings.vpnOwnerPid();
+    return m_settings.ownedVpnConnectionUuid() == m_selectedUuid
+        && ownerPid > 0 && ownerPid != QCoreApplication::applicationPid()
+        && !QFileInfo::exists(QStringLiteral("/proc/%1").arg(ownerPid));
+}
+
+void VpnManager::rememberOwnership()
+{
+    m_settings.setVpnOwnership(m_selectedUuid, QCoreApplication::applicationPid());
 }
