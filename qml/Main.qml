@@ -131,5 +131,20 @@ ApplicationWindow {
             window.visibility = window.visibility === Window.FullScreen
                               ? Window.Windowed : Window.FullScreen
         }
+        onFindSubtitlesRequested: subtitleSearchNotice.open()
+    }
+
+    Dialog {
+        id: subtitleSearchNotice
+        anchors.centerIn: parent
+        title: qsTr("Find subtitles")
+        modal: true
+        standardButtons: Dialog.Ok
+        Label {
+            width: 420
+            text: qsTr("OpenSubtitles search is the next integration step. Embedded and local subtitle files already work without an account.")
+            wrapMode: Text.WordWrap
+            color: Theme.textPrimary
+        }
     }
 }

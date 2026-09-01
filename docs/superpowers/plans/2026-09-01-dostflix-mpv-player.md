@@ -11,8 +11,8 @@
 - Keep playback active while browsing and expose the existing **Return to movie** card.
 - Stop mpv before application shutdown so TorrServer and VPN teardown remain ordered.
 
-Subtitle track enumeration, local subtitle attachment, and **Find subtitles…** are
-the next implementation increment.
+Subtitle track enumeration, local subtitle attachment, and **Find subtitles…**
+are implemented by the follow-up subtitle-controls increment.
 
 ## Implementation map
 
@@ -45,9 +45,10 @@ the next implementation increment.
 - Qt Quick must use OpenGL because libmpv is currently integrated through
   `MPV_RENDER_API_TYPE_OPENGL`.
 
-## Next increment: subtitles
+## Follow-up: subtitles
 
-Implement subtitles without replacing the player or weakening network gating:
+The subtitle-controls increment implements the local portions of this contract
+without replacing the player or weakening network gating:
 
 1. Observe mpv's track list and expose embedded subtitle tracks plus a disabled
    state to QML.
@@ -56,7 +57,8 @@ Implement subtitles without replacing the player or weakening network gating:
 3. Add subtitle selection and delay controls. The final menu item must be
    **Find subtitles…**.
 4. Keep embedded/local subtitles fully usable without credentials or network.
-5. Put OpenSubtitles search behind the existing `networkReady` boundary and
+5. The remaining OpenSubtitles search must stay behind the existing
+   `networkReady` boundary and
    store credentials in the desktop Secret Service, never in settings or logs.
 6. Test the controller with synthetic mpv events and the menu with a fake QML
    player. Any external API test must use a fake local endpoint.
@@ -64,6 +66,8 @@ Implement subtitles without replacing the player or weakening network gating:
 Acceptance criteria and the broader intended behavior are defined in
 `docs/superpowers/specs/2026-08-31-dostflix-design.md`, especially the Player,
 Subtitles, Network-loss behavior, Testing, and Definition of done sections.
+Implementation and handoff details are in
+`docs/superpowers/plans/2026-09-01-dostflix-subtitle-controls.md`.
 
 ## Verification
 

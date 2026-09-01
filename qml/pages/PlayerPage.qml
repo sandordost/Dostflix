@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import Dostflix
 
@@ -10,6 +11,7 @@ Item {
     required property var player
     signal browseRequested()
     signal fullscreenRequested()
+    signal findSubtitlesRequested()
 
     function formatTime(seconds) {
         if (!isFinite(seconds) || seconds < 0)
@@ -26,6 +28,47 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: "transparent"
+    }
+
+    FileDialog {
+        id: subtitleFileDialog
+        title: qsTr("Choose subtitle file")
+        nameFilters: [qsTr("Subtitle files (*.srt *.ass *.vtt)")]
+        onAccepted: root.player.addSubtitleFile(selectedFile)
+    }
+
+    Menu {
+        id: subtitleMenu
+
+        MenuItem {
+            text: qsTr("No subtitles")
+            checkable: true
+            checked: root.player.selectedSubtitleId === "no"
+            onTriggered: root.player.selectSubtitle("no")
+        }
+
+        Repeater {
+            model: root.player.subtitleTracks
+            delegate: MenuItem {
+                required property var modelData
+                text: modelData.label
+                checkable: true
+                checked: modelData.selected
+                onTriggered: root.player.selectSubtitle(modelData.id)
+            }
+        }
+
+        MenuSeparator {}
+        MenuItem {
+            objectName: "localSubtitleButton"
+            text: qsTr("Open local subtitle…")
+            onTriggered: subtitleFileDialog.open()
+        }
+        MenuItem {
+            objectName: "findSubtitlesButton"
+            text: qsTr("Find subtitles…")
+            onTriggered: root.findSubtitlesRequested()
+        }
     }
 
     RowLayout {
@@ -108,6 +151,31 @@ Item {
                 Label {
                     text: root.formatTime(root.player.position) + " / " + root.formatTime(root.player.duration)
                     color: Theme.textPrimary
+                }
+                Button {
+                    objectName: "subtitleButton"
+                    text: qsTr("Subtitles")
+                    onClicked: subtitleMenu.open()
+                }
+                Label {
+                    text: qsTr("Delay")
+                    color: Theme.textSecondary
+                }
+                SpinBox {
+                    objectName: "subtitleDelayControl"
+                    from: -600
+                    to: 600
+                    stepSize: 5
+                    value: Math.round(root.player.subtitleDelay * 10)
+                    editable: true
+                    textFromValue: function(value) {
+                        return (value / 10).toFixed(1) + " s"
+                    }
+                    valueFromText: function(text) {
+                        const parsed = Number.parseFloat(text)
+                        return Number.isFinite(parsed) ? Math.round(parsed * 10) : 0
+                    }
+                    onValueModified: root.player.setSubtitleDelay(value / 10)
                 }
                 Item { Layout.fillWidth: true }
                 Label {

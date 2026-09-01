@@ -1,6 +1,7 @@
 #include "player/MpvPlayer.h"
 
 #include <QByteArray>
+#include <QFileInfo>
 #include <QMetaObject>
 #include <QOpenGLContext>
 #include <QOpenGLFramebufferObject>
@@ -38,7 +39,30 @@ enum PropertyId : uint64_t {
     Pause,
     PausedForCache,
     Volume,
+    SubtitleTracks,
+    SubtitleDelay,
 };
+
+const mpv_node *mapValue(const mpv_node &node, const char *key)
+{
+    if (node.format != MPV_FORMAT_NODE_MAP || !node.u.list) return nullptr;
+    for (int index = 0; index < node.u.list->num; ++index) {
+        if (qstrcmp(node.u.list->keys[index], key) == 0)
+            return &node.u.list->values[index];
+    }
+    return nullptr;
+}
+
+QString nodeString(const mpv_node *node)
+{
+    return node && node->format == MPV_FORMAT_STRING && node->u.string
+        ? QString::fromUtf8(node->u.string) : QString();
+}
+
+bool nodeFlag(const mpv_node *node)
+{
+    return node && node->format == MPV_FORMAT_FLAG && node->u.flag != 0;
+}
 
 void wakeup(void *context)
 {
@@ -167,6 +191,8 @@ MpvPlayer::MpvPlayer(QQuickItem *parent)
     mpv_observe_property(m_handle, Pause, "pause", MPV_FORMAT_FLAG);
     mpv_observe_property(m_handle, PausedForCache, "paused-for-cache", MPV_FORMAT_FLAG);
     mpv_observe_property(m_handle, Volume, "volume", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(m_handle, SubtitleTracks, "track-list", MPV_FORMAT_NODE);
+    mpv_observe_property(m_handle, SubtitleDelay, "sub-delay", MPV_FORMAT_DOUBLE);
     mpv_set_wakeup_callback(m_handle, wakeup, m_state.get());
 }
 
@@ -199,6 +225,9 @@ bool MpvPlayer::buffering() const { return m_buffering; }
 double MpvPlayer::volume() const { return m_volume; }
 QString MpvPlayer::errorMessage() const { return m_error; }
 bool MpvPlayer::renderReady() const { return m_renderReady; }
+QVariantList MpvPlayer::subtitleTracks() const { return m_subtitleTracks; }
+QString MpvPlayer::selectedSubtitleId() const { return m_selectedSubtitleId; }
+double MpvPlayer::subtitleDelay() const { return m_subtitleDelay; }
 mpv_handle *MpvPlayer::handle() const { return m_handle; }
 
 void MpvPlayer::play(const QString &url, const QString &title)
@@ -250,6 +279,62 @@ void MpvPlayer::setVolume(double value)
     emit volumeChanged();
 }
 
+void MpvPlayer::selectSubtitle(const QString &trackId)
+{
+    if (!m_handle || !m_active) return;
+    const QByteArray id = trackId.isEmpty() ? QByteArrayLiteral("no") : trackId.toUtf8();
+    const int result = mpv_set_property_string(m_handle, "sid", id.constData());
+    if (result < 0) {
+        setError(tr("Could not select subtitle track: %1")
+                     .arg(QString::fromUtf8(mpv_error_string(result))));
+        return;
+    }
+    m_selectedSubtitleId = QString::fromUtf8(id);
+    for (QVariant &entry : m_subtitleTracks) {
+        QVariantMap track = entry.toMap();
+        track.insert(QStringLiteral("selected"),
+                     track.value(QStringLiteral("id")).toString() == m_selectedSubtitleId);
+        entry = track;
+    }
+    emit subtitleTracksChanged();
+}
+
+void MpvPlayer::addSubtitleFile(const QUrl &fileUrl)
+{
+    if (!m_handle || !m_active) return;
+    if (!fileUrl.isLocalFile()) {
+        setError(tr("Choose a local subtitle file"));
+        return;
+    }
+    const QFileInfo file(fileUrl.toLocalFile());
+    const QString extension = file.suffix().toLower();
+    if (!file.isFile() || (extension != QStringLiteral("srt")
+                           && extension != QStringLiteral("ass")
+                           && extension != QStringLiteral("vtt"))) {
+        setError(tr("Supported subtitle files are .srt, .ass, and .vtt"));
+        return;
+    }
+    const QByteArray path = file.absoluteFilePath().toUtf8();
+    const char *command[] = {"sub-add", path.constData(), "select", nullptr};
+    const int result = mpv_command(m_handle, command);
+    if (result < 0) {
+        setError(tr("Could not load subtitle file: %1")
+                     .arg(QString::fromUtf8(mpv_error_string(result))));
+    } else if (!m_error.isEmpty()) {
+        setError(QString());
+    }
+}
+
+void MpvPlayer::setSubtitleDelay(double seconds)
+{
+    double bounded = std::clamp(seconds, -60.0, 60.0);
+    if (qFuzzyCompare(m_subtitleDelay, bounded)) return;
+    m_subtitleDelay = bounded;
+    if (m_handle && m_active)
+        mpv_set_property_async(m_handle, 0, "sub-delay", MPV_FORMAT_DOUBLE, &bounded);
+    emit subtitleDelayChanged();
+}
+
 void MpvPlayer::stop()
 {
     if (m_handle) {
@@ -262,10 +347,15 @@ void MpvPlayer::stop()
     m_buffering = false;
     m_position = 0.0;
     m_duration = 0.0;
+    m_subtitleTracks.clear();
+    m_selectedSubtitleId = QStringLiteral("no");
+    m_subtitleDelay = 0.0;
     emit activePlaybackChanged();
     emit bufferingChanged();
     emit positionChanged();
     emit durationChanged();
+    emit subtitleTracksChanged();
+    emit subtitleDelayChanged();
 }
 
 void MpvPlayer::setRenderReady()
@@ -337,8 +427,51 @@ void MpvPlayer::processEvents()
             m_volume = *static_cast<double *>(property->data);
             emit volumeChanged();
             break;
+        case SubtitleTracks:
+            updateSubtitleTracks(static_cast<mpv_node *>(property->data));
+            break;
+        case SubtitleDelay:
+            m_subtitleDelay = *static_cast<double *>(property->data);
+            emit subtitleDelayChanged();
+            break;
         }
     }
+}
+
+void MpvPlayer::updateSubtitleTracks(const mpv_node *node)
+{
+    QVariantList tracks;
+    QString selectedId = QStringLiteral("no");
+    if (node && node->format == MPV_FORMAT_NODE_ARRAY && node->u.list) {
+        for (int index = 0; index < node->u.list->num; ++index) {
+            const mpv_node &item = node->u.list->values[index];
+            if (nodeString(mapValue(item, "type")) != QStringLiteral("sub")) continue;
+            const mpv_node *idNode = mapValue(item, "id");
+            if (!idNode || idNode->format != MPV_FORMAT_INT64) continue;
+            const QString id = QString::number(idNode->u.int64);
+            const QString title = nodeString(mapValue(item, "title"));
+            const QString language = nodeString(mapValue(item, "lang"));
+            const bool selected = nodeFlag(mapValue(item, "selected"));
+            QString label = title;
+            if (label.isEmpty()) label = language;
+            if (label.isEmpty()) label = tr("Subtitle %1").arg(id);
+            else if (!language.isEmpty() && language.compare(label, Qt::CaseInsensitive) != 0)
+                label += QStringLiteral(" (%1)").arg(language);
+            QVariantMap track{
+                {QStringLiteral("id"), id},
+                {QStringLiteral("label"), label},
+                {QStringLiteral("language"), language},
+                {QStringLiteral("selected"), selected},
+                {QStringLiteral("external"), nodeFlag(mapValue(item, "external"))},
+            };
+            tracks.append(track);
+            if (selected) selectedId = id;
+        }
+    }
+    if (tracks == m_subtitleTracks && selectedId == m_selectedSubtitleId) return;
+    m_subtitleTracks = tracks;
+    m_selectedSubtitleId = selectedId;
+    emit subtitleTracksChanged();
 }
 
 void MpvPlayer::setError(const QString &message)
