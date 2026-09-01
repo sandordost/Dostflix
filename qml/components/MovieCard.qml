@@ -12,7 +12,7 @@ Item {
     required property string sourceLabel
     signal selected()
     width: Theme.posterWidth
-    height: width / Theme.posterAspectRatio + 62
+    height: width / Theme.posterAspectRatio + Theme.px(62)
     scale: cardMouse.containsMouse ? 1.025 : 1
     z: cardMouse.containsMouse ? 2 : 0
     Accessible.role: Accessible.Button
@@ -59,11 +59,11 @@ Item {
             Rectangle {
                 anchors.right: parent.right
                 anchors.top: parent.top
-                anchors.margins: 9
+                anchors.margins: Theme.px(9)
                 visible: root.quality.length > 0
-                implicitWidth: qualityLabel.implicitWidth + 14
-                height: 26
-                radius: 13
+                implicitWidth: qualityLabel.implicitWidth + Theme.px(14)
+                height: Theme.px(26)
+                radius: Theme.px(13)
                 color: Qt.rgba(0.02, 0.02, 0.025, 0.88)
                 Label {
                     id: qualityLabel
@@ -78,18 +78,18 @@ Item {
 
             Rectangle {
                 anchors.centerIn: parent
-                width: 52
-                height: 52
-                radius: 26
+                width: Theme.px(52)
+                height: Theme.px(52)
+                radius: Theme.px(26)
                 color: Theme.button
                 opacity: cardMouse.containsMouse ? 1 : 0
                 scale: cardMouse.containsMouse ? 1 : 0.88
                 Label {
                     anchors.centerIn: parent
-                    anchors.horizontalCenterOffset: 2
+                    anchors.horizontalCenterOffset: Theme.px(2)
                     text: "▶"
                     color: Theme.buttonText
-                    font.pixelSize: 22
+                    font.pixelSize: Theme.px(22)
                 }
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                 Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
@@ -100,9 +100,9 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: posterFrame.bottom
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
-            anchors.topMargin: 9
+            anchors.leftMargin: Theme.px(10)
+            anchors.rightMargin: Theme.px(10)
+            anchors.topMargin: Theme.px(9)
             text: root.title
             color: Theme.textPrimary
             font.family: Theme.fontFamily
@@ -115,9 +115,9 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
-            anchors.bottomMargin: 8
+            anchors.leftMargin: Theme.px(10)
+            anchors.rightMargin: Theme.px(10)
+            anchors.bottomMargin: Theme.px(8)
             text: (root.year > 0 ? root.year : qsTr("Unknown year"))
                   + (root.seederCount > 0 ? qsTr(" · %1 seeds").arg(root.seederCount) : "")
             color: Theme.textSecondary

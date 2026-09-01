@@ -8,12 +8,12 @@ GridView {
     required property var movieModel
     signal releaseSelected(string title, string magnetUrl, string downloadUrl, string posterUrl)
     property int cardWidth: Theme.posterWidth
-    property int cardGap: 18
+    property int cardGap: Theme.px(18)
     readonly property int columnCount: Math.max(1, Math.floor(width / (cardWidth + cardGap)))
 
     model: movieModel
     cellWidth: width / columnCount
-    cellHeight: cardWidth / Theme.posterAspectRatio + 82
+    cellHeight: cardWidth / Theme.posterAspectRatio + Theme.px(82)
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: true

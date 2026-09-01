@@ -37,8 +37,8 @@ Item {
         id: resumeDialog
         objectName: "resumePlaybackDialog"
         anchors.centerIn: parent
-        width: Math.min(540, root.width - 48)
-        height: 220
+        width: Math.min(Theme.px(540), root.width - Theme.px(48))
+        height: Theme.px(220)
         modal: true
         title: qsTr("Continue watching?")
         background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
@@ -79,7 +79,7 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: Theme.px(12)
 
         RowLayout {
             Layout.fillWidth: true
@@ -107,8 +107,8 @@ Item {
             Layout.fillWidth: true
             visible: root.metadataManager.busy || root.metadataManager.errorMessage.length > 0
             BusyIndicator {
-                implicitWidth: 22
-                implicitHeight: 22
+                implicitWidth: Theme.px(22)
+                implicitHeight: Theme.px(22)
                 running: root.metadataManager.busy
                 visible: running
             }
@@ -141,7 +141,7 @@ Item {
             Layout.fillHeight: true
             visible: root.libraryManager.count > 0
             clip: true
-            spacing: 8
+            spacing: Theme.px(8)
             boundsBehavior: Flickable.StopAtBounds
             model: root.libraryManager.model
 
@@ -154,7 +154,7 @@ Item {
                 required property int durationSeconds
                 required property int watchedSeconds
                 width: libraryList.width
-                height: 132
+                height: Theme.px(132)
                 radius: Theme.radius
                 color: movieHover.hovered ? Theme.raisedHover : Theme.surface
                 Accessible.role: Accessible.Button
@@ -167,11 +167,11 @@ Item {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 9
-                    spacing: 16
+                    anchors.margins: Theme.px(9)
+                    spacing: Theme.px(16)
 
                     Rectangle {
-                        Layout.preferredWidth: 76
+                        Layout.preferredWidth: Theme.px(76)
                         Layout.fillHeight: true
                         radius: Theme.radiusSmall
                         color: Theme.raised
@@ -184,13 +184,13 @@ Item {
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
                             cache: true
-                            sourceSize: Qt.size(152, 228)
+                            sourceSize: Qt.size(Theme.px(152), Theme.px(228))
                         }
                     }
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 6
+                        spacing: Theme.px(6)
                         Label {
                             Layout.fillWidth: true
                             text: movieRow.title

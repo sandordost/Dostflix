@@ -111,7 +111,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: 78
+        height: Theme.px(78)
         color: Qt.rgba(0.03, 0.03, 0.035, 0.94)
         opacity: root.controlsVisible ? 1 : 0
         visible: opacity > 0
@@ -124,9 +124,9 @@ Item {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 18
-            anchors.rightMargin: 18
-            spacing: 12
+            anchors.leftMargin: Theme.px(18)
+            anchors.rightMargin: Theme.px(18)
+            spacing: Theme.px(12)
 
             AppToolButton {
                 objectName: "browseButton"
@@ -173,23 +173,23 @@ Item {
 
     BusyIndicator {
         anchors.centerIn: parent
-        width: 58
-        height: 58
+        width: Theme.px(58)
+        height: Theme.px(58)
         running: root.player.buffering
         visible: running
     }
 
     AppToolButton {
         anchors.centerIn: parent
-        width: 74
-        height: 74
+        width: Theme.px(74)
+        height: Theme.px(74)
         round: true
         primary: true
         visible: root.controlsVisible && !root.player.buffering
         opacity: visible ? 0.96 : 0
         symbol: root.player.paused ? "\uf04b" : "\uf04c"
-        icon.width: 26
-        icon.height: 26
+        icon.width: Theme.px(26)
+        icon.height: Theme.px(26)
         Accessible.name: root.player.paused ? qsTr("Play") : qsTr("Pause")
         onClicked: root.togglePlayback()
 
@@ -201,7 +201,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: controls.implicitHeight + 32
+        height: controls.implicitHeight + Theme.px(32)
         color: Qt.rgba(0.03, 0.03, 0.035, 0.96)
         opacity: root.controlsVisible ? 1 : 0
         visible: opacity > 0
@@ -215,8 +215,8 @@ Item {
         ColumnLayout {
             id: controls
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
+            anchors.margins: Theme.px(16)
+            spacing: Theme.px(10)
 
             Slider {
                 Layout.fillWidth: true
@@ -232,7 +232,7 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 10
+                spacing: Theme.px(10)
 
                 AppToolButton {
                     icon.name: "media-seek-backward-symbolic"
@@ -282,11 +282,11 @@ Item {
                 Label {
                     text: qsTr("Delay")
                     color: Theme.textSecondary
-                    visible: root.width >= 760
+                    visible: root.width >= Theme.px(760)
                 }
                 AppSpinBox {
                     objectName: "subtitleDelayControl"
-                    visible: root.width >= 760
+                    visible: root.width >= Theme.px(760)
                     from: -600
                     to: 600
                     stepSize: 5
@@ -303,12 +303,12 @@ Item {
                     icon.name: "audio-volume-high-symbolic"
                     icon.width: Theme.iconSize
                     icon.height: Theme.iconSize
-                    visible: root.width >= 620
+                    visible: root.width >= Theme.px(620)
                     Accessible.name: qsTr("Volume")
                 }
                 Slider {
-                    Layout.preferredWidth: Math.min(150, Math.max(86, root.width * 0.12))
-                    visible: root.width >= 620
+                    Layout.preferredWidth: Math.min(Theme.px(150), Math.max(Theme.px(86), root.width * 0.12))
+                    visible: root.width >= Theme.px(620)
                     from: 0
                     to: 100
                     value: root.player.volume

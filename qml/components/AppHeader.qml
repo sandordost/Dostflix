@@ -20,22 +20,22 @@ Item {
         id: logo
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 52
-        height: 52
+        width: Theme.px(52)
+        height: Theme.px(52)
         source: "qrc:/qt/qml/Dostflix/assets/icons/dostflix.svg"
-        sourceSize: Qt.size(104, 104)
+        sourceSize: Qt.size(Theme.px(104), Theme.px(104))
         Accessible.name: qsTr("Dostflix logo")
     }
 
     Label {
         id: brandTitle
         anchors.left: logo.right
-        anchors.leftMargin: 14
+        anchors.leftMargin: Theme.px(14)
         anchors.verticalCenter: logo.verticalCenter
         text: "Dostflix"
         color: Theme.textPrimary
         font.family: Theme.fontFamily
-        font.pixelSize: 31
+        font.pixelSize: Theme.px(31)
         font.weight: Font.DemiBold
     }
 
@@ -43,26 +43,26 @@ Item {
         id: vpnStatus
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        implicitWidth: statusRow.implicitWidth + 24
-        height: 38
-        radius: 19
+        implicitWidth: statusRow.implicitWidth + Theme.px(24)
+        height: Theme.px(38)
+        radius: Theme.px(19)
         color: Qt.rgba(0.08, 0.08, 0.09, 0.82)
 
         RowLayout {
             id: statusRow
             anchors.centerIn: parent
-            spacing: 8
+            spacing: Theme.px(8)
 
             BusyIndicator {
-                Layout.preferredWidth: 16
-                Layout.preferredHeight: 16
+                Layout.preferredWidth: Theme.px(16)
+                Layout.preferredHeight: Theme.px(16)
                 running: root.vpnBusy
                 visible: running
             }
             Rectangle {
-                Layout.preferredWidth: 8
-                Layout.preferredHeight: 8
-                radius: 4
+                Layout.preferredWidth: Theme.px(8)
+                Layout.preferredHeight: Theme.px(8)
+                radius: Theme.px(4)
                 visible: !root.vpnBusy
                 color: root.vpnConnected ? Theme.safe : Theme.textSecondary
             }
@@ -80,25 +80,25 @@ Item {
         objectName: "headerTransferStatus"
         anchors.left: brandTitle.right
         anchors.right: vpnStatus.left
-        anchors.leftMargin: 36
-        anchors.rightMargin: 36
+        anchors.leftMargin: Theme.px(36)
+        anchors.rightMargin: Theme.px(36)
         anchors.verticalCenter: parent.verticalCenter
-        height: 58
+        height: Theme.px(58)
         radius: Theme.radius
         color: Theme.surface
-        visible: root.transferVisible && width >= 280
+        visible: root.transferVisible && width >= Theme.px(280)
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 8
-            spacing: 5
+            anchors.margins: Theme.px(8)
+            spacing: Theme.px(5)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: Theme.px(8)
                 BusyIndicator {
-                    Layout.preferredWidth: 18
-                    Layout.preferredHeight: 18
+                    Layout.preferredWidth: Theme.px(18)
+                    Layout.preferredHeight: Theme.px(18)
                     running: root.prowlarrManager.releaseBusy
                              || (root.torrentEngine.active && !root.torrentEngine.bufferReady)
                     visible: running
@@ -122,8 +122,8 @@ Item {
                 AppToolButton {
                     visible: root.torrentEngine.active
                     icon.name: "media-playback-stop-symbolic"
-                    implicitWidth: 34
-                    implicitHeight: 34
+                    implicitWidth: Theme.px(34)
+                    implicitHeight: Theme.px(34)
                     Accessible.name: qsTr("Cancel download")
                     onClicked: root.torrentEngine.cancel()
                 }
@@ -132,7 +132,7 @@ Item {
             ProgressBar {
                 objectName: "headerTransferProgress"
                 Layout.fillWidth: true
-                Layout.preferredHeight: 4
+                Layout.preferredHeight: Theme.px(4)
                 visible: root.torrentEngine.active
                 from: 0
                 to: 1

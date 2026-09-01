@@ -4,9 +4,9 @@ import Dostflix
 
 TextField {
     id: root
-    implicitHeight: 44
-    leftPadding: 14
-    rightPadding: 14
+    implicitHeight: Theme.px(44)
+    leftPadding: Theme.px(14)
+    rightPadding: Theme.px(14)
     color: Theme.textPrimary
     placeholderTextColor: Theme.textMuted
     selectionColor: Theme.accent

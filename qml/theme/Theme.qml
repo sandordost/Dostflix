@@ -2,6 +2,8 @@ pragma Singleton
 import QtQuick
 
 QtObject {
+    property real scaleFactor: 1.0
+    readonly property int referenceWidth: 1280
     readonly property color canvas: "#020307"
     readonly property color panel: "#121214"
     readonly property real panelOpacity: 0.91
@@ -26,25 +28,29 @@ QtObject {
     readonly property color separator: "#343438"
     readonly property string fontFamily: "Montserrat"
     readonly property string iconFontFamily: "Font Awesome 7 Free"
-    readonly property int radiusSmall: 6
-    readonly property int radius: 10
-    readonly property int radiusLarge: 14
-    readonly property int iconSize: 20
-    readonly property int iconSizeLarge: 28
-    readonly property int captionSize: 12
-    readonly property int bodySize: 14
-    readonly property int headingSize: 22
-    readonly property int titleSize: 28
-    readonly property int headerHeight: 78
-    readonly property int sidebarWidth: 252
-    readonly property int sidebarCompactWidth: 76
-    readonly property int contentGap: 12
-    readonly property int pagePadding: 22
+    readonly property int radiusSmall: px(6)
+    readonly property int radius: px(10)
+    readonly property int radiusLarge: px(14)
+    readonly property int iconSize: px(20)
+    readonly property int iconSizeLarge: px(28)
+    readonly property int captionSize: px(12)
+    readonly property int bodySize: px(14)
+    readonly property int headingSize: px(22)
+    readonly property int titleSize: px(28)
+    readonly property int headerHeight: px(78)
+    readonly property int sidebarWidth: px(252)
+    readonly property int sidebarCompactWidth: px(76)
+    readonly property int contentGap: px(12)
+    readonly property int pagePadding: px(22)
     readonly property int motionFast: 120
     readonly property int motionNormal: 180
     readonly property int controlsTimeout: 2800
-    readonly property int posterWidth: 170
+    readonly property int posterWidth: px(170)
     readonly property real posterAspectRatio: 2 / 3
+
+    function px(value) {
+        return Math.max(1, Math.round(value * scaleFactor))
+    }
 
     function iconGlyph(name) {
         const icons = {

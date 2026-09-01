@@ -8,9 +8,9 @@ Pane {
     required property var controller
     signal returnRequested()
     visible: controller.hasActivePlayback
-    implicitWidth: 360
-    implicitHeight: 72
-    padding: 10
+    implicitWidth: Theme.px(360)
+    implicitHeight: Theme.px(72)
+    padding: Theme.px(10)
     Accessible.role: Accessible.Button
     Accessible.name: qsTr("Return to %1").arg(controller.activeTitle)
     Accessible.onPressAction: returnRequested()
@@ -22,25 +22,25 @@ Pane {
     }
 
     contentItem: RowLayout {
-        spacing: 12
+        spacing: Theme.px(12)
 
         Rectangle {
-            Layout.preferredWidth: 46
-            Layout.preferredHeight: 46
-            radius: 23
+            Layout.preferredWidth: Theme.px(46)
+            Layout.preferredHeight: Theme.px(46)
+            radius: Theme.px(23)
             color: Theme.button
             Label {
                 anchors.centerIn: parent
-                anchors.horizontalCenterOffset: 2
+                anchors.horizontalCenterOffset: Theme.px(2)
                 text: "▶"
                 color: Theme.buttonText
-                font.pixelSize: 18
+                font.pixelSize: Theme.px(18)
             }
         }
 
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 2
+            spacing: Theme.px(2)
             Label {
                 text: qsTr("Now playing")
                 color: Theme.textSecondary

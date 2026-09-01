@@ -34,7 +34,7 @@ Item {
 
         ColumnLayout {
         width: parent.width
-        spacing: 18
+        spacing: Theme.px(18)
 
         Label {
             text: qsTr("VPN protection")
@@ -53,7 +53,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 10
+            spacing: Theme.px(10)
 
             AppComboBox {
                 id: profileBox
@@ -88,12 +88,12 @@ Item {
         }
 
         RowLayout {
-            spacing: 10
+            spacing: Theme.px(10)
 
             Rectangle {
-                implicitWidth: 9
-                implicitHeight: 9
-                radius: 5
+                implicitWidth: Theme.px(9)
+                implicitHeight: Theme.px(9)
+                radius: Theme.px(5)
                 color: root.vpnManager.connected ? Theme.safe : Theme.textSecondary
             }
 
@@ -126,14 +126,14 @@ Item {
 
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: notice.implicitHeight + 24
+            implicitHeight: notice.implicitHeight + Theme.px(24)
             radius: Theme.radiusLarge
             color: Theme.surface
 
             Label {
                 id: notice
                 anchors.fill: parent
-                anchors.margins: 12
+                anchors.margins: Theme.px(12)
                 text: root.vpnManager.networkReady
                       ? qsTr("Network protection verified. Protected features may now use the VPN.")
                       : qsTr("Internet searches and downloads stay disabled until the kill switch has been installed and verified.")
@@ -195,32 +195,32 @@ Item {
 
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: prowlarrRow.implicitHeight + 24
+            implicitHeight: prowlarrRow.implicitHeight + Theme.px(24)
             radius: Theme.radiusLarge
             color: Theme.surface
 
             RowLayout {
                 id: prowlarrRow
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 10
+                anchors.margins: Theme.px(12)
+                spacing: Theme.px(10)
 
                 BusyIndicator {
-                    implicitWidth: 22
-                    implicitHeight: 22
+                    implicitWidth: Theme.px(22)
+                    implicitHeight: Theme.px(22)
                     running: root.prowlarrManager.running && !root.prowlarrManager.ready
                     visible: running
                 }
                 Rectangle {
-                    implicitWidth: 9
-                    implicitHeight: 9
-                    radius: 5
+                    implicitWidth: Theme.px(9)
+                    implicitHeight: Theme.px(9)
+                    radius: Theme.px(5)
                     visible: !root.prowlarrManager.running || root.prowlarrManager.ready
                     color: root.prowlarrManager.ready ? Theme.safe : Theme.textSecondary
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 2
+                    spacing: Theme.px(2)
                     Label { text: qsTr("Managed Prowlarr"); color: Theme.textPrimary; font.weight: Font.DemiBold }
                     Label { text: root.prowlarrManager.stateLabel; color: Theme.textSecondary }
                 }
@@ -289,7 +289,7 @@ Item {
             Layout.fillWidth: true
             AppTextField {
                 id: providerName
-                Layout.preferredWidth: 190
+                Layout.preferredWidth: Theme.px(190)
                 placeholderText: qsTr("Provider name")
             }
             AppComboBox {
@@ -303,7 +303,7 @@ Item {
             }
             AppTextField {
                 id: providerApiKey
-                Layout.preferredWidth: 190
+                Layout.preferredWidth: Theme.px(190)
                 placeholderText: qsTr("API key (optional)")
                 echoMode: TextInput.Password
             }
@@ -332,9 +332,9 @@ Item {
 
         ListView {
             Layout.fillWidth: true
-            implicitHeight: Math.min(contentHeight, 150)
+            implicitHeight: Math.min(contentHeight, Theme.px(150))
             model: root.providerManager.model
-            spacing: 6
+            spacing: Theme.px(6)
             clip: true
             delegate: Rectangle {
                 id: providerDelegate
@@ -343,12 +343,12 @@ Item {
                 required property string kind
                 required property string endpoint
                 width: ListView.view.width
-                height: 52
+                height: Theme.px(52)
                 radius: Theme.radiusLarge
                 color: Theme.surface
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 10
+                    anchors.margins: Theme.px(10)
                     Label { text: providerDelegate.name; color: Theme.textPrimary; font.weight: Font.DemiBold }
                     Label { text: providerDelegate.kind; color: Theme.textSecondary }
                     Label { Layout.fillWidth: true; text: providerDelegate.endpoint; color: Theme.textSecondary; elide: Text.ElideMiddle }
@@ -383,7 +383,7 @@ Item {
             }
             AppTextField {
                 id: subtitleLanguages
-                Layout.preferredWidth: 220
+                Layout.preferredWidth: Theme.px(220)
                 text: root.subtitleManager.preferredLanguages
                 placeholderText: qsTr("nl,en")
                 Accessible.name: qsTr("Preferred subtitle language codes")
@@ -413,13 +413,13 @@ Item {
             }
             AppTextField {
                 id: openSubtitlesUsername
-                Layout.preferredWidth: 210
+                Layout.preferredWidth: Theme.px(210)
                 placeholderText: root.subtitleManager.username.length > 0
                                  ? root.subtitleManager.username : qsTr("Username")
             }
             AppTextField {
                 id: openSubtitlesPassword
-                Layout.preferredWidth: 210
+                Layout.preferredWidth: Theme.px(210)
                 placeholderText: qsTr("Password")
                 echoMode: TextInput.Password
             }

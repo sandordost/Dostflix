@@ -41,11 +41,11 @@ Item {
 
     Popup {
         id: compactSearch
-        x: root.width + 10
+        x: root.width + Theme.px(10)
         y: 0
-        width: 320
-        height: 62
-        padding: 10
+        width: Theme.px(320)
+        height: Theme.px(62)
+        padding: Theme.px(10)
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         onOpened: compactSearchField.forceActiveFocus()
         background: Rectangle {
@@ -56,8 +56,8 @@ Item {
             id: compactSearchField
             placeholderText: qsTr("Search movies…")
             enabled: root.searchEnabled
-            leftPadding: 14
-            rightPadding: 14
+            leftPadding: Theme.px(14)
+            rightPadding: Theme.px(14)
             font.family: Theme.fontFamily
             font.pixelSize: Theme.bodySize
             onTextChanged: root.queueSearch(text)
@@ -75,18 +75,18 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.compact ? 10 : 14
-        spacing: 8
+        anchors.margins: root.compact ? Theme.px(10) : Theme.px(14)
+        spacing: Theme.px(8)
 
         AppTextField {
             id: searchField
             Layout.fillWidth: true
-            Layout.preferredHeight: 46
+            Layout.preferredHeight: Theme.px(46)
             visible: !root.compact
             placeholderText: qsTr("Search movies…")
             enabled: root.searchEnabled
-            leftPadding: 14
-            rightPadding: 14
+            leftPadding: Theme.px(14)
+            rightPadding: Theme.px(14)
             font.family: Theme.fontFamily
             font.pixelSize: Theme.bodySize
             onTextChanged: root.queueSearch(text)
@@ -99,7 +99,7 @@ Item {
 
         AppToolButton {
             Layout.fillWidth: true
-            Layout.preferredHeight: 46
+            Layout.preferredHeight: Theme.px(46)
             id: compactSearchButton
             visible: root.compact
             icon.name: "system-search-symbolic"
@@ -117,7 +117,7 @@ Item {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 1
+            Layout.preferredHeight: Theme.px(1)
             visible: !root.compact
             color: Theme.separator
         }
@@ -135,16 +135,16 @@ Item {
                 required property int index
                 required property var modelData
                 Layout.fillWidth: true
-                Layout.preferredHeight: 48
+                Layout.preferredHeight: Theme.px(48)
                 text: root.compact ? "" : modelData.label
                 icon.name: modelData.iconName
                 icon.width: Theme.iconSize
                 icon.height: Theme.iconSize
                 display: root.compact ? AbstractButton.IconOnly : AbstractButton.TextBesideIcon
                 alignLeft: !root.compact
-                leftPadding: root.compact ? 11 : 24
-                rightPadding: root.compact ? 11 : 16
-                spacing: 12
+                leftPadding: root.compact ? Theme.px(11) : Theme.px(24)
+                rightPadding: root.compact ? Theme.px(11) : Theme.px(16)
+                spacing: Theme.px(12)
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.bodySize
                 font.weight: checked ? Font.DemiBold : Font.Medium
@@ -159,9 +159,9 @@ Item {
                     Rectangle {
                         anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 3
-                        height: 24
-                        radius: 2
+                        width: Theme.px(3)
+                        height: Theme.px(24)
+                        radius: Theme.px(2)
                         visible: navButton.checked
                         color: Theme.accent
                     }
@@ -177,11 +177,11 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: Theme.px(8)
             Label {
                 text: "●"
                 color: root.searchEnabled ? Theme.safe : Theme.textMuted
-                font.pixelSize: 10
+                font.pixelSize: Theme.px(10)
             }
             Label {
                 Layout.fillWidth: true
