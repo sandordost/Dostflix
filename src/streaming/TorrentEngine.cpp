@@ -84,6 +84,8 @@ QString TorrentEngine::errorMessage() const { return m_error; }
 double TorrentEngine::progress() const { return m_progress; }
 qint64 TorrentEngine::downloadRate() const { return m_downloadRate; }
 int TorrentEngine::peerCount() const { return m_peerCount; }
+int TorrentEngine::seedCount() const { return m_seedCount; }
+double TorrentEngine::distributedCopies() const { return m_distributedCopies; }
 double TorrentEngine::bufferSeconds() const { return m_bufferSeconds; }
 double TorrentEngine::estimatedWaitSeconds() const { return m_estimatedWaitSeconds; }
 bool TorrentEngine::bufferReady() const { return m_bufferReady; }
@@ -223,6 +225,8 @@ void TorrentEngine::cancel()
     m_progress = 0.0;
     m_downloadRate = 0;
     m_peerCount = 0;
+    m_seedCount = 0;
+    m_distributedCopies = 0.0;
     m_bufferSeconds = 0.0;
     m_estimatedWaitSeconds = 0.0;
     m_bufferReady = false;
@@ -319,20 +323,20 @@ void TorrentEngine::finalizeFileSelection()
     if (!info || m_selectedTorrentIndex < 0) return;
     const lt::file_storage &storage = info->layout();
     const lt::file_index_t fileIndex{m_selectedTorrentIndex};
-    const auto prioritizeRange = [&](qint64 offset, qint64 length, int deadlineBase) {
+    std::vector<std::pair<lt::piece_index_t, lt::download_priority_t>> priorities;
+    const auto prioritizeRange = [&](qint64 offset, qint64 length) {
         if (length <= 0) return;
         const lt::peer_request first = storage.map_file(fileIndex, offset, 1);
         const lt::peer_request last = storage.map_file(
             fileIndex, std::min(m_selectedFileSize - 1, offset + length - 1), 1);
-        int deadline = deadlineBase;
         for (lt::piece_index_t piece = first.piece; piece <= last.piece; ++piece) {
-            m_impl->handle.set_piece_deadline(piece, deadline);
-            deadline += 25;
+            priorities.emplace_back(piece, lt::top_priority);
         }
     };
-    prioritizeRange(0, std::min<qint64>(m_selectedFileSize, 16LL * 1024 * 1024), 0);
+    prioritizeRange(0, std::min<qint64>(m_selectedFileSize, 16LL * 1024 * 1024));
     prioritizeRange(std::max<qint64>(0, m_selectedFileSize - 4LL * 1024 * 1024),
-                    std::min<qint64>(m_selectedFileSize, 4LL * 1024 * 1024), 500);
+                    std::min<qint64>(m_selectedFileSize, 4LL * 1024 * 1024));
+    m_impl->handle.prioritize_pieces(priorities);
 
     m_impl->handle.unset_flags(lt::torrent_flags::upload_mode
                                | lt::torrent_flags::share_mode
@@ -351,6 +355,8 @@ void TorrentEngine::updateStatistics()
     const lt::torrent_status status = m_impl->handle.status();
     m_downloadRate = status.download_payload_rate;
     m_peerCount = status.num_peers;
+    m_seedCount = status.num_seeds;
+    m_distributedCopies = status.distributed_copies;
     m_progress = status.total_wanted > 0
         ? static_cast<double>(status.total_wanted_done)
               / static_cast<double>(status.total_wanted)

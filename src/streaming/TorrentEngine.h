@@ -20,6 +20,8 @@ class TorrentEngine final : public QObject
     Q_PROPERTY(double progress READ progress NOTIFY statisticsChanged)
     Q_PROPERTY(qint64 downloadRate READ downloadRate NOTIFY statisticsChanged)
     Q_PROPERTY(int peerCount READ peerCount NOTIFY statisticsChanged)
+    Q_PROPERTY(int seedCount READ seedCount NOTIFY statisticsChanged)
+    Q_PROPERTY(double distributedCopies READ distributedCopies NOTIFY statisticsChanged)
     Q_PROPERTY(double bufferSeconds READ bufferSeconds NOTIFY statisticsChanged)
     Q_PROPERTY(double estimatedWaitSeconds READ estimatedWaitSeconds NOTIFY statisticsChanged)
     Q_PROPERTY(bool bufferReady READ bufferReady NOTIFY statisticsChanged)
@@ -40,6 +42,8 @@ public:
     [[nodiscard]] double progress() const;
     [[nodiscard]] qint64 downloadRate() const;
     [[nodiscard]] int peerCount() const;
+    [[nodiscard]] int seedCount() const;
+    [[nodiscard]] double distributedCopies() const;
     [[nodiscard]] double bufferSeconds() const;
     [[nodiscard]] double estimatedWaitSeconds() const;
     [[nodiscard]] bool bufferReady() const;
@@ -82,6 +86,8 @@ private:
     double m_progress = 0.0;
     qint64 m_downloadRate = 0;
     int m_peerCount = 0;
+    int m_seedCount = 0;
+    double m_distributedCopies = 0.0;
     double m_bufferSeconds = 0.0;
     double m_estimatedWaitSeconds = 0.0;
     bool m_bufferReady = false;
