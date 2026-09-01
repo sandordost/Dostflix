@@ -2,6 +2,7 @@
 
 #include "movies/MovieListModel.h"
 #include "providers/ProviderManager.h"
+#include "providers/ReleaseResolver.h"
 
 #include <QDesktopServices>
 #include <QDir>
@@ -62,6 +63,8 @@ bool ProwlarrManager::searchBusy() const
     return !m_searchReply.isNull() || !m_metadataReply.isNull();
 }
 QString ProwlarrManager::searchError() const { return m_searchError; }
+bool ProwlarrManager::releaseBusy() const { return !m_releaseReply.isNull(); }
+QString ProwlarrManager::releaseError() const { return m_releaseError; }
 
 QString ProwlarrManager::stateLabel() const
 {
@@ -225,6 +228,76 @@ void ProwlarrManager::fetchMetadata(const QString &query)
     });
 }
 
+void ProwlarrManager::prepareRelease(const QString &title, const QString &magnetUrl,
+                                     const QString &downloadUrl)
+{
+    if (!m_ready || releaseBusy()) return;
+    m_releaseError.clear();
+    const ReleaseLocation location = resolveReleaseLocation(magnetUrl, downloadUrl);
+    if (!location.magnetUrl.isEmpty()) {
+        emit releasePrepared(title, location.magnetUrl, {});
+        emit releaseStateChanged();
+        return;
+    }
+    if (location.torrentUrl.isEmpty()) {
+        m_releaseError = tr("This release has no usable magnet or torrent link");
+        emit releaseStateChanged();
+        return;
+    }
+    fetchRelease(title, location.torrentUrl, 5);
+}
+
+void ProwlarrManager::fetchRelease(const QString &title, const QUrl &url,
+                                   int redirectsRemaining)
+{
+    QNetworkRequest request(url);
+    const QUrl prowlarrUrl(webUrl());
+    if (url.host() == prowlarrUrl.host() && url.port() == prowlarrUrl.port()) {
+        request.setRawHeader("X-Api-Key", m_apiKey.toUtf8());
+    }
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                         QNetworkRequest::ManualRedirectPolicy);
+    request.setTransferTimeout(30'000);
+    m_releaseReply = m_network.get(request);
+    QNetworkReply *releaseReply = m_releaseReply;
+    emit releaseStateChanged();
+    connect(releaseReply, &QNetworkReply::finished, this,
+            [this, releaseReply, title, redirectsRemaining] {
+        if (m_releaseReply != releaseReply) return;
+        const QByteArray torrentData = releaseReply->readAll();
+        const QString returnedText = QString::fromUtf8(torrentData).trimmed();
+        QUrl redirect = releaseReply->attribute(
+            QNetworkRequest::RedirectionTargetAttribute).toUrl();
+        if (redirect.isRelative()) redirect = releaseReply->url().resolved(redirect);
+        if (isMagnetUrl(redirect.toString())) {
+            emit releasePrepared(title, redirect.toString(), {});
+        } else if (!redirect.isEmpty() && redirectsRemaining > 0) {
+            const ReleaseLocation next = resolveReleaseLocation({}, redirect.toString());
+            if (next.torrentUrl.isEmpty()) {
+                m_releaseError = tr("Prowlarr redirected to an unsupported release link");
+            } else {
+                releaseReply->deleteLater();
+                m_releaseReply = nullptr;
+                fetchRelease(title, next.torrentUrl, redirectsRemaining - 1);
+                return;
+            }
+        } else if (!redirect.isEmpty()) {
+            m_releaseError = tr("Too many redirects while retrieving the torrent");
+        } else if (isMagnetUrl(returnedText)) {
+            emit releasePrepared(title, returnedText, {});
+        } else if (releaseReply->error() != QNetworkReply::NoError || torrentData.isEmpty()) {
+            m_releaseError = releaseReply->error() == QNetworkReply::NoError
+                ? tr("Prowlarr returned an empty torrent file")
+                : releaseReply->errorString();
+        } else {
+            emit releasePrepared(title, {}, torrentData);
+        }
+        releaseReply->deleteLater();
+        m_releaseReply = nullptr;
+        emit releaseStateChanged();
+    });
+}
+
 void ProwlarrManager::openWebInterface()
 {
     if (m_ready) QDesktopServices::openUrl(QUrl(webUrl()));
@@ -316,7 +389,14 @@ void ProwlarrManager::stop()
         reply->abort();
         reply->deleteLater();
     }
+    if (m_releaseReply) {
+        QNetworkReply *reply = m_releaseReply;
+        m_releaseReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     emit searchStateChanged();
+    emit releaseStateChanged();
     m_probeTimer.stop();
     m_ready = false;
     if (!running()) return;

@@ -7,20 +7,26 @@ This repository does not bundle torrent indexers or content sources. Users are r
 ## Current status
 
 The current application contains the native shell, library foundation, OpenVPN
-profile management, and a process-scoped nftables kill switch. The installed
+profile management, provider search, a managed TorrServer streaming backend,
+and a process-scoped nftables kill switch. The installed
 application registers itself in a dedicated systemd cgroup; Polkit-authorized rules
 block that scope from the clear interface before VPN activation and during tunnel
 loss. `networkReady` becomes true only after NetworkManager, the tunnel interface,
 the default route, and protected firewall state have all been verified.
 
-Provider, torrent, player, and subtitle behavior will be added in separately
-tested phases and must use the `networkReady` gate.
+TorrServer is started only after `networkReady`, listens for control requests on
+loopback, inherits Dostflix's protected cgroup, and is stopped before the VPN.
+If its local API does not become ready within 20 seconds, Dostflix reports a
+startup error instead of waiting indefinitely. Backend diagnostics are stored in
+`$XDG_DATA_HOME/dostflix/torrserver/torrserver.log` (normally
+`~/.local/share/dostflix/torrserver/torrserver.log`).
+The embedded mpv player and subtitle behavior remain later phases.
 
 ## Arch installation and dependencies
 
 The recommended local installation route is the Arch package. `makepkg -si`
 installs Dostflix's declared runtime and build dependencies through pacman,
-including NetworkManager's OpenVPN plugin, OpenVPN, nftables, Polkit, libtorrent,
+including NetworkManager's OpenVPN plugin, OpenVPN, nftables, Polkit, TorrServer,
 mpv, Secret Service support, and Qt's Wayland platform integration.
 
 ```bash
@@ -33,8 +39,9 @@ dependencies with:
 
 ```bash
 sudo pacman -S --needed base-devel cmake hicolor-icon-theme libsecret \
-  libtorrent-rasterbar mpv networkmanager networkmanager-openvpn nftables ninja \
+  mpv networkmanager networkmanager-openvpn nftables ninja \
   openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite
+yay -S --needed prowlarr-bin torrserver-bin
 ```
 
 ## Build and test

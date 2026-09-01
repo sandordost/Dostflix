@@ -6,6 +6,7 @@
 #include "providers/ProviderManager.h"
 #include "providers/ProwlarrManager.h"
 #include "providers/SecretStore.h"
+#include "streaming/TorrServerManager.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -50,9 +51,21 @@ int main(int argc, char *argv[])
     });
     ProwlarrManager prowlarrManager(
         QDir(paths.dataDir()).filePath(QStringLiteral("prowlarr")), movies, providerManager);
+    TorrServerManager torrentEngine(
+        QDir(paths.dataDir()).filePath(QStringLiteral("torrserver")));
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &prowlarrManager,
                      [&] { prowlarrManager.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&vpnManager, &VpnManager::stateChanged, &torrentEngine,
+                     [&] { torrentEngine.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&prowlarrManager, &ProwlarrManager::releasePrepared,
+                     &torrentEngine,
+                     [&](const QString &title, const QString &magnetUrl,
+                         const QByteArray &torrentData) {
+        if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
+        else torrentEngine.startTorrentData(title, torrentData);
+    });
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&] {
+        torrentEngine.shutdown();
         prowlarrManager.shutdown();
         vpnManager.shutdown();
     });
@@ -64,6 +77,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
         {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
         {QStringLiteral("prowlarrManager"), QVariant::fromValue(&prowlarrManager)},
+        {QStringLiteral("torrentEngine"), QVariant::fromValue(&torrentEngine)},
     });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },

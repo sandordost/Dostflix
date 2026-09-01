@@ -24,7 +24,12 @@ qt_add_executable(dostflix
     src/providers/ProviderListModel.cpp
     src/providers/ProviderManager.cpp
     src/providers/ProwlarrManager.cpp
+    src/providers/ReleaseResolver.cpp
     src/providers/SecretStore.cpp
+    src/streaming/BufferController.cpp
+    src/streaming/TorrServerManager.cpp
+    src/streaming/StreamServer.cpp
+    src/streaming/TorrentFileModel.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
     src/vpn/VpnManager.cpp

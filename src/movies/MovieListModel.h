@@ -24,7 +24,10 @@ public:
         PosterUrlRole,
         QualityRole,
         SeederCountRole,
-        SizeBytesRole
+        SizeBytesRole,
+        SourceLabelRole,
+        DownloadUrlRole,
+        MagnetUrlRole
     };
     Q_ENUM(Role)
 

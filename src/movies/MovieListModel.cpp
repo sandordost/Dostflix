@@ -44,6 +44,12 @@ QVariant MovieListModel::data(const QModelIndex &index, int role) const
         return movie.seederCount;
     case SizeBytesRole:
         return movie.sizeBytes;
+    case SourceLabelRole:
+        return movie.sourceLabel;
+    case DownloadUrlRole:
+        return movie.downloadUrl;
+    case MagnetUrlRole:
+        return movie.magnetUrl;
     default:
         return {};
     }
@@ -59,6 +65,9 @@ QHash<int, QByteArray> MovieListModel::roleNames() const
         {QualityRole, "quality"},
         {SeederCountRole, "seederCount"},
         {SizeBytesRole, "sizeBytes"},
+        {SourceLabelRole, "sourceLabel"},
+        {DownloadUrlRole, "downloadUrl"},
+        {MagnetUrlRole, "magnetUrl"},
     };
 }
 

@@ -13,6 +13,7 @@ TestCase {
         quality: "4K HDR"
         seederCount: 10
         posterUrl: ""
+        sourceLabel: "Test indexer"
     }
 
     function test_fixed_geometry() {

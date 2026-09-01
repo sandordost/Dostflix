@@ -10,6 +10,7 @@ ApplicationWindow {
     required property var vpnManager
     required property var providerManager
     required property var prowlarrManager
+    required property var torrentEngine
     width: 1280
     height: 760
     minimumWidth: 900
@@ -64,6 +65,7 @@ ApplicationWindow {
                     DiscoverPage {
                         movieModel: window.movieModel
                         prowlarrManager: window.prowlarrManager
+                        torrentEngine: window.torrentEngine
                     }
                     LibraryPage {}
                     DownloadsPage {}

@@ -99,6 +99,15 @@ target_link_libraries(tst_torznab_parser PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_torznab_parser)
 add_test(NAME torznab_parser COMMAND tst_torznab_parser)
 
+qt_add_executable(tst_release_resolver
+    providers/tst_release_resolver.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ReleaseResolver.cpp
+)
+target_include_directories(tst_release_resolver PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_release_resolver PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_release_resolver)
+add_test(NAME release_resolver COMMAND tst_release_resolver)
+
 qt_add_executable(tst_provider_manager
     providers/tst_provider_manager.cpp
     ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
@@ -118,3 +127,44 @@ target_include_directories(tst_secret_store PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_secret_store PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_secret_store)
 add_test(NAME secret_store COMMAND tst_secret_store)
+
+qt_add_executable(tst_buffer_controller
+    streaming/tst_buffer_controller.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/BufferController.cpp
+)
+target_include_directories(tst_buffer_controller PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_buffer_controller PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_buffer_controller)
+add_test(NAME buffer_controller COMMAND tst_buffer_controller)
+
+qt_add_executable(tst_torrent_file_model
+    streaming/tst_torrent_file_model.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrentFileModel.cpp
+)
+target_include_directories(tst_torrent_file_model PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torrent_file_model PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_torrent_file_model)
+add_test(NAME torrent_file_model COMMAND tst_torrent_file_model)
+
+qt_add_executable(tst_torrserver_manager
+    streaming/tst_torrserver_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/BufferController.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrServerManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/TorrentFileModel.cpp
+)
+target_include_directories(tst_torrserver_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_torrserver_manager PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_torrserver_manager)
+add_test(NAME torrserver_manager
+    COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_torrserver_manager>'"
+)
+
+qt_add_executable(tst_stream_server
+    streaming/tst_stream_server.cpp
+    ${PROJECT_SOURCE_DIR}/src/streaming/StreamServer.cpp
+)
+target_include_directories(tst_stream_server PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_stream_server PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_stream_server)
+add_test(NAME stream_server COMMAND tst_stream_server)

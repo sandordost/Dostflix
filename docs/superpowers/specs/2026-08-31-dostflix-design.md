@@ -44,7 +44,7 @@ The first release targets Arch Linux. Its interface follows the visual language 
 - C++20
 - Qt 6 and Qt Quick/QML
 - CMake
-- `libtorrent-rasterbar`
+- TorrServer as a managed torrent-to-HTTP streaming service
 - `libmpv` using the render API
 - NetworkManager D-Bus API and OpenVPN plugin
 - `nftables` controlled by a narrowly scoped privileged helper and Polkit policy
@@ -74,11 +74,11 @@ No provider definition ships with Dostflix.
 
 Uses a user-supplied TMDB access token to match normalized movie titles and retrieve poster, backdrop, year, synopsis, genres, runtime, and external identifiers. Provider results remain usable when TMDB is unavailable or no token is configured. Cached metadata has an expiry and can be refreshed manually.
 
-### 5.5 `TorrentEngine`
+### 5.5 `TorrServerManager`
 
-Owns the libtorrent session, magnet and torrent metadata acquisition, file selection, piece deadlines, disk allocation, resume data, download state, and seeding state. It prioritizes metadata plus the beginning and end of the selected video, then applies time-critical piece deadlines around playback position. Simple sequential-download mode is not the primary streaming strategy.
+Starts and supervises a private TorrServer child process after VPN protection is ready. The process inherits Dostflix's protected systemd scope, stores its database below Dostflix's data directory, and exposes its HTTP API on a random loopback port only. Dostflix uses that API for magnet and torrent submission, metadata acquisition, file selection, playback-range priority, readahead, cache state, progress, and peer health. Dostflix does not expose or reuse a system TorrServer service.
 
-If a torrent contains multiple plausible video files, Dostflix asks the user which one to play. Non-selected files receive zero priority unless they are required by torrent piece overlap.
+If a torrent contains multiple plausible video files, Dostflix asks the user which one to play. TorrServer remains the sole owner of peer selection, tracker behavior, streaming-piece priority, cache allocation, and reader readahead.
 
 ### 5.6 `BufferController`
 
@@ -86,7 +86,7 @@ Estimates playable seconds from contiguous available bytes, media bitrate, curre
 
 ### 5.7 `StreamServer`
 
-Runs on loopback only and exposes the selected video to mpv through a seekable HTTP endpoint with byte-range support. Reads block until the corresponding verified torrent pieces are available or the request is cancelled. A seek notifies `TorrentEngine`, which reprioritizes pieces around the new byte range. Session-specific unguessable paths prevent unrelated local clients from opening a stream accidentally.
+TorrServer exposes the selected video to mpv through its loopback-only, seekable HTTP endpoint with byte-range support. Its reader moves piece priority and readahead when playback seeks, so unavailable ranges return to buffering while verified data is fetched around the new position.
 
 ### 5.8 `PlayerController`
 
@@ -125,9 +125,9 @@ Kernel firewall rules remain the primary leak-prevention layer. On loss of the p
 ### 6.3 Normal shutdown
 
 1. Stop playback and cancel stream reads.
-2. Request and atomically persist torrent resume data.
-3. Stop announcing, downloading, seeding, DHT, and peer sockets.
-4. Confirm torrent networking has stopped.
+2. Allow the managed TorrServer process to persist its database and cache state.
+3. Terminate TorrServer and thereby stop announcing, downloading, seeding, DHT, and peer sockets.
+4. Confirm the managed process has exited.
 5. Remove Dostflix-specific kill-switch rules.
 6. Deactivate the VPN only if Dostflix activated it for this session.
 7. Close the database and exit.
@@ -146,7 +146,7 @@ The search field queries configured providers after the VPN is protected. Result
 
 ### 7.3 Buffer and playback
 
-After release and file selection, the detail view shows metadata acquisition, peer count, speed, downloaded amount, and estimated time until the 30-second buffer is safe. Playback then opens fullscreen or in a dedicated player view. Seeking reprioritizes pieces and may return to buffering.
+After release and file selection, the detail view shows metadata acquisition, connected peers and seeds, speed, cached amount, and estimated time until the 30-second buffer is safe. Playback then opens fullscreen or in a dedicated player view. Seeking moves TorrServer's active reader and may return to buffering.
 
 ### 7.4 Library and seeding
 
@@ -184,7 +184,7 @@ Dostflix follows Dostify's visual language rather than copying controls without 
 - **Unsupported media or decoder failure:** Show concise diagnostics and a copy-details action.
 - **VPN import failure:** Preserve the original file, show NetworkManager's sanitized error, and make no external request.
 - **VPN loss:** Block protected traffic immediately and present the reconnect state.
-- **Crash or power loss:** Recover from SQLite transactions and libtorrent resume data without assuming downloads completed.
+- **Crash or power loss:** Recover from SQLite transactions and TorrServer's database without assuming streams completed.
 
 Logs redact credentials, API tokens, cookies, private keys, signed URLs, and magnet query parameters that may contain secrets.
 
@@ -196,7 +196,7 @@ Cover provider normalization and deduplication, title parsing, metadata matching
 
 ### 10.2 Integration tests
 
-Use local fake HTTP services for Prowlarr/Torznab, TMDB, OpenSubtitles, and byte-range behavior. Use small freely distributable torrent fixtures to test metadata acquisition, piece priority, seek reprioritization, persistence, completion, and seeding.
+Use local fake HTTP services for Prowlarr/Torznab, TMDB, OpenSubtitles, and byte-range behavior. Start the real managed TorrServer backend in an isolated network namespace with loopback as its only interface. Use small freely distributable torrent fixtures to test metadata acquisition, file selection, preload startup, persistence, HTTP range behavior, and shutdown.
 
 ### 10.3 Network isolation tests
 
@@ -212,7 +212,7 @@ Use QML component tests and screenshot comparisons across window sizes, KDE, GNO
 
 ## 11. Packaging and configuration
 
-The Arch package contains the executable, QML modules, desktop file, application icon, Polkit action, privileged helper, translations, and licenses. The `PKGBUILD` declares Qt 6, NetworkManager/OpenVPN support, libtorrent, mpv, SQLite, and other runtime dependencies explicitly.
+The Arch package contains the executable, QML modules, desktop file, application icon, Polkit action, privileged helper, translations, and licenses. The `PKGBUILD` declares Qt 6, NetworkManager/OpenVPN support, `torrserver-bin`, mpv, SQLite, and other runtime dependencies explicitly.
 
 Application data follows XDG locations:
 
@@ -234,7 +234,7 @@ The first release is acceptable when:
 4. A configured Prowlarr/Torznab endpoint can return normalized movie releases.
 5. Optional TMDB metadata enriches results without becoming a hard dependency.
 6. A selected torrent can begin playback after the adaptive 30-second target buffer.
-7. Seeking causes piece reprioritization and correct buffering behavior.
+7. Seeking into unavailable data returns to buffering without serving unverified bytes.
 8. The completed movie remains in the selected library and can play locally later.
 9. Seeding occurs only while Dostflix is open and VPN protection is active.
 10. Embedded and local subtitles work, and OpenSubtitles search appears at the bottom of the subtitle menu when configured.
