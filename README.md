@@ -20,7 +20,9 @@ If its local API does not become ready within 20 seconds, Dostflix reports a
 startup error instead of waiting indefinitely. Backend diagnostics are stored in
 `$XDG_DATA_HOME/dostflix/torrserver/torrserver.log` (normally
 `~/.local/share/dostflix/torrserver/torrserver.log`).
-The embedded mpv player and subtitle behavior remain later phases.
+Ready TorrServer streams now open in an embedded libmpv render surface with
+pause, seek, volume, fullscreen, buffering feedback, and a return-to-movie flow.
+Embedded, local, and OpenSubtitles behavior remains a later phase.
 
 ## Arch installation and dependencies
 
@@ -75,3 +77,21 @@ makepkg -si
 ```
 
 The package installs the `dostflix` executable, desktop entry, and scalable application icon.
+
+## Design and implementation notes
+
+Agents and contributors should start with the following documents before
+changing cross-component behavior:
+
+- `docs/superpowers/specs/2026-08-31-dostflix-design.md` — product architecture,
+  security boundaries, UX requirements, and definition of done.
+- `docs/superpowers/plans/2026-09-01-dostflix-torrserver-backend.md` — managed
+  torrent backend, buffering, diagnostics, and loopback streaming contract.
+- `docs/superpowers/plans/2026-09-01-dostflix-mpv-player.md` — current native
+  player implementation, lifecycle invariants, verification, and the next
+  subtitle increment.
+- `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
+  process-isolation rules that networking changes must preserve.
+
+The plan documents describe completed increments as well as the remaining work;
+do not infer that unfinished features in the design specification already exist.

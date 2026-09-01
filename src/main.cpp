@@ -3,6 +3,7 @@
 #include "movies/MovieListModel.h"
 #include "network/NetworkGuardClient.h"
 #include "network/SystemdScope.h"
+#include "player/MpvPlayer.h"
 #include "providers/ProviderManager.h"
 #include "providers/ProwlarrManager.h"
 #include "providers/SecretStore.h"
@@ -14,13 +15,18 @@
 #include <QDir>
 #include <QGuiApplication>
 #include <QQuickStyle>
+#include <QQuickWindow>
+#include <QSGRendererInterface>
 #include <QQmlApplicationEngine>
 #include <QVariant>
+#include <clocale>
 
 int main(int argc, char *argv[])
 {
     QQuickStyle::setStyle(QStringLiteral("Basic"));
     QGuiApplication app(argc, argv);
+    std::setlocale(LC_NUMERIC, "C");
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
     QCoreApplication::setOrganizationName(QStringLiteral("SandorDost"));
     QCoreApplication::setApplicationName(QStringLiteral("Dostflix"));
 
@@ -64,12 +70,6 @@ int main(int argc, char *argv[])
         if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
         else torrentEngine.startTorrentData(title, torrentData);
     });
-    QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&] {
-        torrentEngine.shutdown();
-        prowlarrManager.shutdown();
-        vpnManager.shutdown();
-    });
-
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
@@ -83,6 +83,15 @@ int main(int argc, char *argv[])
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },
                      Qt::QueuedConnection);
     engine.loadFromModule(QStringLiteral("Dostflix"), QStringLiteral("Main"));
+    MpvPlayer *player = engine.rootObjects().isEmpty()
+        ? nullptr
+        : engine.rootObjects().constFirst()->findChild<MpvPlayer *>(QStringLiteral("videoPlayer"));
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&, player] {
+        if (player) player->stop();
+        torrentEngine.shutdown();
+        prowlarrManager.shutdown();
+        vpnManager.shutdown();
+    });
     vpnManager.start();
     return app.exec();
 }

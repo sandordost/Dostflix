@@ -7,6 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 QuickTest Sql Test)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
 qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/DostflixWarnings.cmake)
@@ -43,6 +45,9 @@ qt_add_qml_module(dostflix_ui
     URI Dostflix
     VERSION 1.0
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Dostflix
+    SOURCES
+        src/player/MpvPlayer.cpp
+        src/player/MpvPlayer.h
     QML_FILES
         qml/Main.qml
         qml/components/AppHeader.qml
@@ -53,6 +58,7 @@ qt_add_qml_module(dostflix_ui
         qml/pages/DiscoverPage.qml
         qml/pages/DownloadsPage.qml
         qml/pages/LibraryPage.qml
+        qml/pages/PlayerPage.qml
         qml/pages/SettingsPage.qml
         qml/theme/Theme.qml
     RESOURCES
@@ -60,9 +66,11 @@ qt_add_qml_module(dostflix_ui
         assets/icons/dostflix.svg
         assets/images/poster-placeholder.svg
 )
-target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2)
+target_include_directories(dostflix_ui PRIVATE src src/player)
+target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2 PkgConfig::MPV)
 target_link_libraries(dostflix PRIVATE
-    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
+    Qt6::Core Qt6::DBus Qt6::Gui Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Sql
+    PkgConfig::MPV dostflix_uiplugin
 )
 dostflix_enable_warnings(dostflix)
 
