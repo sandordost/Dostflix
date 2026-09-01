@@ -33,6 +33,15 @@ TestCase {
                 text: "Save settings"
                 icon.name: "document-open-symbolic"
             }
+            AppToolButton {
+                id: iconButton
+                icon.name: "media-playback-start-symbolic"
+            }
+            PathPickerDialog {
+                id: picker
+                title: "Choose a file"
+                fileNameFilters: ["*.ovpn"]
+            }
         }
     }
 
@@ -59,5 +68,16 @@ TestCase {
     function test_font_awesome_mapping() {
         verify(Theme.iconGlyph("media-playback-start-symbolic").length > 0)
         verify(Theme.iconGlyph("preferences-system-symbolic").length > 0)
+    }
+
+    function test_icon_buttons_are_centered() {
+        const row = iconButton.contentItem.children[0]
+        verify(row !== null)
+        compare(Math.round(row.x), Math.round((iconButton.contentItem.width - row.width) / 2))
+    }
+
+    function test_file_picker_uses_app_surface() {
+        compare(picker.background.color, Theme.panel)
+        compare(picker.fileNameFilters[0], "*.ovpn")
     }
 }

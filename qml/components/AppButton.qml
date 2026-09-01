@@ -9,6 +9,7 @@ Button {
     property bool primary: false
     property bool destructive: false
     property bool quiet: false
+    property bool alignLeft: false
     property int cornerRadius: Theme.radius
 
     implicitHeight: 42
@@ -21,28 +22,36 @@ Button {
     palette.buttonText: enabled ? Theme.textPrimary : Theme.textMuted
     focusPolicy: Qt.StrongFocus
 
-    contentItem: RowLayout {
-        id: contentRow
-        spacing: root.spacing
+    contentItem: Item {
+        implicitWidth: contentRow.implicitWidth
+        implicitHeight: contentRow.implicitHeight
 
-        AppIcon {
-            visible: text.length > 0
-            glyph: root.symbol
-            iconName: root.icon.name
-            color: root.enabled ? Theme.textPrimary : Theme.textMuted
-            font.pixelSize: root.icon.width > 0 ? root.icon.width : Theme.iconSize
-            Layout.preferredWidth: visible ? Math.max(font.pixelSize, implicitWidth) : 0
-            Layout.alignment: Qt.AlignVCenter
-        }
-        Label {
-            visible: root.text.length > 0
-            text: root.text
-            color: root.enabled ? Theme.textPrimary : Theme.textMuted
-            font: root.font
-            elide: Text.ElideRight
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            Layout.alignment: Qt.AlignVCenter
+        RowLayout {
+            id: contentRow
+            x: root.alignLeft ? 0 : Math.round((parent.width - width) / 2)
+            y: Math.round((parent.height - height) / 2)
+            spacing: root.spacing
+
+            AppIcon {
+                visible: text.length > 0
+                glyph: root.symbol
+                iconName: root.icon.name
+                color: root.enabled ? Theme.textPrimary : Theme.textMuted
+                font.pixelSize: root.icon.width > 0 ? root.icon.width : Theme.iconSize
+                Layout.preferredWidth: visible ? font.pixelSize : 0
+                Layout.preferredHeight: visible ? font.pixelSize : 0
+                Layout.alignment: Qt.AlignVCenter
+            }
+            Label {
+                visible: root.text.length > 0
+                text: root.text
+                color: root.enabled ? Theme.textPrimary : Theme.textMuted
+                font: root.font
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                Layout.alignment: Qt.AlignVCenter
+            }
         }
     }
 

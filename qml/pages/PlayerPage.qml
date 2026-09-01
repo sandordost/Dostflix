@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
 import QtQuick.Layouts
 import Dostflix
 
@@ -64,11 +63,11 @@ Item {
         onPositionChanged: root.revealControls()
     }
 
-    FileDialog {
+    PathPickerDialog {
         id: subtitleFileDialog
         title: qsTr("Choose subtitle file")
-        nameFilters: [qsTr("Subtitle files (*.srt *.ass *.vtt)")]
-        onAccepted: root.player.addSubtitleFile(selectedFile)
+        fileNameFilters: ["*.srt", "*.ass", "*.vtt"]
+        onPathChosen: path => root.player.addSubtitleFile(path)
     }
 
     Menu {
@@ -98,7 +97,7 @@ Item {
         AppMenuItem {
             objectName: "localSubtitleButton"
             text: qsTr("Open local subtitle…")
-            onTriggered: subtitleFileDialog.open()
+            onTriggered: subtitleFileDialog.openAt("")
         }
         AppMenuItem {
             objectName: "findSubtitlesButton"

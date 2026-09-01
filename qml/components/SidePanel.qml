@@ -130,7 +130,7 @@ Item {
                 { label: qsTr("Settings"), iconName: "preferences-system-symbolic" }
             ]
 
-            delegate: ToolButton {
+            delegate: AppButton {
                 id: navButton
                 required property int index
                 required property var modelData
@@ -141,6 +141,9 @@ Item {
                 icon.width: Theme.iconSize
                 icon.height: Theme.iconSize
                 display: root.compact ? AbstractButton.IconOnly : AbstractButton.TextBesideIcon
+                alignLeft: !root.compact
+                leftPadding: root.compact ? 11 : 24
+                rightPadding: root.compact ? 11 : 16
                 spacing: 12
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.bodySize

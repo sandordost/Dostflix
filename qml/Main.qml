@@ -141,6 +141,8 @@ ApplicationWindow {
             vpnLabel: window.vpnManager.stateLabel
             vpnConnected: window.vpnManager.connected
             vpnBusy: window.vpnManager.busy
+            prowlarrManager: window.prowlarrManager
+            torrentEngine: window.torrentEngine
         }
 
         RowLayout {

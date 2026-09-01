@@ -66,7 +66,9 @@ qt_add_qml_module(dostflix_ui
         qml/components/AppToolButton.qml
         qml/components/MovieCard.qml
         qml/components/MovieGrid.qml
+        qml/components/MovieList.qml
         qml/components/NowWatchingCard.qml
+        qml/components/PathPickerDialog.qml
         qml/components/SidePanel.qml
         qml/components/SubtitleSearchDialog.qml
         qml/pages/DiscoverPage.qml

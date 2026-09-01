@@ -59,8 +59,12 @@ over; completed movies automatically lose their resume marker.
 The UI follows the Dostify reference with matte translucent panels, fixed 2:3
 poster cards, responsive icon-only navigation on small windows, consistent
 Montserrat typography, and Font Awesome icons. Borderless rounded inputs and
-dark popup/hover states avoid the platform-dependent Qt Basic styling. Player
-controls fade after 2.8 seconds and return on pointer
+dark popup/hover states avoid the platform-dependent Qt Basic styling. File and
+folder selection uses the same in-app visual system instead of compositor-themed
+dialogs. Discover can switch between a poster grid and compact result list;
+active torrent progress stays visible in the application header. The local
+library uses compact poster rows without hover tooltips. Player controls fade
+after 2.8 seconds and return on pointer
 movement, pause, buffering, or keyboard input; only opacity, color, and scale are
 animated to keep frame pacing smooth.
 

@@ -24,13 +24,20 @@ posters remain exactly 170 pixels wide with a 2:3 aspect ratio.
 Reusable `AppTextField`, `AppComboBox`, `AppButton`, `AppToolButton`, and
 `AppSpinBox` controls own their rendering. Inputs are borderless and rounded;
 hover, pressed, focus, popup, and disabled states stay within the dark palette so
-foreground text cannot become unreadable under a desktop theme.
+foreground text cannot become unreadable under a desktop theme. Button content
+is centered as one unit by default; the navigation rail explicitly opts into
+left alignment. `PathPickerDialog` provides consistent in-app file and folder
+selection because native portal dialogs cannot be styled reliably across Linux
+compositors.
 
 Navigation collapses from a 252-pixel text sidebar to a 76-pixel icon rail below
 980 pixels. The content inset also becomes smaller below 900 pixels. Search stays
 available from a popup in compact mode. Result and library grids derive their
 column count from the available width and center every fixed-size card in its
-cell, so metadata never changes card geometry.
+cell. Discover also offers a compact list mode. Release selection starts directly
+without a redundant confirmation step, and active torrent progress is shown in
+the global header. The local library deliberately uses 132-pixel rows with a
+left-hand 2:3 poster and no synopsis tooltip.
 
 ## Motion and render performance
 
@@ -72,9 +79,11 @@ secondary subtitle-delay and volume controls before primary playback controls.
 
 ## Verification
 
-The QML suite covers fixed poster geometry, responsive result wrapping, player
-control existence, Stop semantics, automatic control hiding and reveal, Now
-Playing visibility, library resume behavior, and stable theme/performance tokens.
+The QML suite covers fixed poster geometry, responsive result wrapping, the
+Discover view toggle and direct release action, centered controls, the in-app
+picker, player control existence, Stop semantics, automatic control hiding and
+reveal, Now Playing visibility, library row/resume behavior, and stable
+theme/performance tokens.
 The normal build, `dostflix_ui_qmllint`, and complete CTest suite must pass before
 merging. Do not launch the production application for UI-only validation because
 startup intentionally manages the VPN and network guard.

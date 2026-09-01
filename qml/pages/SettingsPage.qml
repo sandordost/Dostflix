@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
 import QtQuick.Layouts
 import Dostflix
 
@@ -14,18 +13,18 @@ Item {
     required property var subtitleManager
     required property var libraryManager
 
-    FileDialog {
+    PathPickerDialog {
         id: profileDialog
         title: qsTr("Choose an OpenVPN profile")
-        nameFilters: [qsTr("OpenVPN profiles (*.ovpn)")]
-        onAccepted: root.vpnManager.importProfile(selectedFile)
+        fileNameFilters: ["*.ovpn"]
+        onPathChosen: path => root.vpnManager.importProfile(path)
     }
 
-    FolderDialog {
+    PathPickerDialog {
         id: libraryDialog
         title: qsTr("Choose the movie library folder")
-        currentFolder: "file://" + root.libraryManager.directory
-        onAccepted: root.libraryManager.setDirectory(selectedFolder)
+        folderMode: true
+        onPathChosen: path => root.libraryManager.setDirectory(path)
     }
 
     ScrollView {
@@ -76,7 +75,7 @@ Item {
             AppButton {
                 text: qsTr("Import .ovpn…")
                 icon.name: "document-open-symbolic"
-                onClicked: profileDialog.open()
+                onClicked: profileDialog.openAt("")
             }
 
             AppToolButton {
@@ -168,7 +167,7 @@ Item {
             AppButton {
                 text: qsTr("Choose folder…")
                 icon.name: "folder-open-symbolic"
-                onClicked: libraryDialog.open()
+                onClicked: libraryDialog.openAt("file://" + root.libraryManager.directory)
             }
             AppToolButton {
                 icon.name: "view-refresh-symbolic"
