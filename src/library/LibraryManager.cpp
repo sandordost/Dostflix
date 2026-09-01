@@ -79,17 +79,21 @@ void LibraryManager::play(int row, bool restart)
         emit stateChanged();
         return;
     }
+    // Keep value copies: restarting updates and refreshes the model, which
+    // invalidates pointers returned by LocalLibraryModel::at().
+    const QString videoPath = movie->videoPath;
+    const QString title = movie->title;
+    const int durationSeconds = movie->durationSeconds;
     const int startSeconds = restart ? 0 : movie->watchedSeconds;
-    if (restart && !m_database.updateWatchProgress(movie->videoPath, 0,
-                                                   movie->durationSeconds)) {
+    if (restart && !m_database.updateWatchProgress(videoPath, 0, durationSeconds)) {
         m_error = m_database.lastError();
         emit stateChanged();
         return;
     }
-    m_activeVideoPath = movie->videoPath;
+    m_activeVideoPath = videoPath;
     m_lastPersistedSeconds = startSeconds;
     if (restart) reload();
-    emit playbackRequested(QUrl::fromLocalFile(movie->videoPath), movie->title, startSeconds);
+    emit playbackRequested(QUrl::fromLocalFile(videoPath), title, startSeconds);
 }
 
 void LibraryManager::recordPlaybackProgress(int watchedSeconds, int durationSeconds, bool force)

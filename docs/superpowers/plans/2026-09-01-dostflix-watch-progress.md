@@ -17,7 +17,9 @@
   `watched_seconds`/`duration_seconds` fields; no schema migration is required.
 - `LibraryManager` owns the active local playback identity, writes progress at
   five-second intervals, forces a final write before stop, and ignores position
-  reports from torrent or unrelated local playback.
+  reports from torrent or unrelated local playback. Playback signal arguments
+  are copied before a restart refreshes the model, preventing dangling model
+  references from crossing into QML.
 - `LocalLibraryModel::updateProgress` updates only the affected model roles, so
   persistence does not reset the grid or scroll position.
 - `MpvPlayer::play` accepts an optional start position and applies it on

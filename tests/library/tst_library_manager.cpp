@@ -59,6 +59,8 @@ private slots:
         QCOMPARE(database.movies().first().watchedSeconds, 125);
         manager.play(0, true);
         QCOMPARE(playSpy.last().at(2).toInt(), 0);
+        QCOMPARE(playSpy.last().at(0).toUrl().toLocalFile(), video.fileName());
+        QCOMPARE(playSpy.last().at(1).toString(), QStringLiteral("The Matrix"));
         QCOMPARE(database.movies().first().watchedSeconds, 0);
 
         manager.refresh();
