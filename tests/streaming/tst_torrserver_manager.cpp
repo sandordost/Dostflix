@@ -43,6 +43,9 @@ private slots:
         QTRY_COMPARE_WITH_TIMEOUT(manager.selectedFileName(), QStringLiteral("sample.mp4"), 5'000);
         QVERIFY(manager.active());
         QVERIFY(manager.streamUrl().startsWith(QStringLiteral("http://127.0.0.1:")));
+        QTest::qWait(16'000);
+        QVERIFY2(manager.active(), qPrintable(manager.errorMessage()));
+        QVERIFY(manager.errorMessage().isEmpty());
         manager.shutdown();
         QVERIFY(!manager.backendReady());
     }

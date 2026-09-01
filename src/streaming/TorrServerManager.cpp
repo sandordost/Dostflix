@@ -164,6 +164,12 @@ void TorrServerManager::stopDaemon(bool force)
         reply->abort();
         reply->deleteLater();
     }
+    if (m_preloadReply) {
+        QNetworkReply *reply = m_preloadReply;
+        m_preloadReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     m_daemonReady = false;
     if (m_process.state() == QProcess::NotRunning) return;
     m_stopping = true;
@@ -342,7 +348,7 @@ void TorrServerManager::selectVideoFile(int row)
 
 void TorrServerManager::startPreload()
 {
-    if (m_preloadStarted || m_hash.isEmpty() || m_selectedFileId < 0 || m_reply) return;
+    if (m_preloadStarted || m_hash.isEmpty() || m_selectedFileId < 0) return;
     m_preloadStarted = true;
     m_stateLabel = tr("Building a safe playback buffer…");
     emit stateChanged();
@@ -351,9 +357,19 @@ void TorrServerManager::startPreload()
     query.addQueryItem(QStringLiteral("index"), QString::number(m_selectedFileId));
     query.addQueryItem(QStringLiteral("preload"), QString());
     query.addQueryItem(QStringLiteral("stat"), QString());
-    get(QStringLiteral("stream/video"), query, [this](QNetworkReply *reply) {
-        if (!successful(reply)) fail(replyError(reply));
-        else parseStatus(reply->readAll());
+    QUrl url = m_baseUrl.resolved(QUrl(QStringLiteral("stream/video")));
+    url.setQuery(query);
+    QNetworkReply *reply = m_network.get(QNetworkRequest(url));
+    m_preloadReply = reply;
+    connect(reply, &QNetworkReply::finished, this, [this, reply] {
+        if (m_preloadReply != reply) return;
+        m_preloadReply = nullptr;
+        if (!successful(reply) && reply->error() != QNetworkReply::OperationCanceledError) {
+            fail(replyError(reply));
+        } else if (successful(reply)) {
+            parseStatus(reply->readAll());
+        }
+        reply->deleteLater();
     });
 }
 
@@ -377,6 +393,12 @@ void TorrServerManager::shutdown()
 
 void TorrServerManager::clearTransferState()
 {
+    if (m_preloadReply) {
+        QNetworkReply *reply = m_preloadReply;
+        m_preloadReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     m_videoFiles.replace({});
     m_title.clear(); m_hash.clear(); m_pendingMagnet.clear(); m_pendingTorrent.clear();
     m_selectedFileName.clear(); m_stateLabel.clear(); m_error.clear();

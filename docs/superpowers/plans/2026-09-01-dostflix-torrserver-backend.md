@@ -30,6 +30,8 @@ process launch errors and exit codes include the diagnostic log path.
 
 - Acquire torrent metadata and expose plausible video files for selection.
 - Start TorrServer preloading for the selected file.
+- Keep the long-running preload request separate from short control API requests;
+  it intentionally has no transfer timeout while status polling continues.
 - Poll its native download rate, peer, seed, cache, and preload statistics.
 - Retain Dostflix's 30-second initial-buffer policy using TorrServer's contiguous
   preloaded byte count.

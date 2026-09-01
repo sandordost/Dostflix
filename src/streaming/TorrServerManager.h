@@ -89,6 +89,7 @@ private:
     QProcess m_process;
     QNetworkAccessManager m_network;
     QPointer<QNetworkReply> m_reply;
+    QPointer<QNetworkReply> m_preloadReply;
     QTimer m_pollTimer;
     QTimer m_startupTimer;
     QUrl m_baseUrl;
