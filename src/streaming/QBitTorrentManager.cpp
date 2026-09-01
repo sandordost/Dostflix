@@ -362,7 +362,12 @@ void QBitTorrentManager::requestProperties()
         m_pieceSize = static_cast<qint64>(
             properties.value(QStringLiteral("piece_size")).toDouble());
         if (m_pieceSize <= 0) {
-            fail(tr("qBittorrent did not report a valid torrent piece size"));
+            // Magnet entries exist before their metadata has arrived. During
+            // that normal state qBittorrent reports a zero piece size; keep
+            // polling instead of turning metadata acquisition into an error.
+            m_pieceSize = 0;
+            m_stateLabel = tr("Acquiring torrent metadata…");
+            emit stateChanged();
             return;
         }
         requestFiles();

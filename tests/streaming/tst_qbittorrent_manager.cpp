@@ -54,6 +54,25 @@ private slots:
         manager.shutdown();
         QVERIFY(!manager.backendReady());
     }
+
+    void keepsWaitingWhileMagnetMetadataIsUnavailable()
+    {
+        QTemporaryDir directory;
+        QBitTorrentManager manager(directory.filePath(QStringLiteral("data")),
+                                   directory.filePath(QStringLiteral("downloads")));
+        manager.setNetworkReady(true);
+        QTRY_VERIFY_WITH_TIMEOUT(manager.backendReady(), 10'000);
+
+        manager.startMagnet(
+            QStringLiteral("Metadata pending"),
+            QStringLiteral("magnet:?xt=urn:btih:0123456789012345678901234567890123456789"));
+        QTest::qWait(1'500);
+
+        QVERIFY(manager.active());
+        QVERIFY(manager.errorMessage().isEmpty());
+        QVERIFY(manager.stateLabel().contains(QStringLiteral("metadata"),
+                                              Qt::CaseInsensitive));
+    }
 };
 
 QTEST_GUILESS_MAIN(QBitTorrentManagerTest)

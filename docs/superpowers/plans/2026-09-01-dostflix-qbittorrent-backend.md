@@ -42,6 +42,8 @@ player integration, and the user interface.
 ## Verification
 
 - Unit tests prove that torrent work is rejected before VPN readiness.
+- A magnet without available peers remains in metadata acquisition instead of
+  treating qBittorrent's temporary zero piece size as a fatal error.
 - The managed-daemon integration test runs in a fresh Linux network namespace
   with loopback as its only interface, starts qBittorrent, submits a local torrent
   fixture, discovers its video file, and shuts down cleanly.
