@@ -16,7 +16,7 @@ private slots:
         LibraryDatabase database(dir.filePath(QStringLiteral("library.sqlite")),
                                  QStringLiteral("test-library"));
         QVERIFY2(database.open(), qPrintable(database.lastError()));
-        QCOMPARE(database.schemaVersion(), 3);
+        QCOMPARE(database.schemaVersion(), 4);
 
         QSqlQuery query(database.connection());
         QVERIFY(query.exec(QStringLiteral(
@@ -38,6 +38,18 @@ private slots:
         QCOMPARE(movies.size(), 1);
         QCOMPARE(movies.first().title, QStringLiteral("Updated title"));
         QCOMPARE(movies.first().videoPath, QStringLiteral("/movies/test.mkv"));
+        QVERIFY(database.updateMovieMetadata(QStringLiteral("/movies/test.mkv"), 603,
+            QStringLiteral("tt0133093"), QStringLiteral("The Matrix"), 1999,
+            QStringLiteral("/cache/603.jpg"), 8160,
+            QStringLiteral("A computer hacker discovers the truth.")));
+        const LibraryMovie enriched = database.movies().first();
+        QCOMPARE(enriched.tmdbId, 603);
+        QCOMPARE(enriched.imdbId, QStringLiteral("tt0133093"));
+        QCOMPARE(enriched.title, QStringLiteral("The Matrix"));
+        QCOMPARE(enriched.year, 1999);
+        QCOMPARE(enriched.posterPath, QStringLiteral("/cache/603.jpg"));
+        QCOMPARE(enriched.durationSeconds, 8160);
+        QCOMPARE(enriched.synopsis, QStringLiteral("A computer hacker discovers the truth."));
     }
 
     void persistsResumableTransferState()

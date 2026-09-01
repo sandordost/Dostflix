@@ -16,7 +16,8 @@ public:
         PosterUrlRole,
         VideoUrlRole,
         WatchedSecondsRole,
-        DurationSecondsRole
+        DurationSecondsRole,
+        SynopsisRole
     };
     Q_ENUM(Role)
 

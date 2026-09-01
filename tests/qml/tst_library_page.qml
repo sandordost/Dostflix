@@ -9,7 +9,17 @@ TestCase {
 
     ListModel {
         id: movies
-        ListElement { title: "Local movie"; posterUrl: "" }
+        ListElement {
+            title: "Local movie"; posterUrl: ""; year: 1999
+            durationSeconds: 8160; synopsis: "A local movie synopsis."
+        }
+    }
+    QtObject {
+        id: fakeMetadata
+        property bool busy: false
+        property string stateLabel: ""
+        property string errorMessage: ""
+        function refresh() {}
     }
     QtObject {
         id: fakeLibrary
@@ -29,6 +39,7 @@ TestCase {
             id: page
             anchors.fill: parent
             libraryManager: fakeLibrary
+            metadataManager: fakeMetadata
         }
     }
 

@@ -8,6 +8,7 @@ ApplicationWindow {
     required property var appController
     required property var movieModel
     required property var libraryManager
+    required property var metadataManager
     required property var downloadManager
     required property var vpnManager
     required property var providerManager
@@ -139,6 +140,7 @@ ApplicationWindow {
                     }
                     LibraryPage {
                         libraryManager: window.libraryManager
+                        metadataManager: window.metadataManager
                     }
                     DownloadsPage {
                         downloadManager: window.downloadManager

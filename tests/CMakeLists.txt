@@ -36,11 +36,42 @@ qt_add_executable(tst_library_manager
     ${PROJECT_SOURCE_DIR}/src/library/LibraryDatabase.cpp
     ${PROJECT_SOURCE_DIR}/src/library/LibraryManager.cpp
     ${PROJECT_SOURCE_DIR}/src/library/LocalLibraryModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/MovieFilenameParser.cpp
 )
 target_include_directories(tst_library_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_library_manager PRIVATE Qt6::Core Qt6::Sql Qt6::Test)
 dostflix_enable_warnings(tst_library_manager)
 add_test(NAME library_manager COMMAND tst_library_manager)
+
+qt_add_executable(tst_movie_filename_parser
+    library/tst_movie_filename_parser.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/MovieFilenameParser.cpp
+)
+target_include_directories(tst_movie_filename_parser PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_movie_filename_parser PRIVATE Qt6::Core Qt6::Test)
+dostflix_enable_warnings(tst_movie_filename_parser)
+add_test(NAME movie_filename_parser COMMAND tst_movie_filename_parser)
+
+qt_add_executable(tst_library_metadata_manager
+    library/tst_library_metadata_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LibraryDatabase.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LibraryManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LibraryMetadataManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LocalLibraryModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/MovieFilenameParser.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderManager.cpp
+)
+target_include_directories(tst_library_metadata_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_library_metadata_manager PRIVATE
+    Qt6::Core Qt6::Network Qt6::Sql Qt6::Test
+)
+dostflix_enable_warnings(tst_library_metadata_manager)
+add_test(NAME library_metadata_manager
+    COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_library_metadata_manager>'"
+)
 
 qt_add_executable(tst_download_manager
     library/tst_download_manager.cpp
@@ -49,6 +80,7 @@ qt_add_executable(tst_download_manager
     ${PROJECT_SOURCE_DIR}/src/library/LibraryDatabase.cpp
     ${PROJECT_SOURCE_DIR}/src/library/LibraryManager.cpp
     ${PROJECT_SOURCE_DIR}/src/library/LocalLibraryModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/MovieFilenameParser.cpp
 )
 target_include_directories(tst_download_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_download_manager PRIVATE Qt6::Core Qt6::Network Qt6::Sql Qt6::Test)

@@ -36,7 +36,8 @@ bool LibraryDatabase::open()
     if (schemaVersion() < 1 && !migrateToVersionOne()) return false;
     if (schemaVersion() < 2 && !migrateToVersionTwo()) return false;
     if (schemaVersion() < 3 && !migrateToVersionThree()) return false;
-    return schemaVersion() >= 3;
+    if (schemaVersion() < 4 && !migrateToVersionFour()) return false;
+    return schemaVersion() >= 4;
 }
 
 int LibraryDatabase::schemaVersion() const
@@ -122,6 +123,26 @@ bool LibraryDatabase::migrateToVersionThree()
     return true;
 }
 
+bool LibraryDatabase::migrateToVersionFour()
+{
+    if (!m_database.transaction()) {
+        m_lastError = m_database.lastError().text();
+        return false;
+    }
+    QSqlQuery query(m_database);
+    const bool succeeded = query.exec(QStringLiteral("ALTER TABLE movies ADD COLUMN tmdb_id INTEGER"))
+        && query.exec(QStringLiteral("ALTER TABLE movies ADD COLUMN imdb_id TEXT"))
+        && query.exec(QStringLiteral("ALTER TABLE movies ADD COLUMN synopsis TEXT"))
+        && query.exec(QStringLiteral("ALTER TABLE movies ADD COLUMN metadata_updated_at INTEGER"))
+        && query.exec(QStringLiteral("PRAGMA user_version = 4"));
+    if (!succeeded || !m_database.commit()) {
+        m_lastError = succeeded ? m_database.lastError().text() : query.lastError().text();
+        m_database.rollback();
+        return false;
+    }
+    return true;
+}
+
 QString LibraryDatabase::lastError() const
 {
     return m_lastError;
@@ -137,26 +158,54 @@ QList<LibraryMovie> LibraryDatabase::movies() const
     QList<LibraryMovie> result;
     QSqlQuery query(m_database);
     if (!query.exec(QStringLiteral(
-            "SELECT id, title, year, poster_path, video_path, watched_seconds, duration_seconds "
+            "SELECT id, tmdb_id, imdb_id, title, year, poster_path, synopsis, video_path, "
+            "watched_seconds, duration_seconds "
             "FROM movies ORDER BY title COLLATE NOCASE"))) return result;
     while (query.next()) {
-        result.push_back({query.value(0).toLongLong(), query.value(1).toString(),
-                          query.value(2).toInt(), query.value(3).toString(),
-                          query.value(4).toString(), query.value(5).toInt(),
-                          query.value(6).toInt()});
+        result.push_back({query.value(0).toLongLong(), query.value(1).toInt(),
+                          query.value(2).toString(), query.value(3).toString(),
+                          query.value(4).toInt(), query.value(5).toString(),
+                          query.value(6).toString(), query.value(7).toString(),
+                          query.value(8).toInt(), query.value(9).toInt()});
     }
     return result;
 }
 
-bool LibraryDatabase::upsertMovie(const QString &title, const QString &videoPath)
+bool LibraryDatabase::upsertMovie(const QString &title, const QString &videoPath, int year)
 {
     QSqlQuery query(m_database);
     query.prepare(QStringLiteral(
-        "INSERT INTO movies(title, video_path) VALUES(:title, :path) "
-        "ON CONFLICT(video_path) DO UPDATE SET title = excluded.title"));
+        "INSERT INTO movies(title, year, video_path) VALUES(:title, :year, :path) "
+        "ON CONFLICT(video_path) DO UPDATE SET "
+        "title=CASE WHEN movies.tmdb_id IS NULL THEN excluded.title ELSE movies.title END, "
+        "year=CASE WHEN movies.tmdb_id IS NULL THEN excluded.year ELSE movies.year END"));
     query.bindValue(QStringLiteral(":title"), title);
+    query.bindValue(QStringLiteral(":year"), year);
     query.bindValue(QStringLiteral(":path"), videoPath);
     if (query.exec()) return true;
+    m_lastError = query.lastError().text();
+    return false;
+}
+
+bool LibraryDatabase::updateMovieMetadata(const QString &videoPath, int tmdbId,
+                                          const QString &imdbId, const QString &title,
+                                          int year, const QString &posterPath,
+                                          int durationSeconds, const QString &synopsis)
+{
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "UPDATE movies SET tmdb_id=:tmdb, imdb_id=:imdb, title=:title, year=:year, "
+        "poster_path=:poster, duration_seconds=:duration, synopsis=:synopsis, "
+        "metadata_updated_at=unixepoch() WHERE video_path=:path"));
+    query.bindValue(QStringLiteral(":tmdb"), tmdbId);
+    query.bindValue(QStringLiteral(":imdb"), imdbId);
+    query.bindValue(QStringLiteral(":title"), title);
+    query.bindValue(QStringLiteral(":year"), year);
+    query.bindValue(QStringLiteral(":poster"), posterPath);
+    query.bindValue(QStringLiteral(":duration"), durationSeconds);
+    query.bindValue(QStringLiteral(":synopsis"), synopsis);
+    query.bindValue(QStringLiteral(":path"), videoPath);
+    if (query.exec() && query.numRowsAffected() == 1) return true;
     m_lastError = query.lastError().text();
     return false;
 }
