@@ -1,6 +1,6 @@
 # Durable torrent retention plan
 
-**Status:** Implemented on `feature/durable-torrent-retention`
+**Status:** Implemented; lifecycle controls completed on `feature/download-lifecycle`
 
 ## Scope
 
@@ -26,7 +26,14 @@
   index after its private daemon is ready. Its `/stream` request reloads the
   TorrServer database entry and restores peer acquisition behind the VPN.
 - `DownloadsPage.qml` exposes the current/resumable transfer, byte progress,
-  pause, and resume. Completion triggers a `LibraryManager` refresh.
+  pause, resume, playback, and confirmed removal. Completion triggers a
+  `LibraryManager` refresh.
+- Selecting the same magnet in Discover compares its normalized BTIH info hash
+  with the stored transfer. A match restores the existing TorrServer torrent
+  and piece cache instead of submitting a duplicate or discarding the buffer.
+- Completed downloads play directly from the final local file. Partial downloads
+  ask TorrServer to reopen the stored hash/file index, so playback keeps its
+  existing cache and remains behind VPN protection.
 
 The HTTP behavior follows TorrServer's official `server/web/api/stream.go` and
 `server/torr/stream.go`: the stream handler delegates to Go `http.ServeContent`
@@ -50,6 +57,11 @@ and advertises byte-range support for range requests.
   byte but before rename, is reconciled locally at the next start without VPN.
 - Selecting another torrent pauses the previous sequential writer before the
   single-active-torrent replacement proceeds. Its partial state remains stored.
+- Cancelling streaming aborts all in-flight status/preload replies and clears the
+  Discover state without deleting the cached torrent or durable partial file.
+- Removing a download is an explicit confirmed action. It pauses the writer,
+  validates both paths, removes partial/final data and SQLite history, refreshes
+  the library, and asks a running TorrServer daemon to drop its cached torrent.
 
 ## Automated verification
 
@@ -60,7 +72,9 @@ and advertises byte-range support for range requests.
 - Transfer records round-trip through schema version 3.
 - The real managed TorrServer fixture emits the loopback retention source while
   remaining isolated in a loopback-only network namespace.
-- QML tests cover the paused-download resume action.
+- QML tests cover resume, play, and confirmed removal. C++ tests cover completed
+  local playback, matching-magnet cache reuse, file/history deletion, and stable
+  cancellation state.
 
 No public torrent, provider, VPN, or metadata service is contacted by tests.
 
@@ -70,5 +84,4 @@ No public torrent, provider, VPN, or metadata service is contacted by tests.
   resumable transfer.
 - Add free-space forecasting and an explicit library-location recovery flow for
   disk-full failures.
-- Add remove-partial and remove-history actions with confirmation.
 - Persist and display transfer speed independently of TorrServer's peer rate.

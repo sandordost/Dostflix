@@ -63,6 +63,7 @@ public:
                              int fileIndex, const QString &fileName, qint64 expectedSize);
     Q_INVOKABLE void selectVideoFile(int row);
     Q_INVOKABLE void cancel();
+    void removeStoredTorrent(const QString &torrentHash);
     void shutdown();
 
 signals:

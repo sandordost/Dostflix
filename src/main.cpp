@@ -88,13 +88,20 @@ int main(int argc, char *argv[])
                      &torrentEngine,
                      [&](const QString &title, const QString &magnetUrl,
                          const QByteArray &torrentData) {
-        if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
+        if (!magnetUrl.isEmpty()) {
+            if (!downloadManager.playMatchingRelease(title, magnetUrl))
+                torrentEngine.startMagnet(title, magnetUrl);
+        }
         else torrentEngine.startTorrentData(title, torrentData);
     });
     QObject::connect(&torrentEngine, &TorrServerManager::retentionSourceReady,
                      &downloadManager, &DownloadManager::beginTransfer);
     QObject::connect(&downloadManager, &DownloadManager::resumeRequested,
                      &torrentEngine, &TorrServerManager::resumeStoredTorrent);
+    QObject::connect(&downloadManager, &DownloadManager::torrentPlaybackRequested,
+                     &torrentEngine, &TorrServerManager::resumeStoredTorrent);
+    QObject::connect(&downloadManager, &DownloadManager::torrentRemovalRequested,
+                     &torrentEngine, &TorrServerManager::removeStoredTorrent);
     QObject::connect(&torrentEngine, &TorrServerManager::stateChanged,
                      &downloadManager, [&] {
         if (!torrentEngine.active() && downloadManager.active()) downloadManager.pause();

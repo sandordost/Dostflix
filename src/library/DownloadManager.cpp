@@ -7,9 +7,43 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QHostAddress>
+#include <QUrlQuery>
+#include <algorithm>
+#include <iterator>
 #include <fcntl.h>
 #include <utility>
 #include <unistd.h>
+
+namespace {
+QString magnetInfoHash(const QString &magnetUrl)
+{
+    const QUrl url(magnetUrl);
+    for (const auto &[key, value] : QUrlQuery(url).queryItems()) {
+        if (key.compare(QStringLiteral("xt"), Qt::CaseInsensitive) != 0
+            || !value.startsWith(QStringLiteral("urn:btih:"), Qt::CaseInsensitive)) continue;
+        const QByteArray encoded = value.mid(9).toLatin1().toUpper();
+        if (encoded.size() == 40) return QString::fromLatin1(encoded).toLower();
+        if (encoded.size() != 32) return {};
+        static constexpr char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        QByteArray decoded;
+        quint32 bits = 0;
+        int bitCount = 0;
+        for (const char character : encoded) {
+            const char *position = std::find(std::begin(alphabet), std::end(alphabet) - 1,
+                                             character);
+            if (position == std::end(alphabet) - 1) return {};
+            bits = (bits << 5) | static_cast<quint32>(position - alphabet);
+            bitCount += 5;
+            if (bitCount >= 8) {
+                bitCount -= 8;
+                decoded.append(static_cast<char>((bits >> bitCount) & 0xff));
+            }
+        }
+        return decoded.size() == 20 ? QString::fromLatin1(decoded.toHex()) : QString();
+    }
+    return {};
+}
+}
 
 DownloadManager::DownloadManager(LibraryDatabase &database, LibraryManager &library,
                                  QObject *parent)
@@ -24,6 +58,12 @@ bool DownloadManager::hasPending() const
 {
     return !m_transfer.torrentHash.isEmpty()
         && m_transfer.state != QStringLiteral("completed");
+}
+bool DownloadManager::hasTransfer() const { return !m_transfer.torrentHash.isEmpty(); }
+bool DownloadManager::playable() const
+{
+    return hasTransfer() && (QFileInfo(m_transfer.finalPath).isFile()
+                             || m_transfer.bytesWritten > 0);
 }
 QString DownloadManager::title() const { return m_transfer.title; }
 qint64 DownloadManager::bytesWritten() const { return m_transfer.bytesWritten; }
@@ -163,11 +203,79 @@ void DownloadManager::resume()
                          m_transfer.fileName, m_transfer.expectedSize);
 }
 
+void DownloadManager::play()
+{
+    if (!playable()) return;
+    if (QFileInfo(m_transfer.finalPath).isFile()
+        && QFileInfo(m_transfer.finalPath).size() == m_transfer.expectedSize) {
+        emit localPlaybackRequested(QUrl::fromLocalFile(m_transfer.finalPath), m_transfer.title);
+        return;
+    }
+    if (!m_networkReady) {
+        m_error = tr("VPN protection is required to continue this partial download");
+        emit stateChanged();
+        return;
+    }
+    emit torrentPlaybackRequested(m_transfer.title, m_transfer.torrentHash,
+                                  m_transfer.fileIndex, m_transfer.fileName,
+                                  m_transfer.expectedSize);
+}
+
+void DownloadManager::remove()
+{
+    if (!hasTransfer()) return;
+    pause();
+    if (!pathsAreSafe()) {
+        m_error = tr("The saved download path is outside the movie library");
+        emit stateChanged();
+        return;
+    }
+    for (const QString &path : {m_transfer.partialPath, m_transfer.finalPath}) {
+        if (QFileInfo::exists(path) && !QFile::remove(path)) {
+            m_error = tr("Could not remove %1").arg(path);
+            emit stateChanged();
+            return;
+        }
+    }
+    if (!m_database.removeMovieByPath(m_transfer.finalPath)
+        || !m_database.removeTransfer(m_transfer.torrentHash, m_transfer.fileIndex)) {
+        m_error = m_database.lastError();
+        emit stateChanged();
+        return;
+    }
+    const QString removedHash = m_transfer.torrentHash;
+    m_transfer = {};
+    m_sourceUrl.clear();
+    m_stateLabel.clear();
+    m_error.clear();
+    m_library.refresh();
+    emit torrentRemovalRequested(removedHash);
+    emit stateChanged();
+}
+
+bool DownloadManager::playMatchingRelease(const QString &title, const QString &magnetUrl)
+{
+    const QString hash = magnetInfoHash(magnetUrl);
+    if (hash.isEmpty()) return false;
+    if (!hasTransfer() || m_transfer.torrentHash.compare(hash, Qt::CaseInsensitive) != 0) {
+        const std::optional<LibraryTransfer> stored = m_database.latestTransfer();
+        if (!stored || stored->torrentHash.compare(hash, Qt::CaseInsensitive) != 0) return false;
+        m_transfer = *stored;
+    }
+    const QFileInfo partial(m_transfer.partialPath);
+    m_transfer.bytesWritten = partial.isFile() ? partial.size()
+        : (QFileInfo(m_transfer.finalPath).isFile() ? m_transfer.expectedSize : 0);
+    if (!playable()) return false;
+    if (!title.isEmpty()) m_transfer.title = title;
+    play();
+    return true;
+}
+
 void DownloadManager::loadPending()
 {
-    const std::optional<LibraryTransfer> pending = m_database.latestIncompleteTransfer();
-    if (!pending) return;
-    m_transfer = *pending;
+    const std::optional<LibraryTransfer> stored = m_database.latestTransfer();
+    if (!stored) return;
+    m_transfer = *stored;
     const QFileInfo partial(m_transfer.partialPath);
     m_transfer.bytesWritten = partial.isFile() ? partial.size() : 0;
     if (QFileInfo(m_transfer.finalPath).isFile()
@@ -369,4 +477,14 @@ QString DownloadManager::chooseFinalPath(const QString &fileName,
             + QStringLiteral(")") + suffix);
     }
     return result;
+}
+
+bool DownloadManager::pathsAreSafe() const
+{
+    const QString root = QDir(m_library.directory()).absolutePath() + QLatin1Char('/');
+    const auto safe = [&root](const QString &path) {
+        const QFileInfo info(path);
+        return !path.isEmpty() && info.absoluteFilePath().startsWith(root) && !info.isSymLink();
+    };
+    return safe(m_transfer.partialPath) && safe(m_transfer.finalPath);
 }

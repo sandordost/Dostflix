@@ -16,6 +16,8 @@ class DownloadManager final : public QObject
     Q_OBJECT
     Q_PROPERTY(bool active READ active NOTIFY stateChanged)
     Q_PROPERTY(bool hasPending READ hasPending NOTIFY stateChanged)
+    Q_PROPERTY(bool hasTransfer READ hasTransfer NOTIFY stateChanged)
+    Q_PROPERTY(bool playable READ playable NOTIFY stateChanged)
     Q_PROPERTY(QString title READ title NOTIFY stateChanged)
     Q_PROPERTY(qint64 bytesWritten READ bytesWritten NOTIFY stateChanged)
     Q_PROPERTY(qint64 expectedSize READ expectedSize NOTIFY stateChanged)
@@ -30,6 +32,8 @@ public:
 
     bool active() const;
     bool hasPending() const;
+    bool hasTransfer() const;
+    bool playable() const;
     QString title() const;
     qint64 bytesWritten() const;
     qint64 expectedSize() const;
@@ -42,11 +46,19 @@ public:
                        const QString &fileName, qint64 expectedSize, const QUrl &sourceUrl);
     Q_INVOKABLE void pause();
     Q_INVOKABLE void resume();
+    Q_INVOKABLE void play();
+    Q_INVOKABLE void remove();
+    bool playMatchingRelease(const QString &title, const QString &magnetUrl);
 
 signals:
     void stateChanged();
     void resumeRequested(const QString &title, const QString &torrentHash, int fileIndex,
                          const QString &fileName, qint64 expectedSize);
+    void torrentPlaybackRequested(const QString &title, const QString &torrentHash,
+                                  int fileIndex, const QString &fileName,
+                                  qint64 expectedSize);
+    void localPlaybackRequested(const QUrl &fileUrl, const QString &title);
+    void torrentRemovalRequested(const QString &torrentHash);
 
 private:
     void loadPending();
@@ -58,6 +70,7 @@ private:
     bool persist(const QString &state);
     void fail(QString error);
     QString chooseFinalPath(const QString &fileName, const QString &torrentHash) const;
+    bool pathsAreSafe() const;
 
     LibraryDatabase &m_database;
     LibraryManager &m_library;

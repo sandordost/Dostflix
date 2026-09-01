@@ -44,8 +44,10 @@ ApplicationWindow {
         visible: true
         z: window.showingPlayer ? 10 : -1
         onActivePlaybackChanged: {
-            if (!hasActivePlayback)
+            if (!hasActivePlayback) {
                 window.showingPlayer = false
+                window.launchedStreamUrl = ""
+            }
         }
     }
 
@@ -61,6 +63,24 @@ ApplicationWindow {
             window.launchedStreamUrl = ""
             videoPlayer.play(fileUrl, title)
             window.showingPlayer = true
+        }
+    }
+
+    Connections {
+        target: window.downloadManager
+        function onLocalPlaybackRequested(fileUrl, title) {
+            window.launchedStreamUrl = ""
+            videoPlayer.play(fileUrl, title)
+            window.showingPlayer = true
+        }
+        function onTorrentPlaybackRequested() {
+            if (videoPlayer.hasActivePlayback
+                    && window.torrentEngine.streamUrl === window.launchedStreamUrl) {
+                window.showingPlayer = true
+                return
+            }
+            window.launchedStreamUrl = ""
+            window.openReadyStream()
         }
     }
 

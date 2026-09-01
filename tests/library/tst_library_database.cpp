@@ -58,6 +58,9 @@ private slots:
         QCOMPARE(stored->fileIndex, 3);
         QCOMPARE(database.transfer(QStringLiteral("abcdef"), 3)->state,
                  QStringLiteral("downloading"));
+        QVERIFY(database.latestTransfer().has_value());
+        QVERIFY(database.removeTransfer(QStringLiteral("abcdef"), 3));
+        QVERIFY(!database.transfer(QStringLiteral("abcdef"), 3).has_value());
     }
 };
 

@@ -198,6 +198,18 @@ std::optional<LibraryTransfer> LibraryDatabase::latestIncompleteTransfer() const
     return readTransfer(query);
 }
 
+std::optional<LibraryTransfer> LibraryDatabase::latestTransfer() const
+{
+    QSqlQuery query(m_database);
+    if (!query.exec(QStringLiteral(
+            "SELECT torrent_hash, file_index, title, file_name, expected_size, partial_path, "
+            "final_path, bytes_written, state FROM transfers "
+            "ORDER BY updated_at DESC LIMIT 1")) || !query.next()) {
+        return std::nullopt;
+    }
+    return readTransfer(query);
+}
+
 bool LibraryDatabase::saveTransfer(const LibraryTransfer &transfer)
 {
     QSqlQuery query(m_database);
@@ -234,6 +246,28 @@ bool LibraryDatabase::updateTransferProgress(const QString &torrentHash, int fil
     query.bindValue(QStringLiteral(":state"), state);
     query.bindValue(QStringLiteral(":hash"), torrentHash);
     query.bindValue(QStringLiteral(":fileIndex"), fileIndex);
+    if (query.exec()) return true;
+    m_lastError = query.lastError().text();
+    return false;
+}
+
+bool LibraryDatabase::removeTransfer(const QString &torrentHash, int fileIndex)
+{
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "DELETE FROM transfers WHERE torrent_hash=:hash AND file_index=:fileIndex"));
+    query.bindValue(QStringLiteral(":hash"), torrentHash);
+    query.bindValue(QStringLiteral(":fileIndex"), fileIndex);
+    if (query.exec()) return true;
+    m_lastError = query.lastError().text();
+    return false;
+}
+
+bool LibraryDatabase::removeMovieByPath(const QString &videoPath)
+{
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral("DELETE FROM movies WHERE video_path=:path"));
+    query.bindValue(QStringLiteral(":path"), videoPath);
     if (query.exec()) return true;
     m_lastError = query.lastError().text();
     return false;

@@ -44,9 +44,12 @@ public:
     [[nodiscard]] std::optional<LibraryTransfer> transfer(
         const QString &torrentHash, int fileIndex) const;
     [[nodiscard]] std::optional<LibraryTransfer> latestIncompleteTransfer() const;
+    [[nodiscard]] std::optional<LibraryTransfer> latestTransfer() const;
     bool saveTransfer(const LibraryTransfer &transfer);
     bool updateTransferProgress(const QString &torrentHash, int fileIndex,
                                 qint64 bytesWritten, const QString &state);
+    bool removeTransfer(const QString &torrentHash, int fileIndex);
+    bool removeMovieByPath(const QString &videoPath);
 
 private:
     bool migrateToVersionOne();

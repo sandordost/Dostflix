@@ -125,6 +125,25 @@ private slots:
         QCOMPARE(torrents.size(), 2);
         QCOMPARE(activeTorrentCount(torrents), 1);
     }
+
+    void cancelClearsUiStateWithoutDeletingCachedTorrent()
+    {
+        QTemporaryDir directory;
+        TorrServerManager manager(directory.filePath(QStringLiteral("data")));
+        manager.setNetworkReady(true);
+        QTRY_VERIFY_WITH_TIMEOUT(manager.backendReady(), 10'000);
+        manager.startTorrentData(QStringLiteral("Cancelable"), videoTorrentFixture());
+        QTRY_COMPARE_WITH_TIMEOUT(manager.selectedFileName(), QStringLiteral("sample.mp4"), 5'000);
+        const QUrl apiUrl(manager.streamUrl());
+
+        manager.cancel();
+        QTest::qWait(1'200);
+        QVERIFY(!manager.active());
+        QVERIFY(manager.title().isEmpty());
+        QVERIFY(manager.stateLabel().isEmpty());
+        QCOMPARE(manager.progress(), 0.0);
+        QVERIFY(!listTorrents(apiUrl).isEmpty());
+    }
 };
 
 QTEST_GUILESS_MAIN(TorrServerManagerTest)
