@@ -21,6 +21,10 @@ class DownloadManager final : public QObject
     Q_PROPERTY(QString title READ title NOTIFY stateChanged)
     Q_PROPERTY(qint64 bytesWritten READ bytesWritten NOTIFY stateChanged)
     Q_PROPERTY(qint64 expectedSize READ expectedSize NOTIFY stateChanged)
+    Q_PROPERTY(qint64 bytesRemaining READ bytesRemaining NOTIFY stateChanged)
+    Q_PROPERTY(qint64 availableBytes READ availableBytes NOTIFY stateChanged)
+    Q_PROPERTY(bool diskSpaceReady READ diskSpaceReady NOTIFY stateChanged)
+    Q_PROPERTY(QString partialFileName READ partialFileName NOTIFY stateChanged)
     Q_PROPERTY(double progress READ progress NOTIFY stateChanged)
     Q_PROPERTY(QString stateLabel READ stateLabel NOTIFY stateChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY stateChanged)
@@ -37,6 +41,10 @@ public:
     QString title() const;
     qint64 bytesWritten() const;
     qint64 expectedSize() const;
+    qint64 bytesRemaining() const;
+    qint64 availableBytes() const;
+    bool diskSpaceReady() const;
+    QString partialFileName() const;
     double progress() const;
     QString stateLabel() const;
     QString errorMessage() const;
@@ -67,6 +75,8 @@ private:
     void writeAvailable();
     void finishRequest();
     void completeTransfer();
+    void refreshDiskSpace();
+    bool ensureDiskSpace();
     bool persist(const QString &state);
     void fail(QString error);
     QString chooseFinalPath(const QString &fileName, const QString &torrentHash) const;
@@ -83,6 +93,9 @@ private:
     QString m_error;
     QElapsedTimer m_persistTimer;
     qint64 m_requestOffset = 0;
+    qint64 m_availableBytes = 0;
+    qint64 m_bytesRemaining = 0;
+    bool m_diskSpaceReady = true;
     bool m_networkReady = false;
     bool m_active = false;
     bool m_headersValidated = false;

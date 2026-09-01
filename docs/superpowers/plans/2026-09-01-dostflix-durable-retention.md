@@ -1,6 +1,7 @@
 # Durable torrent retention plan
 
-**Status:** Implemented; lifecycle controls completed on `feature/download-lifecycle`
+**Status:** Implemented; lifecycle and disk-safety controls completed through
+`feature/download-disk-safety`
 
 ## Scope
 
@@ -64,6 +65,10 @@ and advertises byte-range support for range requests.
 - Removing a download is an explicit confirmed action. It pauses the writer,
   validates both paths, removes partial/final data and SQLite history, refreshes
   the library, and asks a running TorrServer daemon to drop its cached torrent.
+- Starting or resuming requires enough filesystem-reported available space for
+  all remaining bytes plus a 512 MiB reserve. A failed preflight persists the
+  transfer as paused and sends no loopback request. Write-time resource errors
+  remain recoverable and explicitly identify a full library filesystem.
 
 ## Automated verification
 
@@ -84,6 +89,6 @@ No public torrent, provider, VPN, or metadata service is contacted by tests.
 
 - Present all paused/completed transfer records instead of only the most recent
   resumable transfer.
-- Add free-space forecasting and an explicit library-location recovery flow for
-  disk-full failures.
 - Persist and display transfer speed independently of TorrServer's peer rate.
+- Expand the current single-transfer page into a list of all transfer records;
+  each record must retain the same disk-space and path-safety behavior.

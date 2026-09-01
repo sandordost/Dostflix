@@ -113,6 +113,18 @@ Item {
                     elide: Text.ElideRight
                 }
                 Label {
+                    objectName: "incompleteFileLabel"
+                    Layout.fillWidth: true
+                    visible: root.downloadManager.hasPending
+                    text: qsTr("Incomplete file: %1 · %2 GiB remaining · %3 GiB free")
+                          .arg(root.downloadManager.partialFileName)
+                          .arg((root.downloadManager.bytesRemaining / 1073741824).toFixed(2))
+                          .arg((root.downloadManager.availableBytes / 1073741824).toFixed(2))
+                    color: root.downloadManager.diskSpaceReady
+                           ? Theme.textSecondary : "#ff9b9b"
+                    elide: Text.ElideMiddle
+                }
+                Label {
                     Layout.fillWidth: true
                     visible: root.downloadManager.errorMessage.length > 0
                     text: root.downloadManager.errorMessage

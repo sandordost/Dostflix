@@ -16,6 +16,10 @@ TestCase {
         property string title: "Saved movie"
         property double bytesWritten: 25
         property double expectedSize: 100
+        property double bytesRemaining: 75
+        property double availableBytes: 1000000
+        property bool diskSpaceReady: true
+        property string partialFileName: "movie.mkv.dostflix.part"
         property real progress: 0.25
         property string stateLabel: "Download paused"
         property string errorMessage: ""
@@ -43,6 +47,13 @@ TestCase {
         verify(button !== null)
         mouseClick(button)
         compare(fakeDownload.resumeCalls, 1)
+    }
+
+    function test_incompleteFileIsIdentified() {
+        const label = findChild(page, "incompleteFileLabel")
+        verify(label !== null)
+        verify(label.text.includes("movie.mkv.dostflix.part"))
+        verify(label.visible)
     }
 
     function test_savedDownloadCanPlay() {

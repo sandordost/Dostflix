@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QHash>
 #include <QSignalSpy>
+#include <QStorageInfo>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
@@ -158,6 +159,37 @@ private slots:
         QCOMPARE(library.count(), 1);
         QCOMPARE(database.transfer(QStringLiteral("hash-three"), 4)->state,
                  QStringLiteral("completed"));
+    }
+
+    void blocksTransferBeforeDiskCanFill()
+    {
+        QTemporaryDir root;
+        RangeServer server(QByteArray("unused"));
+        QVERIFY(server.listen());
+        AppSettings settings(root.filePath(QStringLiteral("settings.ini")));
+        LibraryDatabase database(root.filePath(QStringLiteral("library.sqlite")),
+                                 QStringLiteral("download-disk-space-test"));
+        QVERIFY(database.open());
+        const QString libraryPath = root.filePath(QStringLiteral("Movies"));
+        LibraryManager library(settings, database, libraryPath);
+        const qint64 available = QStorageInfo(libraryPath).bytesAvailable();
+        QVERIFY(available > 0);
+        DownloadManager download(database, library);
+        download.setNetworkReady(true);
+
+        download.beginTransfer(QStringLiteral("Too large"), QStringLiteral("hash-large"), 0,
+                               QStringLiteral("large.mkv"), available + 1, server.url());
+
+        QVERIFY(download.hasPending());
+        QVERIFY(!download.active());
+        QVERIFY(!download.diskSpaceReady());
+        QVERIFY(download.errorMessage().contains(QStringLiteral("Not enough free space")));
+        QCOMPARE(download.stateLabel(), QStringLiteral("Waiting for disk space"));
+        QCOMPARE(server.requests.size(), 0);
+        const auto stored = database.transfer(QStringLiteral("hash-large"), 0);
+        QVERIFY(stored.has_value());
+        QCOMPARE(stored->state, QStringLiteral("paused"));
+        QVERIFY(!QFileInfo::exists(stored->partialPath));
     }
 
     void playsCompletedDownloadLocally()
