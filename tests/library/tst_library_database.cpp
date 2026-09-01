@@ -9,19 +9,35 @@ class LibraryDatabaseTest final : public QObject
     Q_OBJECT
 
 private slots:
-    void createsVersionOneSchema()
+    void createsCurrentSchema()
     {
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         LibraryDatabase database(dir.filePath(QStringLiteral("library.sqlite")),
                                  QStringLiteral("test-library"));
         QVERIFY2(database.open(), qPrintable(database.lastError()));
-        QCOMPARE(database.schemaVersion(), 1);
+        QCOMPARE(database.schemaVersion(), 2);
 
         QSqlQuery query(database.connection());
         QVERIFY(query.exec(QStringLiteral(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='movies'")));
         QVERIFY(query.next());
+    }
+
+    void upsertsMoviesByVideoPath()
+    {
+        QTemporaryDir dir;
+        LibraryDatabase database(dir.filePath(QStringLiteral("library.sqlite")),
+                                 QStringLiteral("test-library-upsert"));
+        QVERIFY2(database.open(), qPrintable(database.lastError()));
+        QVERIFY(database.upsertMovie(QStringLiteral("First title"),
+                                     QStringLiteral("/movies/test.mkv")));
+        QVERIFY(database.upsertMovie(QStringLiteral("Updated title"),
+                                     QStringLiteral("/movies/test.mkv")));
+        const QList<LibraryMovie> movies = database.movies();
+        QCOMPARE(movies.size(), 1);
+        QCOMPARE(movies.first().title, QStringLiteral("Updated title"));
+        QCOMPARE(movies.first().videoPath, QStringLiteral("/movies/test.mkv"));
     }
 };
 

@@ -12,12 +12,20 @@ Item {
     required property var providerManager
     required property var prowlarrManager
     required property var subtitleManager
+    required property var libraryManager
 
     FileDialog {
         id: profileDialog
         title: qsTr("Choose an OpenVPN profile")
         nameFilters: [qsTr("OpenVPN profiles (*.ovpn)")]
         onAccepted: root.vpnManager.importProfile(selectedFile)
+    }
+
+    FolderDialog {
+        id: libraryDialog
+        title: qsTr("Choose the movie library folder")
+        currentFolder: "file://" + root.libraryManager.directory
+        onAccepted: root.libraryManager.setDirectory(selectedFolder)
     }
 
     ScrollView {
@@ -133,6 +141,50 @@ Item {
                 color: Theme.textSecondary
                 wrapMode: Text.WordWrap
             }
+        }
+
+        Label {
+            text: qsTr("Movie library")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.titleSize
+            font.weight: Font.DemiBold
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: qsTr("Dostflix scans this folder for existing local videos. Local playback does not require a VPN connection.")
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            TextField {
+                Layout.fillWidth: true
+                readOnly: true
+                text: root.libraryManager.directory
+                Accessible.name: qsTr("Movie library folder")
+            }
+            Button {
+                text: qsTr("Choose folder…")
+                icon.name: "folder-open-symbolic"
+                onClicked: libraryDialog.open()
+            }
+            ToolButton {
+                icon.name: "view-refresh-symbolic"
+                icon.width: Theme.iconSize
+                icon.height: Theme.iconSize
+                Accessible.name: qsTr("Rescan movie library")
+                onClicked: root.libraryManager.refresh()
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.libraryManager.errorMessage.length > 0
+            text: root.libraryManager.errorMessage
+            color: "#ff9b9b"
+            wrapMode: Text.WordWrap
         }
 
         Label {

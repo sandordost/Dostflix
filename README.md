@@ -30,6 +30,10 @@ The player lists embedded subtitle tracks, accepts local `.srt`, `.ass`, and
 search Dutch and English releases through a user-configured OpenSubtitles.com
 account, download the selected subtitle, and load it directly into mpv. These
 requests are disabled until VPN protection is verified.
+Users can choose a writable movie-library folder; Dostflix recursively discovers
+supported local videos, registers them in SQLite without duplicates, and plays
+them through embedded mpv even when the VPN is unavailable. Copying completed
+TorrServer data into that folder remains the next persistence increment.
 
 ## Arch installation and dependencies
 
@@ -101,6 +105,8 @@ changing cross-component behavior:
   and local subtitle implementation and its networked handoff boundary.
 - `docs/superpowers/plans/2026-09-01-dostflix-opensubtitles.md` — OpenSubtitles
   API, secret-storage, VPN gating, fake-server tests, and future enhancements.
+- `docs/superpowers/plans/2026-09-01-dostflix-local-library.md` — local folder,
+  SQLite registration, offline playback, tests, and torrent-retention handoff.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 
