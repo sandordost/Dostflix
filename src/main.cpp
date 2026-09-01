@@ -6,7 +6,7 @@
 #include "providers/ProviderManager.h"
 #include "providers/ProwlarrManager.h"
 #include "providers/SecretStore.h"
-#include "streaming/TorrentEngine.h"
+#include "streaming/QBitTorrentManager.h"
 #include "streaming/StreamServer.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
@@ -52,7 +52,8 @@ int main(int argc, char *argv[])
     });
     ProwlarrManager prowlarrManager(
         QDir(paths.dataDir()).filePath(QStringLiteral("prowlarr")), movies, providerManager);
-    TorrentEngine torrentEngine(
+    QBitTorrentManager torrentEngine(
+        QDir(paths.dataDir()).filePath(QStringLiteral("qbittorrent")),
         QDir(paths.dataDir()).filePath(QStringLiteral("downloads")));
     StreamServer streamServer;
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &prowlarrManager,
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
         if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
         else torrentEngine.startTorrentData(title, torrentData);
     });
-    QObject::connect(&torrentEngine, &TorrentEngine::stateChanged, &streamServer, [&] {
+    QObject::connect(&torrentEngine, &QBitTorrentManager::stateChanged, &streamServer, [&] {
         if (!torrentEngine.active()) {
             streamServer.stop();
         } else if (!torrentEngine.selectedFilePath().isEmpty() && !streamServer.running()) {

@@ -1,7 +1,4 @@
 cmake_minimum_required(VERSION 3.28)
-if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 NEW)
-endif()
 project(Dostflix VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -10,7 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 QuickTest Sql Test)
-find_package(LibtorrentRasterbar CONFIG REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/DostflixWarnings.cmake)
@@ -31,8 +27,8 @@ qt_add_executable(dostflix
     src/providers/ReleaseResolver.cpp
     src/providers/SecretStore.cpp
     src/streaming/BufferController.cpp
+    src/streaming/QBitTorrentManager.cpp
     src/streaming/StreamServer.cpp
-    src/streaming/TorrentEngine.cpp
     src/streaming/TorrentFileModel.cpp
     src/ui/AppController.cpp
     src/vpn/NetworkManagerBackend.cpp
@@ -67,7 +63,6 @@ qt_add_qml_module(dostflix_ui
 target_link_libraries(dostflix_ui PRIVATE Qt6::Quick Qt6::QuickControls2)
 target_link_libraries(dostflix PRIVATE
     Qt6::Core Qt6::DBus Qt6::Gui Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Sql dostflix_uiplugin
-    LibtorrentRasterbar::torrent-rasterbar
 )
 dostflix_enable_warnings(dostflix)
 
