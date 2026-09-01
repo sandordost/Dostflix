@@ -171,6 +171,7 @@ void TorrServerManager::stopDaemon(bool force)
         reply->deleteLater();
     }
     m_daemonReady = false;
+    m_dropInProgress = false;
     if (m_process.state() == QProcess::NotRunning) return;
     m_stopping = true;
     force ? m_process.kill() : m_process.terminate();
@@ -185,7 +186,7 @@ void TorrServerManager::poll()
 {
     if (!m_networkReady || m_reply) return;
     if (!m_daemonReady) probeApi();
-    else if (m_active && m_hash.isEmpty()) submitPendingRelease();
+    else if (m_active && m_hash.isEmpty()) retirePreviousOrSubmit();
     else if (m_active) requestStatus();
 }
 
@@ -196,7 +197,7 @@ void TorrServerManager::probeApi()
         m_startupTimer.stop();
         m_daemonReady = true;
         emit stateChanged();
-        submitPendingRelease();
+        retirePreviousOrSubmit();
     });
 }
 
@@ -206,28 +207,67 @@ void TorrServerManager::startMagnet(const QString &title, const QString &magnetU
     if (!magnetUrl.startsWith(QStringLiteral("magnet:?"), Qt::CaseInsensitive)) {
         fail(tr("This release does not contain a valid magnet link")); return;
     }
-    clearTransferState();
-    m_title = title;
-    m_pendingMagnet = magnetUrl;
-    m_active = true;
-    m_stateLabel = tr("Submitting stream to TorrServer…");
-    emit stateChanged();
-    startDaemon();
-    if (m_daemonReady) submitPendingRelease();
+    beginRelease(title, magnetUrl, {});
 }
 
 void TorrServerManager::startTorrentData(const QString &title, const QByteArray &torrentData)
 {
     if (!m_networkReady) { fail(tr("VPN protection must be ready before starting a torrent")); return; }
     if (torrentData.isEmpty()) { fail(tr("The torrent file is empty")); return; }
+    beginRelease(title, {}, torrentData);
+}
+
+void TorrServerManager::beginRelease(QString title, QString magnetUrl, QByteArray torrentData)
+{
+    if (m_active && m_hash.isEmpty() && m_retiringHash.isEmpty() && !m_dropInProgress) {
+        m_error = tr("Wait for the current torrent to finish starting before choosing another");
+        emit stateChanged();
+        return;
+    }
+
+    const QString previousHash = m_hash;
+    if (m_reply && !m_dropInProgress) {
+        QNetworkReply *reply = m_reply;
+        m_reply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     clearTransferState();
-    m_title = title;
-    m_pendingTorrent = torrentData;
+    m_title = std::move(title);
+    m_pendingMagnet = std::move(magnetUrl);
+    m_pendingTorrent = std::move(torrentData);
     m_active = true;
-    m_stateLabel = tr("Submitting stream to TorrServer…");
+    if (!previousHash.isEmpty()) m_retiringHash = previousHash;
+    m_stateLabel = m_retiringHash.isEmpty()
+        ? tr("Submitting stream to TorrServer…")
+        : tr("Stopping the previous torrent…");
     emit stateChanged();
     startDaemon();
-    if (m_daemonReady) submitPendingRelease();
+    retirePreviousOrSubmit();
+}
+
+void TorrServerManager::retirePreviousOrSubmit()
+{
+    if (!m_active || !m_daemonReady || m_reply || m_dropInProgress) return;
+    if (m_retiringHash.isEmpty()) {
+        submitPendingRelease();
+        return;
+    }
+
+    m_dropInProgress = true;
+    const QString hash = m_retiringHash;
+    postJson(QStringLiteral("torrents"),
+             QJsonObject{{QStringLiteral("action"), QStringLiteral("drop")},
+                         {QStringLiteral("hash"), hash}},
+             [this, hash](QNetworkReply *reply) {
+        m_dropInProgress = false;
+        if (!successful(reply)) {
+            fail(tr("Could not stop the previous torrent: %1").arg(replyError(reply)));
+            return;
+        }
+        if (m_retiringHash == hash) m_retiringHash.clear();
+        submitPendingRelease();
+    });
 }
 
 void TorrServerManager::submitPendingRelease()

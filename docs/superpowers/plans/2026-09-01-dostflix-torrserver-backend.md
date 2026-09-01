@@ -20,8 +20,12 @@ prioritizes the active playback range and readahead window.
    below `$XDG_DATA_HOME/dostflix/torrserver/`.
    Process diagnostics are persisted to `torrserver.log` in that directory.
 4. Magnets and torrent files are submitted only while VPN protection is ready.
-5. On VPN loss TorrServer is killed immediately while firewall protection remains.
-6. Normal shutdown stops TorrServer before the guard and Dostflix-owned VPN.
+5. Replacing a release first drops the current live torrent and waits for a
+   successful response before submitting the replacement. Rapid choices update
+   the pending replacement behind the same barrier; they never create parallel
+   swarms.
+6. On VPN loss TorrServer is killed immediately while firewall protection remains.
+7. Normal shutdown stops TorrServer before the guard and Dostflix-owned VPN.
 
 Startup fails visibly after 20 seconds if the local API does not become ready;
 process launch errors and exit codes include the diagnostic log path.
@@ -37,6 +41,9 @@ process launch errors and exit codes include the diagnostic log path.
   preloaded byte count.
 - Expose TorrServer's loopback HTTP stream URL directly to the future mpv player;
   seeking automatically moves TorrServer's reader priority and readahead window.
+- TorrServer may retain previously selected releases as status `5` (database-only)
+  entries. These have no live swarm or cache and must not be counted as active
+  torrents. Dostflix permits exactly one status other than database-only.
 
 ## Verification
 
@@ -45,3 +52,5 @@ process launch errors and exit codes include the diagnostic log path.
   its only interface.
 - A local torrent fixture is uploaded, its video is selected, preloading starts,
   and a loopback-only stream URL is produced without any external traffic.
+- A second local fixture replaces the first; the TorrServer list then contains
+  exactly one active torrent while the first remains database-only.

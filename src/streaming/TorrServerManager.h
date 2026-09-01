@@ -72,6 +72,8 @@ private:
     void stopDaemon(bool force);
     void poll();
     void probeApi();
+    void beginRelease(QString title, QString magnetUrl, QByteArray torrentData);
+    void retirePreviousOrSubmit();
     void submitPendingRelease();
     void requestStatus();
     void parseStatus(const QByteArray &body);
@@ -98,6 +100,7 @@ private:
     QString m_hash;
     QString m_pendingMagnet;
     QByteArray m_pendingTorrent;
+    QString m_retiringHash;
     QString m_selectedFileName;
     QString m_stateLabel;
     QString m_error;
@@ -108,6 +111,7 @@ private:
     bool m_needsFileSelection = false;
     bool m_preloadStarted = false;
     bool m_bufferReady = false;
+    bool m_dropInProgress = false;
     int m_selectedFileId = -1;
     qint64 m_selectedFileSize = 0;
     double m_progress = 0.0;
