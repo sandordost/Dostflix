@@ -2,6 +2,7 @@
 
 #include "movies/MovieListModel.h"
 #include "providers/ProviderManager.h"
+#include "providers/ReleaseResolver.h"
 
 #include <QDesktopServices>
 #include <QDir>
@@ -232,18 +233,18 @@ void ProwlarrManager::prepareRelease(const QString &title, const QString &magnet
 {
     if (!m_ready || releaseBusy()) return;
     m_releaseError.clear();
-    if (!magnetUrl.isEmpty()) {
-        emit releasePrepared(title, magnetUrl, {});
+    const ReleaseLocation location = resolveReleaseLocation(magnetUrl, downloadUrl);
+    if (!location.magnetUrl.isEmpty()) {
+        emit releasePrepared(title, location.magnetUrl, {});
         emit releaseStateChanged();
         return;
     }
-    const QUrl url(downloadUrl);
-    if (!url.isValid() || url.scheme().isEmpty()) {
+    if (location.torrentUrl.isEmpty()) {
         m_releaseError = tr("This release has no usable magnet or torrent link");
         emit releaseStateChanged();
         return;
     }
-    QNetworkRequest request(url);
+    QNetworkRequest request(location.torrentUrl);
     request.setRawHeader("X-Api-Key", m_apiKey.toUtf8());
     request.setTransferTimeout(30'000);
     m_releaseReply = m_network.get(request);
@@ -252,7 +253,15 @@ void ProwlarrManager::prepareRelease(const QString &title, const QString &magnet
     connect(releaseReply, &QNetworkReply::finished, this, [this, releaseReply, title] {
         if (m_releaseReply != releaseReply) return;
         const QByteArray torrentData = releaseReply->readAll();
-        if (releaseReply->error() != QNetworkReply::NoError || torrentData.isEmpty()) {
+        const QString returnedText = QString::fromUtf8(torrentData).trimmed();
+        QUrl redirect = releaseReply->attribute(
+            QNetworkRequest::RedirectionTargetAttribute).toUrl();
+        if (redirect.isRelative()) redirect = releaseReply->url().resolved(redirect);
+        if (isMagnetUrl(redirect.toString())) {
+            emit releasePrepared(title, redirect.toString(), {});
+        } else if (isMagnetUrl(returnedText)) {
+            emit releasePrepared(title, returnedText, {});
+        } else if (releaseReply->error() != QNetworkReply::NoError || torrentData.isEmpty()) {
             m_releaseError = releaseReply->error() == QNetworkReply::NoError
                 ? tr("Prowlarr returned an empty torrent file")
                 : releaseReply->errorString();
