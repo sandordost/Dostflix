@@ -16,6 +16,9 @@ the default route, and protected firewall state have all been verified.
 
 TorrServer is started only after `networkReady`, listens for control requests on
 loopback, inherits Dostflix's protected cgroup, and is stopped before the VPN.
+When another release is selected, Dostflix waits for TorrServer to drop the
+current live swarm before submitting its replacement, guaranteeing at most one
+active torrent while still allowing database-only history entries.
 If its local API does not become ready within 20 seconds, Dostflix reports a
 startup error instead of waiting indefinitely. Backend diagnostics are stored in
 `$XDG_DATA_HOME/dostflix/torrserver/torrserver.log` (normally
