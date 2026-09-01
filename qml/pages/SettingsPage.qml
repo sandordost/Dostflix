@@ -56,7 +56,7 @@ Item {
             Layout.fillWidth: true
             spacing: 10
 
-            ComboBox {
+            AppComboBox {
                 id: profileBox
                 Layout.fillWidth: true
                 model: root.vpnManager.profileModel
@@ -73,13 +73,13 @@ Item {
                 Accessible.name: qsTr("OpenVPN profile")
             }
 
-            Button {
+            AppButton {
                 text: qsTr("Import .ovpn…")
                 icon.name: "document-open-symbolic"
                 onClicked: profileDialog.open()
             }
 
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-refresh-symbolic"
                 icon.width: Theme.iconSize
                 icon.height: Theme.iconSize
@@ -104,7 +104,7 @@ Item {
                 font.pixelSize: Theme.bodySize
             }
 
-            Button {
+            AppButton {
                 text: root.vpnManager.connected
                       ? (root.vpnManager.ownsConnection ? qsTr("Disconnect") : qsTr("Connected externally"))
                       : qsTr("Connect")
@@ -159,18 +159,18 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 Layout.fillWidth: true
                 readOnly: true
                 text: root.libraryManager.directory
                 Accessible.name: qsTr("Movie library folder")
             }
-            Button {
+            AppButton {
                 text: qsTr("Choose folder…")
                 icon.name: "folder-open-symbolic"
                 onClicked: libraryDialog.open()
             }
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-refresh-symbolic"
                 icon.width: Theme.iconSize
                 icon.height: Theme.iconSize
@@ -225,7 +225,7 @@ Item {
                     Label { text: qsTr("Managed Prowlarr"); color: Theme.textPrimary; font.weight: Font.DemiBold }
                     Label { text: root.prowlarrManager.stateLabel; color: Theme.textSecondary }
                 }
-                Button {
+                AppButton {
                     text: qsTr("Configure indexers")
                     enabled: root.prowlarrManager.ready
                     onClicked: root.prowlarrManager.openWebInterface()
@@ -257,7 +257,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: tmdbToken
                 Layout.fillWidth: true
                 placeholderText: root.providerManager.hasTmdbToken
@@ -265,14 +265,14 @@ Item {
                                  : qsTr("TMDB API Read Access Token")
                 echoMode: TextInput.Password
             }
-            Button {
+            AppButton {
                 text: qsTr("Save token")
                 onClicked: {
                     if (root.providerManager.saveTmdbToken(tmdbToken.text))
                         tmdbToken.clear()
                 }
             }
-            Button {
+            AppButton {
                 text: qsTr("Remove")
                 visible: root.providerManager.hasTmdbToken
                 onClicked: root.providerManager.clearTmdbToken()
@@ -288,27 +288,27 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: providerName
                 Layout.preferredWidth: 190
                 placeholderText: qsTr("Provider name")
             }
-            ComboBox {
+            AppComboBox {
                 id: providerKind
                 model: ["Torznab", "Prowlarr"]
             }
-            TextField {
+            AppTextField {
                 id: providerEndpoint
                 Layout.fillWidth: true
                 placeholderText: qsTr("https://example.test/api")
             }
-            TextField {
+            AppTextField {
                 id: providerApiKey
                 Layout.preferredWidth: 190
                 placeholderText: qsTr("API key (optional)")
                 echoMode: TextInput.Password
             }
-            Button {
+            AppButton {
                 text: qsTr("Add provider")
                 onClicked: {
                     if (root.providerManager.addProvider(providerName.text,
@@ -353,7 +353,7 @@ Item {
                     Label { text: providerDelegate.name; color: Theme.textPrimary; font.weight: Font.DemiBold }
                     Label { text: providerDelegate.kind; color: Theme.textSecondary }
                     Label { Layout.fillWidth: true; text: providerDelegate.endpoint; color: Theme.textSecondary; elide: Text.ElideMiddle }
-                    ToolButton {
+                    AppToolButton {
                         icon.name: "edit-delete-symbolic"
                         Accessible.name: qsTr("Remove provider")
                         onClicked: root.providerManager.removeProvider(providerDelegate.index)
@@ -382,7 +382,7 @@ Item {
                 text: qsTr("Preferred languages")
                 color: Theme.textPrimary
             }
-            TextField {
+            AppTextField {
                 id: subtitleLanguages
                 Layout.preferredWidth: 220
                 text: root.subtitleManager.preferredLanguages
@@ -390,7 +390,7 @@ Item {
                 Accessible.name: qsTr("Preferred subtitle language codes")
                 onAccepted: root.subtitleManager.setPreferredLanguages(text)
             }
-            Button {
+            AppButton {
                 text: qsTr("Save languages")
                 onClicked: root.subtitleManager.setPreferredLanguages(subtitleLanguages.text)
             }
@@ -404,7 +404,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: openSubtitlesApiKey
                 Layout.fillWidth: true
                 placeholderText: root.subtitleManager.configured
@@ -412,19 +412,19 @@ Item {
                                  : qsTr("API key")
                 echoMode: TextInput.Password
             }
-            TextField {
+            AppTextField {
                 id: openSubtitlesUsername
                 Layout.preferredWidth: 210
                 placeholderText: root.subtitleManager.username.length > 0
                                  ? root.subtitleManager.username : qsTr("Username")
             }
-            TextField {
+            AppTextField {
                 id: openSubtitlesPassword
                 Layout.preferredWidth: 210
                 placeholderText: qsTr("Password")
                 echoMode: TextInput.Password
             }
-            Button {
+            AppButton {
                 text: qsTr("Save")
                 onClicked: {
                     if (root.subtitleManager.saveCredentials(openSubtitlesApiKey.text,
@@ -436,7 +436,7 @@ Item {
                     }
                 }
             }
-            Button {
+            AppButton {
                 text: qsTr("Remove")
                 visible: root.subtitleManager.configured
                 onClicked: root.subtitleManager.clearCredentials()

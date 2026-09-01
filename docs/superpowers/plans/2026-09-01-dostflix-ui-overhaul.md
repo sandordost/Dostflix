@@ -16,9 +16,15 @@ Dostflix does not depend on or package that project.
 ## Visual system
 
 `qml/theme/Theme.qml` is the single source for colors, spacing, radii, typography,
-poster geometry, and motion durations. The application font is Noto Sans with a
-system fallback. Headings use a small 12/14/22/28 pixel scale; icons use 20 or 28
-pixels. Movie posters remain exactly 170 pixels wide with a 2:3 aspect ratio.
+poster geometry, and motion durations. The application uses packaged Montserrat
+and Font Awesome rather than compositor-dependent control fonts and theme icons.
+Headings use a small 12/14/22/28 pixel scale; icons use 20 or 28 pixels. Movie
+posters remain exactly 170 pixels wide with a 2:3 aspect ratio.
+
+Reusable `AppTextField`, `AppComboBox`, `AppButton`, `AppToolButton`, and
+`AppSpinBox` controls own their rendering. Inputs are borderless and rounded;
+hover, pressed, focus, popup, and disabled states stay within the dark palette so
+foreground text cannot become unreadable under a desktop theme.
 
 Navigation collapses from a 252-pixel text sidebar to a 76-pixel icon rail below
 980 pixels. The content inset also becomes smaller below 900 pixels. Search stays

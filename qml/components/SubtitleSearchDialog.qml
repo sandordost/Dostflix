@@ -15,7 +15,15 @@ Dialog {
     height: Math.min(580, parent ? parent.height - 80 : 580)
     modal: true
     title: qsTr("Find subtitles")
-    standardButtons: Dialog.Close
+    background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
+    footer: DialogButtonBox {
+        background: Item {}
+        AppButton {
+            text: qsTr("Close")
+            DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+            onClicked: root.reject()
+        }
+    }
 
     onOpened: {
         if (manager.configured && manager.networkReady)
@@ -28,15 +36,16 @@ Dialog {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: searchField
                 Layout.fillWidth: true
                 text: root.query
                 placeholderText: qsTr("Movie or release title")
                 onAccepted: root.manager.search(text)
             }
-            Button {
+            AppButton {
                 text: qsTr("Search")
+                primary: true
                 enabled: !root.manager.busy && root.manager.configured && root.manager.networkReady
                 onClicked: root.manager.search(searchField.text)
             }
@@ -49,7 +58,7 @@ Dialog {
             color: Theme.textSecondary
             wrapMode: Text.WordWrap
         }
-        Button {
+        AppButton {
             visible: !root.manager.configured
             text: qsTr("Open Settings")
             onClicked: root.settingsRequested()
@@ -121,8 +130,9 @@ Dialog {
                             color: Theme.textSecondary
                         }
                     }
-                    Button {
+                    AppButton {
                         text: qsTr("Download")
+                        primary: true
                         enabled: !root.manager.busy
                         onClicked: root.manager.download(resultDelegate.index)
                     }

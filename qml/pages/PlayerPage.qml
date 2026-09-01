@@ -74,8 +74,9 @@ Item {
     Menu {
         id: subtitleMenu
         onAboutToShow: root.revealControls()
+        background: Rectangle { radius: Theme.radius; color: Theme.surface }
 
-        MenuItem {
+        AppMenuItem {
             text: qsTr("No subtitles")
             checkable: true
             checked: root.player.selectedSubtitleId === "no"
@@ -84,7 +85,7 @@ Item {
 
         Repeater {
             model: root.player.subtitleTracks
-            delegate: MenuItem {
+            delegate: AppMenuItem {
                 required property var modelData
                 text: modelData.label
                 checkable: true
@@ -94,12 +95,12 @@ Item {
         }
 
         MenuSeparator {}
-        MenuItem {
+        AppMenuItem {
             objectName: "localSubtitleButton"
             text: qsTr("Open local subtitle…")
             onTriggered: subtitleFileDialog.open()
         }
-        MenuItem {
+        AppMenuItem {
             objectName: "findSubtitlesButton"
             text: qsTr("Find subtitles…")
             onTriggered: root.findSubtitlesRequested()
@@ -128,7 +129,7 @@ Item {
             anchors.rightMargin: 18
             spacing: 12
 
-            ToolButton {
+            AppToolButton {
                 objectName: "browseButton"
                 icon.name: "go-previous-symbolic"
                 icon.width: Theme.iconSizeLarge
@@ -146,7 +147,7 @@ Item {
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-fullscreen-symbolic"
                 icon.width: Theme.iconSizeLarge
                 icon.height: Theme.iconSizeLarge
@@ -155,7 +156,7 @@ Item {
                 ToolTip.text: Accessible.name
                 onClicked: root.fullscreenRequested()
             }
-            ToolButton {
+            AppToolButton {
                 objectName: "stopButton"
                 icon.name: "media-playback-stop-symbolic"
                 icon.width: Theme.iconSize
@@ -179,15 +180,17 @@ Item {
         visible: running
     }
 
-    RoundButton {
+    AppToolButton {
         anchors.centerIn: parent
         width: 74
         height: 74
-        radius: 37
+        round: true
+        primary: true
         visible: root.controlsVisible && !root.player.buffering
         opacity: visible ? 0.96 : 0
-        text: root.player.paused ? "▶" : "Ⅱ"
-        font.pixelSize: 26
+        symbol: root.player.paused ? "\uf04b" : "\uf04c"
+        icon.width: 26
+        icon.height: 26
         Accessible.name: root.player.paused ? qsTr("Play") : qsTr("Pause")
         onClicked: root.togglePlayback()
 
@@ -232,7 +235,7 @@ Item {
                 Layout.fillWidth: true
                 spacing: 10
 
-                ToolButton {
+                AppToolButton {
                     icon.name: "media-seek-backward-symbolic"
                     icon.width: Theme.iconSizeLarge
                     icon.height: Theme.iconSizeLarge
@@ -241,7 +244,7 @@ Item {
                     ToolTip.text: Accessible.name
                     onClicked: { root.player.seek(-10); root.revealControls() }
                 }
-                ToolButton {
+                AppToolButton {
                     objectName: "pauseButton"
                     icon.name: root.player.paused ? "media-playback-start-symbolic" : "media-playback-pause-symbolic"
                     icon.width: Theme.iconSizeLarge
@@ -251,7 +254,7 @@ Item {
                     ToolTip.text: Accessible.name
                     onClicked: root.togglePlayback()
                 }
-                ToolButton {
+                AppToolButton {
                     icon.name: "media-seek-forward-symbolic"
                     icon.width: Theme.iconSizeLarge
                     icon.height: Theme.iconSizeLarge
@@ -268,7 +271,7 @@ Item {
 
                 Item { Layout.fillWidth: true }
 
-                ToolButton {
+                AppToolButton {
                     objectName: "subtitleButton"
                     text: "CC"
                     font.weight: Font.DemiBold
@@ -282,7 +285,7 @@ Item {
                     color: Theme.textSecondary
                     visible: root.width >= 760
                 }
-                SpinBox {
+                AppSpinBox {
                     objectName: "subtitleDelayControl"
                     visible: root.width >= 760
                     from: -600
@@ -297,7 +300,7 @@ Item {
                     }
                     onValueModified: root.player.setSubtitleDelay(value / 10)
                 }
-                ToolButton {
+                AppToolButton {
                     icon.name: "audio-volume-high-symbolic"
                     icon.width: Theme.iconSize
                     icon.height: Theme.iconSize

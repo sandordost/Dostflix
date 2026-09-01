@@ -18,16 +18,33 @@ Item {
     Dialog {
         id: releaseDialog
         anchors.centerIn: parent
+        width: Math.min(540, root.width - 48)
+        height: 220
         modal: true
         title: qsTr("Start this release?")
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        onOpened: standardButton(Dialog.Ok).enabled =
-                      root.pendingMagnet.length > 0 || root.pendingDownload.length > 0
-        onAccepted: root.prowlarrManager.prepareRelease(
-                        root.pendingTitle, root.pendingMagnet, root.pendingDownload)
+        background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
+
+        footer: DialogButtonBox {
+            background: Item {}
+            AppButton {
+                text: qsTr("Cancel")
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                onClicked: releaseDialog.reject()
+            }
+            AppButton {
+                text: qsTr("Start release")
+                primary: true
+                enabled: root.pendingMagnet.length > 0 || root.pendingDownload.length > 0
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                onClicked: {
+                    releaseDialog.accept()
+                    root.prowlarrManager.prepareRelease(
+                                root.pendingTitle, root.pendingMagnet, root.pendingDownload)
+                }
+            }
+        }
 
         contentItem: Label {
-            width: 440
             text: root.pendingMagnet.length > 0 || root.pendingDownload.length > 0
                   ? qsTr("Dostflix will download and retain “%1”. Torrent traffic remains blocked whenever VPN protection is unavailable.").arg(root.pendingTitle)
                   : qsTr("This release has no usable download link.")
@@ -98,7 +115,7 @@ Item {
                         color: Theme.textPrimary
                         elide: Text.ElideRight
                     }
-                    Button {
+                    AppButton {
                         text: qsTr("Cancel")
                         visible: root.torrentEngine.active
                         onClicked: root.torrentEngine.cancel()

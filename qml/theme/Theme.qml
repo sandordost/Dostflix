@@ -19,10 +19,13 @@ QtObject {
     readonly property color safe: "#70e6aa"
     readonly property color warning: "#f4c76b"
     readonly property color danger: "#ff9299"
-    readonly property color button: "#e8e6eb"
-    readonly property color buttonText: "#202124"
+    readonly property color button: "#2a2a2e"
+    readonly property color buttonHover: "#38383e"
+    readonly property color buttonPressed: "#45414f"
+    readonly property color buttonText: "#f7f7fa"
     readonly property color separator: "#343438"
-    readonly property string fontFamily: "Noto Sans"
+    readonly property string fontFamily: "Montserrat"
+    readonly property string iconFontFamily: "Font Awesome 7 Free"
     readonly property int radiusSmall: 6
     readonly property int radius: 10
     readonly property int radiusLarge: 14
@@ -42,4 +45,26 @@ QtObject {
     readonly property int controlsTimeout: 2800
     readonly property int posterWidth: 170
     readonly property real posterAspectRatio: 2 / 3
+
+    function iconGlyph(name) {
+        const icons = {
+            "system-search-symbolic": "\uf002",
+            "folder-videos-symbolic": "\uf008",
+            "folder-download-symbolic": "\uf019",
+            "preferences-system-symbolic": "\uf013",
+            "go-previous-symbolic": "\uf060",
+            "view-fullscreen-symbolic": "\uf065",
+            "media-playback-stop-symbolic": "\uf04d",
+            "media-seek-backward-symbolic": "\uf048",
+            "media-playback-start-symbolic": "\uf04b",
+            "media-playback-pause-symbolic": "\uf04c",
+            "media-seek-forward-symbolic": "\uf051",
+            "audio-volume-high-symbolic": "\uf028",
+            "view-refresh-symbolic": "\uf2f1",
+            "document-open-symbolic": "\uf56f",
+            "folder-open-symbolic": "\uf07c",
+            "edit-delete-symbolic": "\uf1f8"
+        }
+        return icons[name] || ""
+    }
 }

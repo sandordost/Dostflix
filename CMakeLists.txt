@@ -57,6 +57,13 @@ qt_add_qml_module(dostflix_ui
     QML_FILES
         qml/Main.qml
         qml/components/AppHeader.qml
+        qml/components/AppButton.qml
+        qml/components/AppComboBox.qml
+        qml/components/AppIcon.qml
+        qml/components/AppMenuItem.qml
+        qml/components/AppSpinBox.qml
+        qml/components/AppTextField.qml
+        qml/components/AppToolButton.qml
         qml/components/MovieCard.qml
         qml/components/MovieGrid.qml
         qml/components/NowWatchingCard.qml

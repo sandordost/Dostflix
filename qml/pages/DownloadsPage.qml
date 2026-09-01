@@ -13,12 +13,29 @@ Item {
         id: removeDialog
         objectName: "removeDownloadDialog"
         anchors.centerIn: parent
+        width: Math.min(500, root.width - 48)
+        height: 210
         modal: true
         title: qsTr("Remove download?")
-        standardButtons: Dialog.Yes | Dialog.No
-        onAccepted: root.downloadManager.remove()
+        background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
+        footer: RowLayout {
+            spacing: 8
+            Item { Layout.fillWidth: true }
+            AppButton {
+                text: qsTr("Cancel")
+                onClicked: removeDialog.reject()
+            }
+            AppButton {
+                objectName: "confirmRemoveDownloadButton"
+                text: qsTr("Remove")
+                destructive: true
+                onClicked: {
+                    removeDialog.accept()
+                    root.downloadManager.remove()
+                }
+            }
+        }
         contentItem: Label {
-            width: 420
             text: qsTr("This removes the partial or completed movie file and its download history. This cannot be undone.")
             color: Theme.textPrimary
             wrapMode: Text.WordWrap
@@ -71,26 +88,26 @@ Item {
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
-                    Button {
+                    AppButton {
                         text: qsTr("Pause")
                         visible: root.downloadManager.active
                         onClicked: root.downloadManager.pause()
                     }
-                    Button {
+                    AppButton {
                         objectName: "resumeDownloadButton"
                         text: qsTr("Resume")
                         visible: root.downloadManager.hasPending
                                  && !root.downloadManager.active
                         onClicked: root.downloadManager.resume()
                     }
-                    Button {
+                    AppButton {
                         objectName: "playDownloadButton"
                         text: qsTr("Play")
                         icon.name: "media-playback-start-symbolic"
                         enabled: root.downloadManager.playable
                         onClicked: root.downloadManager.play()
                     }
-                    Button {
+                    AppButton {
                         objectName: "removeDownloadButton"
                         text: qsTr("Remove")
                         icon.name: "edit-delete-symbolic"

@@ -52,7 +52,7 @@ Item {
             radius: Theme.radius
             color: Theme.surface
         }
-        contentItem: TextField {
+        contentItem: AppTextField {
             id: compactSearchField
             placeholderText: qsTr("Search movies…")
             enabled: root.searchEnabled
@@ -66,10 +66,8 @@ Item {
                 compactSearch.close()
             }
             background: Rectangle {
-                radius: Theme.radiusSmall
-                color: Theme.input
-                border.width: compactSearchField.activeFocus ? 2 : 0
-                border.color: Theme.accent
+                radius: Theme.radius
+                color: compactSearchField.activeFocus ? Theme.raisedHover : Theme.input
             }
             Accessible.name: qsTr("Search movies")
         }
@@ -80,7 +78,7 @@ Item {
         anchors.margins: root.compact ? 10 : 14
         spacing: 8
 
-        TextField {
+        AppTextField {
             id: searchField
             Layout.fillWidth: true
             Layout.preferredHeight: 46
@@ -93,15 +91,13 @@ Item {
             font.pixelSize: Theme.bodySize
             onTextChanged: root.queueSearch(text)
             background: Rectangle {
-                radius: Theme.radiusSmall
-                color: Theme.input
-                border.width: searchField.activeFocus ? 2 : 0
-                border.color: Theme.accent
+                radius: Theme.radius
+                color: searchField.activeFocus ? Theme.raisedHover : Theme.input
             }
             Accessible.name: qsTr("Search movies")
         }
 
-        ToolButton {
+        AppToolButton {
             Layout.fillWidth: true
             Layout.preferredHeight: 46
             id: compactSearchButton

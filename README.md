@@ -57,8 +57,10 @@ before stopping. Returning to a partially watched movie offers Resume or Start
 over; completed movies automatically lose their resume marker.
 
 The UI follows the Dostify reference with matte translucent panels, fixed 2:3
-poster cards, responsive icon-only navigation on small windows, and consistent
-Noto Sans typography. Player controls fade after 2.8 seconds and return on pointer
+poster cards, responsive icon-only navigation on small windows, consistent
+Montserrat typography, and Font Awesome icons. Borderless rounded inputs and
+dark popup/hover states avoid the platform-dependent Qt Basic styling. Player
+controls fade after 2.8 seconds and return on pointer
 movement, pause, buffering, or keyboard input; only opacity, color, and scale are
 animated to keep frame pacing smooth.
 
@@ -79,8 +81,9 @@ dependencies with:
 
 ```bash
 sudo pacman -S --needed base-devel cmake hicolor-icon-theme libsecret \
-  mpv networkmanager networkmanager-openvpn nftables ninja \
-  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite
+  mpv networkmanager networkmanager-openvpn nftables ninja otf-font-awesome \
+  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite \
+  ttf-montserrat
 yay -S --needed prowlarr-bin torrserver-bin
 ```
 

@@ -24,8 +24,11 @@ Item {
         id: resumeDialog
         objectName: "resumePlaybackDialog"
         anchors.centerIn: parent
+        width: Math.min(540, root.width - 48)
+        height: 220
         modal: true
         title: qsTr("Continue watching?")
+        background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
         property int movieIndex: -1
         property string movieTitle: ""
         property int watchedSeconds: 0
@@ -38,7 +41,8 @@ Item {
             wrapMode: Text.WordWrap
         }
         footer: DialogButtonBox {
-            Button {
+            background: Item {}
+            AppButton {
                 objectName: "restartMovieButton"
                 text: qsTr("Start over")
                 DialogButtonBox.buttonRole: DialogButtonBox.ResetRole
@@ -47,9 +51,10 @@ Item {
                     root.libraryManager.play(resumeDialog.movieIndex, true)
                 }
             }
-            Button {
+            AppButton {
                 objectName: "resumeMovieButton"
                 text: qsTr("Resume")
+                primary: true
                 DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
                 onClicked: {
                     resumeDialog.close()
@@ -76,7 +81,7 @@ Item {
                 text: qsTr("%1 movies").arg(root.libraryManager.count)
                 color: Theme.textSecondary
             }
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-refresh-symbolic"
                 Accessible.name: qsTr("Rescan movie library")
                 onClicked: root.libraryManager.refresh()
@@ -188,7 +193,7 @@ Item {
                     hoverEnabled: true
                     acceptedButtons: Qt.NoButton
                 }
-                Button {
+                AppButton {
                     objectName: "libraryPlayButton"
                     anchors.left: parent.left
                     anchors.right: parent.right

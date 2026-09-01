@@ -10,6 +10,8 @@ TestCase {
         compare(Theme.posterWidth, 170)
         compare(Theme.iconSize, 20)
         compare(Theme.panelOpacity, 0.91)
+        compare(Theme.fontFamily, "Montserrat")
+        compare(Theme.iconFontFamily, "Font Awesome 7 Free")
         verify(Theme.motionFast <= 150)
         verify(Theme.motionNormal <= 200)
         verify(Theme.controlsTimeout >= 2500)
