@@ -7,6 +7,7 @@ ApplicationWindow {
     id: window
     required property var appController
     required property var movieModel
+    required property var libraryManager
     required property var vpnManager
     required property var providerManager
     required property var prowlarrManager
@@ -51,6 +52,15 @@ ApplicationWindow {
         target: window.torrentEngine
         function onStatisticsChanged() { window.openReadyStream() }
         function onStateChanged() { window.openReadyStream() }
+    }
+
+    Connections {
+        target: window.libraryManager
+        function onPlaybackRequested(fileUrl, title) {
+            window.launchedStreamUrl = ""
+            videoPlayer.play(fileUrl, title)
+            window.showingPlayer = true
+        }
     }
 
     Image {
@@ -100,13 +110,16 @@ ApplicationWindow {
                         prowlarrManager: window.prowlarrManager
                         torrentEngine: window.torrentEngine
                     }
-                    LibraryPage {}
+                    LibraryPage {
+                        libraryManager: window.libraryManager
+                    }
                     DownloadsPage {}
                     SettingsPage {
                         vpnManager: window.vpnManager
                         providerManager: window.providerManager
                         prowlarrManager: window.prowlarrManager
                         subtitleManager: window.subtitleManager
+                        libraryManager: window.libraryManager
                     }
                 }
             }

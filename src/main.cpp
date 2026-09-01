@@ -1,5 +1,7 @@
 #include "app/AppPaths.h"
 #include "app/AppSettings.h"
+#include "library/LibraryDatabase.h"
+#include "library/LibraryManager.h"
 #include "movies/MovieListModel.h"
 #include "network/NetworkGuardClient.h"
 #include "network/SystemdScope.h"
@@ -41,6 +43,17 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     AppSettings settings(QDir(paths.configDir()).filePath(QStringLiteral("settings.ini")));
+    LibraryDatabase libraryDatabase(
+        QDir(paths.dataDir()).filePath(QStringLiteral("library.sqlite")),
+        QStringLiteral("dostflix-library"));
+    if (!libraryDatabase.open()) {
+        qCritical().noquote() << "Could not open the library database:"
+                              << libraryDatabase.lastError();
+        return EXIT_FAILURE;
+    }
+    LibraryManager libraryManager(
+        settings, libraryDatabase,
+        QDir(paths.dataDir()).filePath(QStringLiteral("library")));
     NetworkManagerBackend vpnBackend;
     NetworkGuardClient networkGuard;
     VpnManager vpnManager(settings, vpnBackend, &networkGuard);
@@ -78,6 +91,7 @@ int main(int argc, char *argv[])
     engine.setInitialProperties({
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
+        {QStringLiteral("libraryManager"), QVariant::fromValue(&libraryManager)},
         {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
         {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
         {QStringLiteral("prowlarrManager"), QVariant::fromValue(&prowlarrManager)},
