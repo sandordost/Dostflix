@@ -42,6 +42,22 @@ target_link_libraries(tst_library_manager PRIVATE Qt6::Core Qt6::Sql Qt6::Test)
 dostflix_enable_warnings(tst_library_manager)
 add_test(NAME library_manager COMMAND tst_library_manager)
 
+qt_add_executable(tst_download_manager
+    library/tst_download_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/DownloadManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LibraryDatabase.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LibraryManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/library/LocalLibraryModel.cpp
+)
+target_include_directories(tst_download_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_download_manager PRIVATE Qt6::Core Qt6::Network Qt6::Sql Qt6::Test)
+dostflix_enable_warnings(tst_download_manager)
+add_test(NAME download_manager
+    COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_download_manager>'"
+)
+
 qt_add_executable(tst_movie_list_model
     movies/tst_movie_list_model.cpp
     ${PROJECT_SOURCE_DIR}/src/movies/Movie.cpp

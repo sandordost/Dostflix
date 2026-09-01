@@ -11,8 +11,8 @@
 - Play a selected local file through the embedded mpv player without requiring
   VPN, provider, metadata, or torrent networking.
 
-This increment deliberately does not copy TorrServer content into the library.
-Durable transfer completion and resume are the next streaming-to-library step.
+Durable transfer completion and resume are implemented by the follow-up in
+`2026-09-01-dostflix-durable-retention.md`.
 
 ## Implementation map
 
@@ -42,16 +42,18 @@ Durable transfer completion and resume are the next streaming-to-library step.
 - A folder must be local, creatable, and writable before it replaces the saved
   setting.
 
-## Next increment: durable torrent retention
+## Durable torrent retention follow-up
 
-1. Stream the selected TorrServer file into a resumable partial file below the
+The follow-up now:
+
+1. Streams the selected TorrServer file into a resumable partial file below the
    selected library directory while playback continues over loopback.
-2. Persist torrent hash, selected file index, partial path, expected size, and
+2. Persists torrent hash, selected file index, partial path, expected size, and
    transfer state transactionally.
-3. Verify the completed byte count, atomically rename the partial file, and ask
+3. Verifies the completed byte count, atomically renames the partial file, and asks
    `LibraryManager` to register/refresh it.
-4. Expose active and resumable work on the Downloads page.
-5. Preserve one-active-torrent and VPN-loss guarantees; never continue remote
+4. Exposes active and resumable work on the Downloads page.
+5. Preserves one-active-torrent and VPN-loss guarantees; it never continues remote
    transfer work outside verified protection.
 
 ## Verification

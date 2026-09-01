@@ -1,6 +1,7 @@
 #include "app/AppPaths.h"
 #include "app/AppSettings.h"
 #include "library/LibraryDatabase.h"
+#include "library/DownloadManager.h"
 #include "library/LibraryManager.h"
 #include "movies/MovieListModel.h"
 #include "network/NetworkGuardClient.h"
@@ -54,6 +55,7 @@ int main(int argc, char *argv[])
     LibraryManager libraryManager(
         settings, libraryDatabase,
         QDir(paths.dataDir()).filePath(QStringLiteral("library")));
+    DownloadManager downloadManager(libraryDatabase, libraryManager);
     NetworkManagerBackend vpnBackend;
     NetworkGuardClient networkGuard;
     VpnManager vpnManager(settings, vpnBackend, &networkGuard);
@@ -78,6 +80,8 @@ int main(int argc, char *argv[])
                      [&] { prowlarrManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &torrentEngine,
                      [&] { torrentEngine.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&vpnManager, &VpnManager::stateChanged, &downloadManager,
+                     [&] { downloadManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &subtitleManager,
                      [&] { subtitleManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&prowlarrManager, &ProwlarrManager::releasePrepared,
@@ -87,11 +91,20 @@ int main(int argc, char *argv[])
         if (!magnetUrl.isEmpty()) torrentEngine.startMagnet(title, magnetUrl);
         else torrentEngine.startTorrentData(title, torrentData);
     });
+    QObject::connect(&torrentEngine, &TorrServerManager::retentionSourceReady,
+                     &downloadManager, &DownloadManager::beginTransfer);
+    QObject::connect(&downloadManager, &DownloadManager::resumeRequested,
+                     &torrentEngine, &TorrServerManager::resumeStoredTorrent);
+    QObject::connect(&torrentEngine, &TorrServerManager::stateChanged,
+                     &downloadManager, [&] {
+        if (!torrentEngine.active() && downloadManager.active()) downloadManager.pause();
+    });
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
         {QStringLiteral("libraryManager"), QVariant::fromValue(&libraryManager)},
+        {QStringLiteral("downloadManager"), QVariant::fromValue(&downloadManager)},
         {QStringLiteral("vpnManager"), QVariant::fromValue(&vpnManager)},
         {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
         {QStringLiteral("prowlarrManager"), QVariant::fromValue(&prowlarrManager)},
@@ -110,6 +123,7 @@ int main(int argc, char *argv[])
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&, player] {
         if (player) player->stop();
         subtitleManager.cancel();
+        downloadManager.pause();
         torrentEngine.shutdown();
         prowlarrManager.shutdown();
         vpnManager.shutdown();
