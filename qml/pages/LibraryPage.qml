@@ -20,12 +20,28 @@ Item {
                 : minutes + ":" + String(remainder).padStart(2, "0")
     }
 
+    function requestPlayback(index, title, durationSeconds, watchedSeconds) {
+        const canResume = watchedSeconds >= 30
+                && (durationSeconds <= 0 || durationSeconds - watchedSeconds > 60)
+        if (!canResume) {
+            libraryManager.play(index, true)
+            return
+        }
+        resumeDialog.movieIndex = index
+        resumeDialog.movieTitle = title
+        resumeDialog.watchedSeconds = watchedSeconds
+        resumeDialog.open()
+    }
+
     Dialog {
         id: resumeDialog
         objectName: "resumePlaybackDialog"
         anchors.centerIn: parent
+        width: Math.min(540, root.width - 48)
+        height: 220
         modal: true
         title: qsTr("Continue watching?")
+        background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
         property int movieIndex: -1
         property string movieTitle: ""
         property int watchedSeconds: 0
@@ -38,7 +54,8 @@ Item {
             wrapMode: Text.WordWrap
         }
         footer: DialogButtonBox {
-            Button {
+            background: Item {}
+            AppButton {
                 objectName: "restartMovieButton"
                 text: qsTr("Start over")
                 DialogButtonBox.buttonRole: DialogButtonBox.ResetRole
@@ -47,9 +64,10 @@ Item {
                     root.libraryManager.play(resumeDialog.movieIndex, true)
                 }
             }
-            Button {
+            AppButton {
                 objectName: "resumeMovieButton"
                 text: qsTr("Resume")
+                primary: true
                 DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
                 onClicked: {
                     resumeDialog.close()
@@ -69,14 +87,16 @@ Item {
                 Layout.fillWidth: true
                 text: qsTr("Library")
                 color: Theme.textPrimary
-                font.pixelSize: Theme.titleSize
-                font.weight: Font.Bold
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.headingSize
+                font.weight: Font.DemiBold
             }
             Label {
                 text: qsTr("%1 movies").arg(root.libraryManager.count)
                 color: Theme.textSecondary
+                font.family: Theme.fontFamily
             }
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-refresh-symbolic"
                 Accessible.name: qsTr("Rescan movie library")
                 onClicked: root.libraryManager.refresh()
@@ -96,7 +116,8 @@ Item {
                 Layout.fillWidth: true
                 text: root.metadataManager.busy
                       ? root.metadataManager.stateLabel : root.metadataManager.errorMessage
-                color: root.metadataManager.errorMessage.length > 0 ? "#ff9b9b" : Theme.textSecondary
+                color: root.metadataManager.errorMessage.length > 0
+                       ? Theme.danger : Theme.textSecondary
                 elide: Text.ElideRight
             }
         }
@@ -109,101 +130,113 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: Theme.textSecondary
+            font.family: Theme.fontFamily
             font.pixelSize: Theme.bodySize
         }
 
-        GridView {
-            id: grid
+        ListView {
+            id: libraryList
+            objectName: "libraryList"
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: root.libraryManager.count > 0
             clip: true
-            cellWidth: 190
-            cellHeight: 355
+            spacing: 8
+            boundsBehavior: Flickable.StopAtBounds
             model: root.libraryManager.model
+
             delegate: Rectangle {
-                id: movieDelegate
+                id: movieRow
                 required property int index
                 required property string title
                 required property url posterUrl
                 required property int year
                 required property int durationSeconds
                 required property int watchedSeconds
-                required property string synopsis
-                width: 174
-                height: 339
+                width: libraryList.width
+                height: 132
                 radius: Theme.radius
-                color: Theme.raised
+                color: movieHover.hovered ? Theme.raisedHover : Theme.surface
+                Accessible.role: Accessible.Button
+                Accessible.name: movieRow.title
+                Accessible.onPressAction: root.requestPlayback(
+                    movieRow.index, movieRow.title,
+                    movieRow.durationSeconds, movieRow.watchedSeconds)
 
-                Image {
-                    id: poster
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: 8
-                    height: width / Theme.posterAspectRatio
-                    source: movieDelegate.posterUrl.toString().length > 0
-                            ? movieDelegate.posterUrl
-                            : "qrc:/qt/qml/Dostflix/assets/images/poster-placeholder.svg"
-                    fillMode: Image.PreserveAspectCrop
-                }
-                Label {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: poster.bottom
-                    anchors.margins: 8
-                    text: movieDelegate.title
-                    color: Theme.textPrimary
-                    font.weight: Font.DemiBold
-                    elide: Text.ElideRight
-                }
-                Label {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: poster.bottom
-                    anchors.topMargin: 34
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
-                    text: (movieDelegate.year > 0 ? movieDelegate.year : qsTr("Unknown year"))
-                          + (movieDelegate.durationSeconds > 0
-                             ? qsTr(" · %1 min").arg(Math.round(movieDelegate.durationSeconds / 60)) : "")
-                    color: Theme.textSecondary
-                    font.pixelSize: Math.max(11, Theme.bodySize - 2)
-                    elide: Text.ElideRight
-                }
-                ToolTip.visible: movieMouse.containsMouse && movieDelegate.synopsis.length > 0
-                ToolTip.text: movieDelegate.synopsis
-                MouseArea {
-                    id: movieMouse
+                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                RowLayout {
                     anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
-                }
-                Button {
-                    objectName: "libraryPlayButton"
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 8
-                    text: movieDelegate.watchedSeconds >= 30
-                          ? qsTr("Continue · %1").arg(root.formatTime(movieDelegate.watchedSeconds))
-                          : qsTr("Play")
-                    icon.name: "media-playback-start-symbolic"
-                    onClicked: {
-                        const canResume = movieDelegate.watchedSeconds >= 30
-                                && (movieDelegate.durationSeconds <= 0
-                                    || movieDelegate.durationSeconds - movieDelegate.watchedSeconds > 60)
-                        if (!canResume) {
-                            root.libraryManager.play(movieDelegate.index, true)
-                            return
+                    anchors.margins: 9
+                    spacing: 16
+
+                    Rectangle {
+                        Layout.preferredWidth: 76
+                        Layout.fillHeight: true
+                        radius: Theme.radiusSmall
+                        color: Theme.raised
+                        clip: true
+                        Image {
+                            anchors.fill: parent
+                            source: movieRow.posterUrl.toString().length > 0
+                                    ? movieRow.posterUrl
+                                    : "qrc:/qt/qml/Dostflix/assets/images/poster-placeholder.svg"
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            cache: true
+                            sourceSize: Qt.size(152, 228)
                         }
-                        resumeDialog.movieIndex = movieDelegate.index
-                        resumeDialog.movieTitle = movieDelegate.title
-                        resumeDialog.watchedSeconds = movieDelegate.watchedSeconds
-                        resumeDialog.open()
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        Label {
+                            Layout.fillWidth: true
+                            text: movieRow.title
+                            color: Theme.textPrimary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.headingSize
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: (movieRow.year > 0 ? movieRow.year : qsTr("Unknown year"))
+                                  + (movieRow.durationSeconds > 0
+                                     ? qsTr(" · %1 min").arg(Math.round(movieRow.durationSeconds / 60)) : "")
+                            color: Theme.textSecondary
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.bodySize
+                            elide: Text.ElideRight
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            visible: movieRow.watchedSeconds >= 30
+                            text: qsTr("Watched to %1").arg(root.formatTime(movieRow.watchedSeconds))
+                            color: Theme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.captionSize
+                        }
+                    }
+
+                    AppButton {
+                        objectName: "libraryPlayButton"
+                        text: movieRow.watchedSeconds >= 30
+                              ? qsTr("Continue · %1").arg(root.formatTime(movieRow.watchedSeconds))
+                              : qsTr("Play")
+                        icon.name: "media-playback-start-symbolic"
+                        primary: true
+                        onClicked: root.requestPlayback(
+                            movieRow.index, movieRow.title,
+                            movieRow.durationSeconds, movieRow.watchedSeconds)
                     }
                 }
+
+                HoverHandler { id: movieHover }
             }
+
+            ScrollBar.vertical: ScrollBar {}
         }
     }
 }

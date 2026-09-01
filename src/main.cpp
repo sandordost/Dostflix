@@ -19,6 +19,7 @@
 
 #include <QDir>
 #include <QGuiApplication>
+#include <QFont>
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QSGRendererInterface>
@@ -30,6 +31,9 @@ int main(int argc, char *argv[])
 {
     QQuickStyle::setStyle(QStringLiteral("Basic"));
     QGuiApplication app(argc, argv);
+    QFont interfaceFont(QStringLiteral("Montserrat"));
+    interfaceFont.setPixelSize(14);
+    app.setFont(interfaceFont);
     std::setlocale(LC_NUMERIC, "C");
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
     QCoreApplication::setOrganizationName(QStringLiteral("SandorDost"));

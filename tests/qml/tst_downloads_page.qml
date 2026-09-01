@@ -60,7 +60,7 @@ TestCase {
         const button = findChild(page, "playDownloadButton")
         verify(button !== null)
         mouseClick(button)
-        compare(fakeDownload.playCalls, 1)
+        tryCompare(fakeDownload, "playCalls", 1)
     }
 
     function test_savedDownloadCanBeRemovedAfterConfirmation() {
@@ -69,9 +69,11 @@ TestCase {
         mouseClick(button)
         const dialog = findChild(page, "removeDownloadDialog")
         verify(dialog !== null)
-        const yes = dialog.standardButton(Dialog.Yes)
-        verify(yes !== null)
-        mouseClick(yes)
-        compare(fakeDownload.removeCalls, 1)
+        tryCompare(dialog, "visible", true)
+        const confirm = findChild(dialog, "confirmRemoveDownloadButton")
+        verify(confirm !== null)
+        tryCompare(confirm, "visible", true)
+        mouseClick(confirm)
+        tryCompare(fakeDownload, "removeCalls", 1)
     }
 }

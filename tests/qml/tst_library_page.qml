@@ -53,6 +53,10 @@ TestCase {
     }
 
     function test_localMovieCanBePlayed() {
+        const list = findChild(page, "libraryList")
+        verify(list !== null)
+        tryVerify(function() { return list.contentItem.children.length > 0 })
+        compare(list.contentItem.children[0].height, 132)
         const button = findChild(page, "libraryPlayButton")
         verify(button !== null)
         mouseClick(button)

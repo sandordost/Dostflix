@@ -56,6 +56,18 @@ Local playback position is persisted in five-second increments and once more
 before stopping. Returning to a partially watched movie offers Resume or Start
 over; completed movies automatically lose their resume marker.
 
+The UI follows the Dostify reference with matte translucent panels, fixed 2:3
+poster cards, responsive icon-only navigation on small windows, consistent
+Montserrat typography, and Font Awesome icons. Borderless rounded inputs and
+dark popup/hover states avoid the platform-dependent Qt Basic styling. File and
+folder selection uses the same in-app visual system instead of compositor-themed
+dialogs. Discover can switch between a poster grid and compact result list;
+active torrent progress stays visible in the application header. The local
+library uses compact poster rows without hover tooltips. Player controls fade
+after 2.8 seconds and return on pointer
+movement, pause, buffering, or keyboard input; only opacity, color, and scale are
+animated to keep frame pacing smooth.
+
 ## Arch installation and dependencies
 
 The recommended local installation route is the Arch package. `makepkg -si`
@@ -73,8 +85,9 @@ dependencies with:
 
 ```bash
 sudo pacman -S --needed base-devel cmake hicolor-icon-theme libsecret \
-  mpv networkmanager networkmanager-openvpn nftables ninja \
-  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite
+  mpv networkmanager networkmanager-openvpn nftables ninja otf-font-awesome \
+  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite \
+  ttf-montserrat
 yay -S --needed prowlarr-bin torrserver-bin
 ```
 
@@ -138,6 +151,9 @@ changing cross-component behavior:
   and security rules.
 - `docs/superpowers/plans/2026-09-01-dostflix-download-disk-safety.md` — free-space
   preflight, safety margin, disk-full handling, incomplete-file UX, and tests.
+- `docs/superpowers/plans/2026-09-01-dostflix-ui-overhaul.md` — Dostify-inspired
+  visual tokens, responsive layout, animation performance rules, player auto-hide,
+  keyboard controls, accessibility, and visual-regression follow-up.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 

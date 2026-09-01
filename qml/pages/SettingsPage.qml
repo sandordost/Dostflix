@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
 import QtQuick.Layouts
 import Dostflix
 
@@ -14,18 +13,18 @@ Item {
     required property var subtitleManager
     required property var libraryManager
 
-    FileDialog {
+    PathPickerDialog {
         id: profileDialog
         title: qsTr("Choose an OpenVPN profile")
-        nameFilters: [qsTr("OpenVPN profiles (*.ovpn)")]
-        onAccepted: root.vpnManager.importProfile(selectedFile)
+        fileNameFilters: ["*.ovpn"]
+        onPathChosen: path => root.vpnManager.importProfile(path)
     }
 
-    FolderDialog {
+    PathPickerDialog {
         id: libraryDialog
         title: qsTr("Choose the movie library folder")
-        currentFolder: "file://" + root.libraryManager.directory
-        onAccepted: root.libraryManager.setDirectory(selectedFolder)
+        folderMode: true
+        onPathChosen: path => root.libraryManager.setDirectory(path)
     }
 
     ScrollView {
@@ -40,7 +39,7 @@ Item {
         Label {
             text: qsTr("VPN protection")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -56,7 +55,7 @@ Item {
             Layout.fillWidth: true
             spacing: 10
 
-            ComboBox {
+            AppComboBox {
                 id: profileBox
                 Layout.fillWidth: true
                 model: root.vpnManager.profileModel
@@ -73,13 +72,13 @@ Item {
                 Accessible.name: qsTr("OpenVPN profile")
             }
 
-            Button {
+            AppButton {
                 text: qsTr("Import .ovpn…")
                 icon.name: "document-open-symbolic"
-                onClicked: profileDialog.open()
+                onClicked: profileDialog.openAt("")
             }
 
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-refresh-symbolic"
                 icon.width: Theme.iconSize
                 icon.height: Theme.iconSize
@@ -104,7 +103,7 @@ Item {
                 font.pixelSize: Theme.bodySize
             }
 
-            Button {
+            AppButton {
                 text: root.vpnManager.connected
                       ? (root.vpnManager.ownsConnection ? qsTr("Disconnect") : qsTr("Connected externally"))
                       : qsTr("Connect")
@@ -121,15 +120,15 @@ Item {
             Layout.fillWidth: true
             visible: root.vpnManager.errorMessage.length > 0
             text: root.vpnManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: notice.implicitHeight + 24
-            radius: Theme.radius
-            color: Theme.raised
+            radius: Theme.radiusLarge
+            color: Theme.surface
 
             Label {
                 id: notice
@@ -146,7 +145,7 @@ Item {
         Label {
             text: qsTr("Movie library")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -159,18 +158,18 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 Layout.fillWidth: true
                 readOnly: true
                 text: root.libraryManager.directory
                 Accessible.name: qsTr("Movie library folder")
             }
-            Button {
+            AppButton {
                 text: qsTr("Choose folder…")
                 icon.name: "folder-open-symbolic"
-                onClicked: libraryDialog.open()
+                onClicked: libraryDialog.openAt("file://" + root.libraryManager.directory)
             }
-            ToolButton {
+            AppToolButton {
                 icon.name: "view-refresh-symbolic"
                 icon.width: Theme.iconSize
                 icon.height: Theme.iconSize
@@ -183,22 +182,22 @@ Item {
             Layout.fillWidth: true
             visible: root.libraryManager.errorMessage.length > 0
             text: root.libraryManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
         Label {
             text: qsTr("Torrent providers")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: prowlarrRow.implicitHeight + 24
-            radius: Theme.radius
-            color: Theme.raised
+            radius: Theme.radiusLarge
+            color: Theme.surface
 
             RowLayout {
                 id: prowlarrRow
@@ -225,7 +224,7 @@ Item {
                     Label { text: qsTr("Managed Prowlarr"); color: Theme.textPrimary; font.weight: Font.DemiBold }
                     Label { text: root.prowlarrManager.stateLabel; color: Theme.textSecondary }
                 }
-                Button {
+                AppButton {
                     text: qsTr("Configure indexers")
                     enabled: root.prowlarrManager.ready
                     onClicked: root.prowlarrManager.openWebInterface()
@@ -237,14 +236,14 @@ Item {
             Layout.fillWidth: true
             visible: root.prowlarrManager.errorMessage.length > 0
             text: root.prowlarrManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
         Label {
             text: qsTr("Movie metadata")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -257,7 +256,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: tmdbToken
                 Layout.fillWidth: true
                 placeholderText: root.providerManager.hasTmdbToken
@@ -265,14 +264,14 @@ Item {
                                  : qsTr("TMDB API Read Access Token")
                 echoMode: TextInput.Password
             }
-            Button {
+            AppButton {
                 text: qsTr("Save token")
                 onClicked: {
                     if (root.providerManager.saveTmdbToken(tmdbToken.text))
                         tmdbToken.clear()
                 }
             }
-            Button {
+            AppButton {
                 text: qsTr("Remove")
                 visible: root.providerManager.hasTmdbToken
                 onClicked: root.providerManager.clearTmdbToken()
@@ -288,27 +287,27 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: providerName
                 Layout.preferredWidth: 190
                 placeholderText: qsTr("Provider name")
             }
-            ComboBox {
+            AppComboBox {
                 id: providerKind
                 model: ["Torznab", "Prowlarr"]
             }
-            TextField {
+            AppTextField {
                 id: providerEndpoint
                 Layout.fillWidth: true
                 placeholderText: qsTr("https://example.test/api")
             }
-            TextField {
+            AppTextField {
                 id: providerApiKey
                 Layout.preferredWidth: 190
                 placeholderText: qsTr("API key (optional)")
                 echoMode: TextInput.Password
             }
-            Button {
+            AppButton {
                 text: qsTr("Add provider")
                 onClicked: {
                     if (root.providerManager.addProvider(providerName.text,
@@ -327,7 +326,7 @@ Item {
             Layout.fillWidth: true
             visible: root.providerManager.errorMessage.length > 0
             text: root.providerManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
@@ -345,15 +344,15 @@ Item {
                 required property string endpoint
                 width: ListView.view.width
                 height: 52
-                radius: Theme.radius
-                color: Theme.raised
+                radius: Theme.radiusLarge
+                color: Theme.surface
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: 10
                     Label { text: providerDelegate.name; color: Theme.textPrimary; font.weight: Font.DemiBold }
                     Label { text: providerDelegate.kind; color: Theme.textSecondary }
                     Label { Layout.fillWidth: true; text: providerDelegate.endpoint; color: Theme.textSecondary; elide: Text.ElideMiddle }
-                    ToolButton {
+                    AppToolButton {
                         icon.name: "edit-delete-symbolic"
                         Accessible.name: qsTr("Remove provider")
                         onClicked: root.providerManager.removeProvider(providerDelegate.index)
@@ -365,7 +364,7 @@ Item {
         Label {
             text: qsTr("OpenSubtitles")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -382,7 +381,7 @@ Item {
                 text: qsTr("Preferred languages")
                 color: Theme.textPrimary
             }
-            TextField {
+            AppTextField {
                 id: subtitleLanguages
                 Layout.preferredWidth: 220
                 text: root.subtitleManager.preferredLanguages
@@ -390,7 +389,7 @@ Item {
                 Accessible.name: qsTr("Preferred subtitle language codes")
                 onAccepted: root.subtitleManager.setPreferredLanguages(text)
             }
-            Button {
+            AppButton {
                 text: qsTr("Save languages")
                 onClicked: root.subtitleManager.setPreferredLanguages(subtitleLanguages.text)
             }
@@ -404,7 +403,7 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            TextField {
+            AppTextField {
                 id: openSubtitlesApiKey
                 Layout.fillWidth: true
                 placeholderText: root.subtitleManager.configured
@@ -412,19 +411,19 @@ Item {
                                  : qsTr("API key")
                 echoMode: TextInput.Password
             }
-            TextField {
+            AppTextField {
                 id: openSubtitlesUsername
                 Layout.preferredWidth: 210
                 placeholderText: root.subtitleManager.username.length > 0
                                  ? root.subtitleManager.username : qsTr("Username")
             }
-            TextField {
+            AppTextField {
                 id: openSubtitlesPassword
                 Layout.preferredWidth: 210
                 placeholderText: qsTr("Password")
                 echoMode: TextInput.Password
             }
-            Button {
+            AppButton {
                 text: qsTr("Save")
                 onClicked: {
                     if (root.subtitleManager.saveCredentials(openSubtitlesApiKey.text,
@@ -436,7 +435,7 @@ Item {
                     }
                 }
             }
-            Button {
+            AppButton {
                 text: qsTr("Remove")
                 visible: root.subtitleManager.configured
                 onClicked: root.subtitleManager.clearCredentials()
@@ -447,7 +446,7 @@ Item {
             Layout.fillWidth: true
             visible: root.subtitleManager.errorMessage.length > 0
             text: root.subtitleManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 

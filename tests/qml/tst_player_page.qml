@@ -23,10 +23,11 @@ TestCase {
         property string selectedSubtitleId: "2"
         property real subtitleDelay: 0
         property int pauseCalls: 0
+        property int seekCalls: 0
         property int subtitleCalls: 0
         property int stopCalls: 0
         function stop() { stopCalls += 1 }
-        function seek(offset) {}
+        function seek(offset) { seekCalls += 1 }
         function setPosition(seconds) {}
         function setVolume(value) {}
         function togglePaused() { pauseCalls += 1 }
@@ -43,12 +44,19 @@ TestCase {
             id: page
             anchors.fill: parent
             player: fakePlayer
+            controlsHideInterval: 40
         }
     }
     SignalSpy {
         id: browseSpy
         target: page
         signalName: "browseRequested"
+    }
+
+    function init() {
+        page.controlsVisible = true
+        fakePlayer.paused = false
+        fakePlayer.buffering = false
     }
 
     function test_formats_time() {
@@ -71,13 +79,23 @@ TestCase {
         verify(findChild(page, "findSubtitlesButton") !== null)
     }
 
+    function test_controls_auto_hide_and_reveal() {
+        page.revealControls()
+        mouseMove(page, page.width / 2, page.height / 2)
+        tryCompare(page, "controlsVisible", false, 400)
+        page.revealControls()
+        mouseMove(page, page.width / 2, page.height / 2)
+        compare(page.controlsVisible, true)
+    }
+
     function test_stop_control_stops_playback_and_browses() {
         const button = findChild(page, "stopButton")
         verify(button !== null)
         browseSpy.clear()
+        page.revealControls()
+        mouseMove(page, page.width / 2, page.height / 2)
         mouseClick(button)
         compare(fakePlayer.stopCalls, 1)
         compare(browseSpy.count, 1)
     }
-
 }
