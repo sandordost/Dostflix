@@ -42,8 +42,8 @@ Item {
         Label {
             text: qsTr("Results")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
-            font.weight: Font.Bold
+            font.pixelSize: Theme.headingSize
+            font.weight: Font.DemiBold
         }
         RowLayout {
             Layout.fillWidth: true
@@ -60,15 +60,15 @@ Item {
                 text: root.prowlarrManager.searchBusy
                       ? qsTr("Searching all configured indexers…")
                       : root.prowlarrManager.searchError
-                color: root.prowlarrManager.searchError.length > 0 ? "#ff9b9b" : Theme.textSecondary
+                color: root.prowlarrManager.searchError.length > 0 ? Theme.danger : Theme.textSecondary
                 wrapMode: Text.WordWrap
             }
         }
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: torrentStatus.implicitHeight + 24
-            radius: Theme.radius
-            color: Theme.raised
+            radius: Theme.radiusLarge
+            color: Theme.surface
             visible: root.torrentEngine.active
                      || root.torrentEngine.errorMessage.length > 0
                      || root.prowlarrManager.releaseBusy
@@ -134,7 +134,7 @@ Item {
                     Layout.fillWidth: true
                     visible: root.torrentEngine.errorMessage.length > 0
                     text: root.torrentEngine.errorMessage
-                    color: "#ff9b9b"
+                    color: Theme.danger
                     wrapMode: Text.WordWrap
                 }
 
@@ -142,7 +142,7 @@ Item {
                     Layout.fillWidth: true
                     visible: root.prowlarrManager.releaseError.length > 0
                     text: root.prowlarrManager.releaseError
-                    color: "#ff9b9b"
+                    color: Theme.danger
                     wrapMode: Text.WordWrap
                 }
 

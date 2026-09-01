@@ -40,7 +40,7 @@ Item {
         Label {
             text: qsTr("VPN protection")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -121,15 +121,15 @@ Item {
             Layout.fillWidth: true
             visible: root.vpnManager.errorMessage.length > 0
             text: root.vpnManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: notice.implicitHeight + 24
-            radius: Theme.radius
-            color: Theme.raised
+            radius: Theme.radiusLarge
+            color: Theme.surface
 
             Label {
                 id: notice
@@ -146,7 +146,7 @@ Item {
         Label {
             text: qsTr("Movie library")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -183,22 +183,22 @@ Item {
             Layout.fillWidth: true
             visible: root.libraryManager.errorMessage.length > 0
             text: root.libraryManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
         Label {
             text: qsTr("Torrent providers")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: prowlarrRow.implicitHeight + 24
-            radius: Theme.radius
-            color: Theme.raised
+            radius: Theme.radiusLarge
+            color: Theme.surface
 
             RowLayout {
                 id: prowlarrRow
@@ -237,14 +237,14 @@ Item {
             Layout.fillWidth: true
             visible: root.prowlarrManager.errorMessage.length > 0
             text: root.prowlarrManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
         Label {
             text: qsTr("Movie metadata")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -327,7 +327,7 @@ Item {
             Layout.fillWidth: true
             visible: root.providerManager.errorMessage.length > 0
             text: root.providerManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 
@@ -345,8 +345,8 @@ Item {
                 required property string endpoint
                 width: ListView.view.width
                 height: 52
-                radius: Theme.radius
-                color: Theme.raised
+                radius: Theme.radiusLarge
+                color: Theme.surface
                 RowLayout {
                     anchors.fill: parent
                     anchors.margins: 10
@@ -365,7 +365,7 @@ Item {
         Label {
             text: qsTr("OpenSubtitles")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
+            font.pixelSize: Theme.headingSize
             font.weight: Font.DemiBold
         }
 
@@ -447,7 +447,7 @@ Item {
             Layout.fillWidth: true
             visible: root.subtitleManager.errorMessage.length > 0
             text: root.subtitleManager.errorMessage
-            color: "#ff9b9b"
+            color: Theme.danger
             wrapMode: Text.WordWrap
         }
 

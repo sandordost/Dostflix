@@ -69,8 +69,8 @@ Item {
                 Layout.fillWidth: true
                 text: qsTr("Library")
                 color: Theme.textPrimary
-                font.pixelSize: Theme.titleSize
-                font.weight: Font.Bold
+                font.pixelSize: Theme.headingSize
+                font.weight: Font.DemiBold
             }
             Label {
                 text: qsTr("%1 movies").arg(root.libraryManager.count)
@@ -96,7 +96,7 @@ Item {
                 Layout.fillWidth: true
                 text: root.metadataManager.busy
                       ? root.metadataManager.stateLabel : root.metadataManager.errorMessage
-                color: root.metadataManager.errorMessage.length > 0 ? "#ff9b9b" : Theme.textSecondary
+                color: root.metadataManager.errorMessage.length > 0 ? Theme.danger : Theme.textSecondary
                 elide: Text.ElideRight
             }
         }
@@ -118,8 +118,11 @@ Item {
             Layout.fillHeight: true
             visible: root.libraryManager.count > 0
             clip: true
-            cellWidth: 190
-            cellHeight: 355
+            property int cardWidth: Theme.posterWidth
+            property int cardGap: 18
+            readonly property int columnCount: Math.max(1, Math.floor(width / (cardWidth + cardGap)))
+            cellWidth: width / columnCount
+            cellHeight: cardWidth / Theme.posterAspectRatio + 82
             model: root.libraryManager.model
             delegate: Rectangle {
                 id: movieDelegate
@@ -130,10 +133,13 @@ Item {
                 required property int durationSeconds
                 required property int watchedSeconds
                 required property string synopsis
-                width: 174
-                height: 339
+                width: grid.cardWidth
+                height: width / Theme.posterAspectRatio + 70
                 radius: Theme.radius
                 color: Theme.raised
+                scale: movieMouse.containsMouse ? 1.02 : 1
+                x: Math.max(0, (grid.cellWidth - width) / 2)
+                Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
 
                 Image {
                     id: poster
@@ -146,6 +152,9 @@ Item {
                             ? movieDelegate.posterUrl
                             : "qrc:/qt/qml/Dostflix/assets/images/poster-placeholder.svg"
                     fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    sourceSize: Qt.size(movieDelegate.width * 2, height * 2)
                 }
                 Label {
                     anchors.left: parent.left

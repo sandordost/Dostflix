@@ -56,6 +56,12 @@ Local playback position is persisted in five-second increments and once more
 before stopping. Returning to a partially watched movie offers Resume or Start
 over; completed movies automatically lose their resume marker.
 
+The UI follows the Dostify reference with matte translucent panels, fixed 2:3
+poster cards, responsive icon-only navigation on small windows, and consistent
+Noto Sans typography. Player controls fade after 2.8 seconds and return on pointer
+movement, pause, buffering, or keyboard input; only opacity, color, and scale are
+animated to keep frame pacing smooth.
+
 ## Arch installation and dependencies
 
 The recommended local installation route is the Arch package. `makepkg -si`
@@ -138,6 +144,9 @@ changing cross-component behavior:
   and security rules.
 - `docs/superpowers/plans/2026-09-01-dostflix-download-disk-safety.md` — free-space
   preflight, safety margin, disk-full handling, incomplete-file UX, and tests.
+- `docs/superpowers/plans/2026-09-01-dostflix-ui-overhaul.md` — Dostify-inspired
+  visual tokens, responsive layout, animation performance rules, player auto-hide,
+  keyboard controls, accessibility, and visual-regression follow-up.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 

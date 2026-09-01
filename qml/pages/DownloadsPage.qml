@@ -31,8 +31,8 @@ Item {
         Label {
             text: qsTr("Downloads")
             color: Theme.textPrimary
-            font.pixelSize: Theme.titleSize
-            font.weight: Font.Bold
+            font.pixelSize: Theme.headingSize
+            font.weight: Font.DemiBold
         }
         Label {
             Layout.fillWidth: true
@@ -48,8 +48,8 @@ Item {
             Layout.fillWidth: true
             implicitHeight: transferContent.implicitHeight + 28
             visible: root.downloadManager.hasTransfer
-            radius: Theme.radius
-            color: Theme.raised
+            radius: Theme.radiusLarge
+            color: Theme.surface
 
             ColumnLayout {
                 id: transferContent
@@ -121,14 +121,14 @@ Item {
                           .arg((root.downloadManager.bytesRemaining / 1073741824).toFixed(2))
                           .arg((root.downloadManager.availableBytes / 1073741824).toFixed(2))
                     color: root.downloadManager.diskSpaceReady
-                           ? Theme.textSecondary : "#ff9b9b"
+                           ? Theme.textSecondary : Theme.danger
                     elide: Text.ElideMiddle
                 }
                 Label {
                     Layout.fillWidth: true
                     visible: root.downloadManager.errorMessage.length > 0
                     text: root.downloadManager.errorMessage
-                    color: "#ff9b9b"
+                    color: Theme.danger
                     wrapMode: Text.WordWrap
                 }
             }

@@ -16,14 +16,25 @@ ApplicationWindow {
     required property var torrentEngine
     required property var subtitleManager
     width: 1280
-    height: 760
-    minimumWidth: 900
-    minimumHeight: 600
+    height: 800
+    minimumWidth: 780
+    minimumHeight: 520
     visible: true
     title: qsTr("Dostflix")
     color: Theme.canvas
+    palette.window: Theme.panel
+    palette.windowText: Theme.textPrimary
+    palette.base: Theme.input
+    palette.alternateBase: Theme.surface
+    palette.text: Theme.textPrimary
+    palette.button: Theme.button
+    palette.buttonText: Theme.buttonText
+    palette.highlight: Theme.accent
+    palette.highlightedText: Theme.textPrimary
+    palette.placeholderText: Theme.textMuted
     property int pageIndex: 0
     property bool showingPlayer: false
+    readonly property bool compactNavigation: width < 980
     property string launchedStreamUrl: ""
     property string stoppedStreamUrl: ""
 
@@ -101,13 +112,32 @@ ApplicationWindow {
         fillMode: Image.PreserveAspectCrop
     }
 
+    Rectangle {
+        anchors.fill: parent
+        color: Qt.rgba(0.01, 0.015, 0.03, 0.52)
+    }
+
+    Shortcut { sequence: "Ctrl+1"; onActivated: window.pageIndex = 0 }
+    Shortcut { sequence: "Ctrl+2"; onActivated: window.pageIndex = 1 }
+    Shortcut { sequence: "Ctrl+3"; onActivated: window.pageIndex = 2 }
+    Shortcut { sequence: "Ctrl+4"; onActivated: window.pageIndex = 3 }
+    Shortcut {
+        sequence: "Escape"
+        enabled: window.showingPlayer
+        onActivated: window.showingPlayer = false
+    }
+
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 14
-        spacing: 8
+        anchors.leftMargin: 18
+        anchors.rightMargin: 18
+        anchors.topMargin: 8
+        anchors.bottomMargin: 16
+        spacing: Theme.contentGap
 
         AppHeader {
             Layout.fillWidth: true
+            Layout.preferredHeight: Theme.headerHeight
             vpnLabel: window.vpnManager.stateLabel
             vpnConnected: window.vpnManager.connected
             vpnBusy: window.vpnManager.busy
@@ -116,11 +146,13 @@ ApplicationWindow {
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 8
+            spacing: Theme.contentGap
 
             SidePanel {
-                Layout.preferredWidth: 255
+                Layout.preferredWidth: window.compactNavigation
+                                       ? Theme.sidebarCompactWidth : Theme.sidebarWidth
                 Layout.fillHeight: true
+                compact: window.compactNavigation
                 currentIndex: window.pageIndex
                 searchEnabled: window.prowlarrManager.ready
                 onPageRequested: index => window.pageIndex = index
@@ -130,12 +162,12 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: Theme.radius
+                radius: Theme.radiusLarge
                 color: Qt.rgba(0.071, 0.071, 0.078, Theme.panelOpacity)
 
                 StackLayout {
                     anchors.fill: parent
-                    anchors.margins: 18
+                    anchors.margins: window.width < 900 ? 14 : Theme.pagePadding
                     currentIndex: window.pageIndex
                     DiscoverPage {
                         movieModel: window.movieModel

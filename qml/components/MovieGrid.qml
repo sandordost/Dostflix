@@ -1,4 +1,5 @@
 pragma ComponentBehavior: Bound
+
 import QtQuick
 import Dostflix
 
@@ -6,23 +7,33 @@ GridView {
     id: root
     required property var movieModel
     signal releaseSelected(string title, string magnetUrl, string downloadUrl, string posterUrl)
-    property int cardWidth: 170
-    model: movieModel
-    cellWidth: Math.max(cardWidth + 12,
-                        width / Math.max(1, Math.floor(width / (cardWidth + 12))))
-    cellHeight: cardWidth / Theme.posterAspectRatio + 74
-    clip: true
+    property int cardWidth: Theme.posterWidth
+    property int cardGap: 18
+    readonly property int columnCount: Math.max(1, Math.floor(width / (cardWidth + cardGap)))
 
-    delegate: MovieCard {
+    model: movieModel
+    cellWidth: width / columnCount
+    cellHeight: cardWidth / Theme.posterAspectRatio + 82
+    clip: true
+    boundsBehavior: Flickable.StopAtBounds
+    keyNavigationEnabled: true
+
+    delegate: Item {
         required property var model
-        width: root.cardWidth
-        title: model.title
-        year: model.year
-        quality: model.quality
-        seederCount: model.seederCount
-        posterUrl: model.posterUrl
-        sourceLabel: model.sourceLabel
-        onSelected: root.releaseSelected(model.title, model.magnetUrl,
-                                         model.downloadUrl, model.posterUrl)
+        width: root.cellWidth
+        height: root.cellHeight
+
+        MovieCard {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: root.cardWidth
+            title: parent.model.title
+            year: parent.model.year
+            quality: parent.model.quality
+            seederCount: parent.model.seederCount
+            posterUrl: parent.model.posterUrl
+            sourceLabel: parent.model.sourceLabel
+            onSelected: root.releaseSelected(parent.model.title, parent.model.magnetUrl,
+                                             parent.model.downloadUrl, parent.model.posterUrl)
+        }
     }
 }
