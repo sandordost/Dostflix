@@ -95,6 +95,7 @@ Item {
             onClicked: root.fullscreenRequested()
         }
         Button {
+            objectName: "stopButton"
             text: qsTr("Stop")
             onClicked: {
                 root.player.stop()

@@ -59,6 +59,8 @@ and advertises byte-range support for range requests.
   single-active-torrent replacement proceeds. Its partial state remains stored.
 - Cancelling streaming aborts all in-flight status/preload replies and clears the
   Discover state without deleting the cached torrent or durable partial file.
+- Stopping mpv suppresses automatic reopening of that exact stream URL despite
+  continued TorrServer status polling; an explicit Play action clears the block.
 - Removing a download is an explicit confirmed action. It pauses the writer,
   validates both paths, removes partial/final data and SQLite history, refreshes
   the library, and asks a running TorrServer daemon to drop its cached torrent.
