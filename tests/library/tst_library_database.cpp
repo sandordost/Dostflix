@@ -16,7 +16,7 @@ private slots:
         LibraryDatabase database(dir.filePath(QStringLiteral("library.sqlite")),
                                  QStringLiteral("test-library"));
         QVERIFY2(database.open(), qPrintable(database.lastError()));
-        QCOMPARE(database.schemaVersion(), 2);
+        QCOMPARE(database.schemaVersion(), 3);
 
         QSqlQuery query(database.connection());
         QVERIFY(query.exec(QStringLiteral(
@@ -38,6 +38,26 @@ private slots:
         QCOMPARE(movies.size(), 1);
         QCOMPARE(movies.first().title, QStringLiteral("Updated title"));
         QCOMPARE(movies.first().videoPath, QStringLiteral("/movies/test.mkv"));
+    }
+
+    void persistsResumableTransferState()
+    {
+        QTemporaryDir dir;
+        LibraryDatabase database(dir.filePath(QStringLiteral("library.sqlite")),
+                                 QStringLiteral("test-library-transfer"));
+        QVERIFY(database.open());
+        LibraryTransfer transfer{QStringLiteral("abcdef"), 3, QStringLiteral("Movie"),
+            QStringLiteral("movie.mkv"), 100, QStringLiteral("/movies/movie.part"),
+            QStringLiteral("/movies/movie.mkv"), 25, QStringLiteral("paused")};
+        QVERIFY(database.saveTransfer(transfer));
+        QVERIFY(database.updateTransferProgress(QStringLiteral("abcdef"), 3, 50,
+                                                QStringLiteral("downloading")));
+        const auto stored = database.latestIncompleteTransfer();
+        QVERIFY(stored.has_value());
+        QCOMPARE(stored->bytesWritten, 50);
+        QCOMPARE(stored->fileIndex, 3);
+        QCOMPARE(database.transfer(QStringLiteral("abcdef"), 3)->state,
+                 QStringLiteral("downloading"));
     }
 };
 

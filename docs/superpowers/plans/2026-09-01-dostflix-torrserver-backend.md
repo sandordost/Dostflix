@@ -41,6 +41,10 @@ process launch errors and exit codes include the diagnostic log path.
   preloaded byte count.
 - Expose TorrServer's loopback HTTP stream URL directly to the future mpv player;
   seeking automatically moves TorrServer's reader priority and readahead window.
+- Emit the selected file's loopback source, info hash, torrent index, filename,
+  and authoritative size to `DownloadManager`. That follow-up keeps a sequential
+  range-resumable reader open so playback cache and durable library retention
+  remain separate concerns owned by TorrServer and Dostflix respectively.
 - TorrServer may retain previously selected releases as status `5` (database-only)
   entries. These have no live swarm or cache and must not be counted as active
   torrents. Dostflix permits exactly one status other than database-only.

@@ -18,6 +18,7 @@ qt_add_executable(dostflix
     src/app/AppPaths.cpp
     src/app/AppSettings.cpp
     src/library/LibraryDatabase.cpp
+    src/library/DownloadManager.cpp
     src/library/LibraryManager.cpp
     src/library/LocalLibraryModel.cpp
     src/movies/Movie.cpp

@@ -59,6 +59,8 @@ public:
     void setNetworkReady(bool ready);
     Q_INVOKABLE void startMagnet(const QString &title, const QString &magnetUrl);
     void startTorrentData(const QString &title, const QByteArray &torrentData);
+    void resumeStoredTorrent(const QString &title, const QString &torrentHash,
+                             int fileIndex, const QString &fileName, qint64 expectedSize);
     Q_INVOKABLE void selectVideoFile(int row);
     Q_INVOKABLE void cancel();
     void shutdown();
@@ -66,6 +68,9 @@ public:
 signals:
     void stateChanged();
     void statisticsChanged();
+    void retentionSourceReady(const QString &title, const QString &torrentHash,
+                              int fileIndex, const QString &fileName,
+                              qint64 expectedSize, const QUrl &sourceUrl);
 
 private:
     void startDaemon();
@@ -112,6 +117,8 @@ private:
     bool m_preloadStarted = false;
     bool m_bufferReady = false;
     bool m_dropInProgress = false;
+    bool m_resumePending = false;
+    bool m_retentionAnnounced = false;
     int m_selectedFileId = -1;
     qint64 m_selectedFileSize = 0;
     double m_progress = 0.0;

@@ -8,6 +8,7 @@ ApplicationWindow {
     required property var appController
     required property var movieModel
     required property var libraryManager
+    required property var downloadManager
     required property var vpnManager
     required property var providerManager
     required property var prowlarrManager
@@ -113,7 +114,9 @@ ApplicationWindow {
                     LibraryPage {
                         libraryManager: window.libraryManager
                     }
-                    DownloadsPage {}
+                    DownloadsPage {
+                        downloadManager: window.downloadManager
+                    }
                     SettingsPage {
                         vpnManager: window.vpnManager
                         providerManager: window.providerManager

@@ -197,7 +197,12 @@ void TorrServerManager::probeApi()
         m_startupTimer.stop();
         m_daemonReady = true;
         emit stateChanged();
-        retirePreviousOrSubmit();
+        if (m_resumePending) {
+            m_resumePending = false;
+            startPreload();
+        } else {
+            retirePreviousOrSubmit();
+        }
     });
 }
 
@@ -215,6 +220,29 @@ void TorrServerManager::startTorrentData(const QString &title, const QByteArray 
     if (!m_networkReady) { fail(tr("VPN protection must be ready before starting a torrent")); return; }
     if (torrentData.isEmpty()) { fail(tr("The torrent file is empty")); return; }
     beginRelease(title, {}, torrentData);
+}
+
+void TorrServerManager::resumeStoredTorrent(const QString &title, const QString &torrentHash,
+                                            int fileIndex, const QString &fileName,
+                                            qint64 expectedSize)
+{
+    if (!m_networkReady || torrentHash.isEmpty() || fileIndex < 0 || expectedSize <= 0) return;
+    if (m_active && m_hash == torrentHash && m_selectedFileId == fileIndex) return;
+    clearTransferState();
+    m_title = title;
+    m_hash = torrentHash;
+    m_selectedFileId = fileIndex;
+    m_selectedFileName = fileName;
+    m_selectedFileSize = expectedSize;
+    m_active = true;
+    m_resumePending = true;
+    m_stateLabel = tr("Restoring saved torrent…");
+    emit stateChanged();
+    startDaemon();
+    if (m_daemonReady) {
+        m_resumePending = false;
+        startPreload();
+    }
 }
 
 void TorrServerManager::beginRelease(QString title, QString magnetUrl, QByteArray torrentData)
@@ -388,10 +416,15 @@ void TorrServerManager::selectVideoFile(int row)
 
 void TorrServerManager::startPreload()
 {
-    if (m_preloadStarted || m_hash.isEmpty() || m_selectedFileId < 0) return;
+    if (m_preloadStarted || !m_daemonReady || m_hash.isEmpty() || m_selectedFileId < 0) return;
     m_preloadStarted = true;
     m_stateLabel = tr("Building a safe playback buffer…");
     emit stateChanged();
+    if (!m_retentionAnnounced) {
+        m_retentionAnnounced = true;
+        emit retentionSourceReady(m_title, m_hash, m_selectedFileId, m_selectedFileName,
+                                  m_selectedFileSize, QUrl(streamUrl()));
+    }
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("link"), m_hash);
     query.addQueryItem(QStringLiteral("index"), QString::number(m_selectedFileId));
@@ -443,6 +476,7 @@ void TorrServerManager::clearTransferState()
     m_title.clear(); m_hash.clear(); m_pendingMagnet.clear(); m_pendingTorrent.clear();
     m_selectedFileName.clear(); m_stateLabel.clear(); m_error.clear();
     m_active = false; m_needsFileSelection = false; m_preloadStarted = false; m_bufferReady = false;
+    m_resumePending = false; m_retentionAnnounced = false;
     m_selectedFileId = -1; m_selectedFileSize = 0; m_progress = 0.0; m_downloadRate = 0;
     m_peerCount = 0; m_seedCount = 0; m_bufferSeconds = 0.0; m_estimatedWaitSeconds = 0.0;
     emit stateChanged();
