@@ -61,6 +61,7 @@ private:
     void stop();
     void probe();
     void fetchMetadata(const QString &query);
+    void fetchRelease(const QString &title, const QUrl &url, int redirectsRemaining);
     void setError(QString error);
 
     static constexpr auto Executable = "/usr/lib/prowlarr/bin/Prowlarr";
