@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     ProviderManager providerManager(settings, secretStore);
     LibraryMetadataManager metadataManager(
         libraryDatabase, libraryManager, providerManager, paths.dataDir());
-    OpenSubtitlesManager subtitleManager(secretStore, paths.dataDir());
+    OpenSubtitlesManager subtitleManager(settings, secretStore, paths.dataDir());
 
     AppController controller;
     MovieListModel movies;
@@ -94,6 +94,8 @@ int main(int argc, char *argv[])
     QObject::connect(&libraryManager, &LibraryManager::stateChanged,
                      &metadataManager, &LibraryMetadataManager::refresh,
                      Qt::QueuedConnection);
+    QObject::connect(&libraryManager, &LibraryManager::subtitleContextChanged,
+                     &subtitleManager, &OpenSubtitlesManager::setMediaContext);
     QObject::connect(&prowlarrManager, &ProwlarrManager::releasePrepared,
                      &torrentEngine,
                      [&](const QString &title, const QString &magnetUrl,

@@ -16,11 +16,13 @@ private slots:
             AppSettings settings(file);
             settings.setLibraryDirectory(QStringLiteral("/media/Movies"));
             settings.setVpnConnectionUuid(QStringLiteral("vpn-uuid"));
+            settings.setSubtitleLanguages(QStringLiteral("nl,de,en"));
             settings.setVpnOwnership(QStringLiteral("vpn-uuid"), 12345);
         }
         AppSettings reloaded(file);
         QCOMPARE(reloaded.libraryDirectory(), QStringLiteral("/media/Movies"));
         QCOMPARE(reloaded.vpnConnectionUuid(), QStringLiteral("vpn-uuid"));
+        QCOMPARE(reloaded.subtitleLanguages(), QStringLiteral("nl,de,en"));
         QCOMPARE(reloaded.ownedVpnConnectionUuid(), QStringLiteral("vpn-uuid"));
         QCOMPARE(reloaded.vpnOwnerPid(), 12345);
         reloaded.clearVpnOwnership();

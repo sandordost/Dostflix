@@ -1,18 +1,22 @@
 #include "subtitles/OpenSubtitlesManager.h"
 
+#include "app/AppSettings.h"
 #include "providers/SecretStore.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QHostAddress>
+#include <QtEndian>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSaveFile>
 #include <QUrlQuery>
+#include <algorithm>
 #include <utility>
 
 namespace {
@@ -25,14 +29,17 @@ bool successful(const QNetworkReply *reply)
 }
 }
 
-OpenSubtitlesManager::OpenSubtitlesManager(SecretStore &secrets, QString dataDir,
-                                           QUrl apiBase, QObject *parent)
+OpenSubtitlesManager::OpenSubtitlesManager(AppSettings &settings, SecretStore &secrets,
+                                           QString dataDir, QUrl apiBase, QObject *parent)
     : QObject(parent)
+    , m_settings(settings)
     , m_secrets(secrets)
     , m_dataDir(std::move(dataDir))
     , m_apiBase(std::move(apiBase))
     , m_network(new QNetworkAccessManager(this))
 {
+    m_preferredLanguages = normalizeLanguages(m_settings.subtitleLanguages());
+    if (m_preferredLanguages.isEmpty()) m_preferredLanguages = QStringLiteral("nl,en");
     QString ignored;
     const QJsonObject stored = QJsonDocument::fromJson(
         m_secrets.load(QString::fromLatin1(CredentialId), &ignored).toUtf8()).object();
@@ -45,6 +52,7 @@ OpenSubtitlesManager::~OpenSubtitlesManager() { cancel(); }
 bool OpenSubtitlesManager::configured() const
 { return !m_apiKey.isEmpty() && !m_username.isEmpty() && !m_password.isEmpty(); }
 QString OpenSubtitlesManager::username() const { return m_username; }
+QString OpenSubtitlesManager::preferredLanguages() const { return m_preferredLanguages; }
 bool OpenSubtitlesManager::networkReady() const { return m_networkReady; }
 bool OpenSubtitlesManager::busy() const { return !m_reply.isNull(); }
 QString OpenSubtitlesManager::statusLabel() const { return m_status; }
@@ -109,6 +117,27 @@ void OpenSubtitlesManager::clearCredentials()
     emit resultsChanged();
 }
 
+bool OpenSubtitlesManager::setPreferredLanguages(const QString &languages)
+{
+    const QString normalized = normalizeLanguages(languages);
+    if (normalized.isEmpty()) {
+        setError(tr("Enter one or more two- or three-letter language codes"));
+        return false;
+    }
+    if (m_preferredLanguages == normalized) return true;
+    m_preferredLanguages = normalized;
+    m_settings.setSubtitleLanguages(normalized);
+    setError({});
+    emit configurationChanged();
+    return true;
+}
+
+void OpenSubtitlesManager::setMediaContext(const QUrl &videoUrl, const QString &imdbId)
+{
+    m_videoPath = videoUrl.isLocalFile() ? videoUrl.toLocalFile() : QString{};
+    m_imdbId = imdbId.trimmed();
+}
+
 void OpenSubtitlesManager::search(const QString &query, const QString &languages)
 {
     if (!m_networkReady) { setError(tr("VPN protection is required to search subtitles")); return; }
@@ -116,7 +145,12 @@ void OpenSubtitlesManager::search(const QString &query, const QString &languages
     if (query.trimmed().isEmpty()) { setError(tr("Enter a movie or release title")); return; }
     cancel();
     m_query = query.trimmed();
-    m_languages = languages.trimmed().isEmpty() ? QStringLiteral("nl,en") : languages.trimmed();
+    m_languages = normalizeLanguages(languages.trimmed().isEmpty()
+                                         ? m_preferredLanguages : languages);
+    if (m_languages.isEmpty()) {
+        setError(tr("Enter valid subtitle language codes"));
+        return;
+    }
     m_pendingAction = PendingAction::Search;
     m_status = tr("Signing in to OpenSubtitles…");
     setError({});
@@ -172,6 +206,17 @@ void OpenSubtitlesManager::performSearch()
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("query"), m_query);
     query.addQueryItem(QStringLiteral("languages"), m_languages);
+    QString numericImdb = m_imdbId;
+    if (numericImdb.startsWith(QStringLiteral("tt"), Qt::CaseInsensitive)) numericImdb.remove(0, 2);
+    bool validImdb = false;
+    numericImdb.toLongLong(&validImdb);
+    if (validImdb) query.addQueryItem(QStringLiteral("imdb_id"), numericImdb);
+    qint64 fileSize = 0;
+    const QString hash = movieHash(m_videoPath, &fileSize);
+    if (!hash.isEmpty()) {
+        query.addQueryItem(QStringLiteral("moviehash"), hash);
+        query.addQueryItem(QStringLiteral("moviebytesize"), QString::number(fileSize));
+    }
     query.addQueryItem(QStringLiteral("order_by"), QStringLiteral("download_count"));
     query.addQueryItem(QStringLiteral("order_direction"), QStringLiteral("desc"));
     url.setQuery(query);
@@ -285,10 +330,21 @@ void OpenSubtitlesManager::fetchSubtitle(const QUrl &url, QString fileName)
             if (safeName.isEmpty()) safeName = QStringLiteral("subtitle.srt");
             else if (suffix != QStringLiteral("srt") && suffix != QStringLiteral("ass")
                      && suffix != QStringLiteral("vtt")) safeName += QStringLiteral(".srt");
-            const QString directory = QDir(m_dataDir).filePath(QStringLiteral("subtitles"));
+            QString directory = QDir(m_dataDir).filePath(QStringLiteral("subtitles"));
+            if (!m_videoPath.isEmpty() && QFileInfo::exists(m_videoPath))
+                directory = QFileInfo(m_videoPath).absolutePath();
             if (!QDir().mkpath(directory)) {
                 setError(tr("Could not create the subtitle directory"));
             } else {
+                if (!m_videoPath.isEmpty() && QFileInfo::exists(m_videoPath)) {
+                    const QString language = m_pendingRow >= 0 && m_pendingRow < m_results.size()
+                        ? m_results.at(m_pendingRow).toMap().value(QStringLiteral("language")).toString()
+                        : QString{};
+                    const QString extension = QFileInfo(safeName).suffix().toLower();
+                    safeName = QFileInfo(m_videoPath).completeBaseName()
+                        + (language.isEmpty() ? QString{} : QStringLiteral(".") + language)
+                        + QStringLiteral(".") + extension;
+                }
                 const QString destination = QDir(directory).filePath(safeName);
                 QSaveFile file(destination);
                 if (!file.open(QIODevice::WriteOnly) || file.write(reply->readAll()) < 0 || !file.commit()) {
@@ -377,4 +433,38 @@ QString OpenSubtitlesManager::responseError(QNetworkReply *reply) const
     const QByteArray body = reply->readAll();
     const QString message = QJsonDocument::fromJson(body).object().value(QStringLiteral("message")).toString();
     return message.isEmpty() ? reply->errorString() : message;
+}
+
+QString OpenSubtitlesManager::normalizeLanguages(const QString &languages)
+{
+    QStringList result;
+    for (QString language : languages.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+        language = language.trimmed().toLower();
+        if ((language.size() != 2 && language.size() != 3)
+            || std::any_of(language.cbegin(), language.cend(), [](QChar character) {
+                   return character < QLatin1Char('a') || character > QLatin1Char('z');
+               })) return {};
+        if (!result.contains(language)) result.append(language);
+    }
+    return result.join(QLatin1Char(','));
+}
+
+QString OpenSubtitlesManager::movieHash(const QString &videoPath, qint64 *fileSize)
+{
+    if (fileSize) *fileSize = 0;
+    QFile file(videoPath);
+    if (!file.open(QIODevice::ReadOnly) || file.size() < 131072) return {};
+    const qint64 size = file.size();
+    quint64 hash = static_cast<quint64>(size);
+    auto addBlock = [&file, &hash](qint64 offset) {
+        if (!file.seek(offset)) return false;
+        const QByteArray block = file.read(65536);
+        if (block.size() != 65536) return false;
+        for (qsizetype index = 0; index < block.size(); index += 8)
+            hash += qFromLittleEndian<quint64>(block.constData() + index);
+        return true;
+    };
+    if (!addBlock(0) || !addBlock(size - 65536)) return {};
+    if (fileSize) *fileSize = size;
+    return QStringLiteral("%1").arg(hash, 16, 16, QLatin1Char('0'));
 }

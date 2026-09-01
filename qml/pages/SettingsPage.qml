@@ -378,6 +378,32 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
+            Label {
+                text: qsTr("Preferred languages")
+                color: Theme.textPrimary
+            }
+            TextField {
+                id: subtitleLanguages
+                Layout.preferredWidth: 220
+                text: root.subtitleManager.preferredLanguages
+                placeholderText: qsTr("nl,en")
+                Accessible.name: qsTr("Preferred subtitle language codes")
+                onAccepted: root.subtitleManager.setPreferredLanguages(text)
+            }
+            Button {
+                text: qsTr("Save languages")
+                onClicked: root.subtitleManager.setPreferredLanguages(subtitleLanguages.text)
+            }
+            Label {
+                Layout.fillWidth: true
+                text: qsTr("Comma-separated ISO codes, in preference order.")
+                color: Theme.textSecondary
+                wrapMode: Text.WordWrap
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
             TextField {
                 id: openSubtitlesApiKey
                 Layout.fillWidth: true

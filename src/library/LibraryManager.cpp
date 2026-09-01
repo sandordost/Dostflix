@@ -83,6 +83,7 @@ void LibraryManager::play(int row, bool restart)
     // invalidates pointers returned by LocalLibraryModel::at().
     const QString videoPath = movie->videoPath;
     const QString title = movie->title;
+    const QString imdbId = movie->imdbId;
     const int durationSeconds = movie->durationSeconds;
     const int startSeconds = restart ? 0 : movie->watchedSeconds;
     if (restart && !m_database.updateWatchProgress(videoPath, 0, durationSeconds)) {
@@ -93,6 +94,7 @@ void LibraryManager::play(int row, bool restart)
     m_activeVideoPath = videoPath;
     m_lastPersistedSeconds = startSeconds;
     if (restart) reload();
+    emit subtitleContextChanged(QUrl::fromLocalFile(videoPath), imdbId);
     emit playbackRequested(QUrl::fromLocalFile(videoPath), title, startSeconds);
 }
 

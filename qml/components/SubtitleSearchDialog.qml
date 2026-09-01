@@ -19,7 +19,7 @@ Dialog {
 
     onOpened: {
         if (manager.configured && manager.networkReady)
-            manager.search(query, "nl,en")
+            manager.search(query)
     }
     onClosed: manager.cancel()
 
@@ -33,12 +33,12 @@ Dialog {
                 Layout.fillWidth: true
                 text: root.query
                 placeholderText: qsTr("Movie or release title")
-                onAccepted: root.manager.search(text, "nl,en")
+                onAccepted: root.manager.search(text)
             }
             Button {
                 text: qsTr("Search")
                 enabled: !root.manager.busy && root.manager.configured && root.manager.networkReady
-                onClicked: root.manager.search(searchField.text, "nl,en")
+                onClicked: root.manager.search(searchField.text)
             }
         }
 

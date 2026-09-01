@@ -32,6 +32,11 @@ private slots:
                                  QStringLiteral("library-manager-test"));
         QVERIFY(database.open());
         LibraryManager manager(settings, database, movieDir);
+        QVERIFY(database.updateMovieMetadata(video.fileName(), 603,
+                                              QStringLiteral("tt0133093"),
+                                              QStringLiteral("The Matrix"), 1999,
+                                              {}, 8160, {}));
+        manager.refresh();
 
         QCOMPARE(manager.count(), 1);
         QCOMPARE(settings.libraryDirectory(), movieDir);
@@ -41,8 +46,12 @@ private slots:
         QCOMPARE(manager.model()->data(manager.model()->index(0, 0),
                                        LocalLibraryModel::YearRole).toInt(), 1999);
         QSignalSpy playSpy(&manager, &LibraryManager::playbackRequested);
+        QSignalSpy subtitleSpy(&manager, &LibraryManager::subtitleContextChanged);
         manager.play(0);
         QCOMPARE(playSpy.size(), 1);
+        QCOMPARE(subtitleSpy.size(), 1);
+        QCOMPARE(subtitleSpy.first().first().toUrl().toLocalFile(), video.fileName());
+        QCOMPARE(subtitleSpy.first().at(1).toString(), QStringLiteral("tt0133093"));
         QCOMPARE(playSpy.first().first().toUrl().toLocalFile(), video.fileName());
         QCOMPARE(playSpy.first().at(2).toInt(), 0);
 
@@ -58,6 +67,7 @@ private slots:
         manager.recordPlaybackProgress(0, 600);
         QCOMPARE(database.movies().first().watchedSeconds, 125);
         manager.play(0, true);
+        QCOMPARE(subtitleSpy.last().at(1).toString(), QStringLiteral("tt0133093"));
         QCOMPARE(playSpy.last().at(2).toInt(), 0);
         QCOMPARE(playSpy.last().at(0).toUrl().toLocalFile(), video.fileName());
         QCOMPARE(playSpy.last().at(1).toString(), QStringLiteral("The Matrix"));
