@@ -128,6 +128,18 @@ target_link_libraries(tst_provider_manager PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_provider_manager)
 add_test(NAME provider_manager COMMAND tst_provider_manager)
 
+qt_add_executable(tst_open_subtitles_manager
+    subtitles/tst_open_subtitles_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/subtitles/OpenSubtitlesManager.cpp
+)
+target_include_directories(tst_open_subtitles_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_open_subtitles_manager PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_open_subtitles_manager)
+add_test(NAME open_subtitles_manager
+    COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_open_subtitles_manager>'"
+)
+
 qt_add_executable(tst_secret_store
     providers/tst_secret_store.cpp
     ${PROJECT_SOURCE_DIR}/src/providers/SecretStore.cpp

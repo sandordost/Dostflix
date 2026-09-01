@@ -1,6 +1,7 @@
 # Subtitle controls plan
 
-**Status:** Implemented on `feature/subtitle-controls`
+**Status:** Implemented in PR #7; OpenSubtitles follow-up implemented on
+`feature/opensubtitles-search`
 
 ## Scope
 
@@ -19,8 +20,8 @@
 - `qml/pages/PlayerPage.qml` owns the subtitle menu, local file dialog, and
   delay control. The menu order is: disabled, available tracks, local file,
   then **Find subtitles…**.
-- `qml/Main.qml` currently explains that the final search action is reserved for
-  the next integration; it performs no network request.
+- `qml/Main.qml` now opens the network-gated OpenSubtitles search dialog for the
+  final search action.
 - `tests/player/tst_mpv_player.cpp` validates defaults, delay bounds, extension
   filtering, and a real local `.srt` load through libmpv.
 - `tests/qml/tst_player_page.qml` validates that the player exposes all subtitle
@@ -40,9 +41,9 @@
 - Preserve the player ownership and shutdown invariants documented in
   `2026-09-01-dostflix-mpv-player.md`.
 
-## Next increment: OpenSubtitles
+## OpenSubtitles follow-up
 
-Implement the networked search as a separate service and keep these boundaries:
+The networked search is implemented as a separate service with these boundaries:
 
 1. Add optional OpenSubtitles credentials/settings, storing secrets through the
    existing desktop Secret Service abstraction.
@@ -54,6 +55,9 @@ Implement the networked search as a separate service and keep these boundaries:
    under Dostflix application data, and load it through `addSubtitleFile()`.
 5. Use a fake local HTTP endpoint in automated tests. Do not call the public API
    from CI or unit tests.
+
+See `2026-09-01-dostflix-opensubtitles.md` for its API contract, security
+invariants, tests, and remaining metadata improvements.
 
 ## Verification
 
@@ -68,5 +72,5 @@ QT_QPA_PLATFORM=wayland \
   ./build/tests/tst_mpv_player initializesOpenGlRenderContext
 ```
 
-At implementation time the full suite passed 19/19, and the real Wayland/OpenGL
+At the local-controls implementation time the full suite passed 19/19, and the real Wayland/OpenGL
 test loaded and selected a generated local `.srt` track successfully.

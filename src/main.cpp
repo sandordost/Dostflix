@@ -8,6 +8,7 @@
 #include "providers/ProwlarrManager.h"
 #include "providers/SecretStore.h"
 #include "streaming/TorrServerManager.h"
+#include "subtitles/OpenSubtitlesManager.h"
 #include "ui/AppController.h"
 #include "vpn/NetworkManagerBackend.h"
 #include "vpn/VpnManager.h"
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
     VpnManager vpnManager(settings, vpnBackend, &networkGuard);
     LibSecretStore secretStore;
     ProviderManager providerManager(settings, secretStore);
+    OpenSubtitlesManager subtitleManager(secretStore, paths.dataDir());
 
     AppController controller;
     MovieListModel movies;
@@ -63,6 +65,8 @@ int main(int argc, char *argv[])
                      [&] { prowlarrManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &torrentEngine,
                      [&] { torrentEngine.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&vpnManager, &VpnManager::stateChanged, &subtitleManager,
+                     [&] { subtitleManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&prowlarrManager, &ProwlarrManager::releasePrepared,
                      &torrentEngine,
                      [&](const QString &title, const QString &magnetUrl,
@@ -78,6 +82,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("providerManager"), QVariant::fromValue(&providerManager)},
         {QStringLiteral("prowlarrManager"), QVariant::fromValue(&prowlarrManager)},
         {QStringLiteral("torrentEngine"), QVariant::fromValue(&torrentEngine)},
+        {QStringLiteral("subtitleManager"), QVariant::fromValue(&subtitleManager)},
     });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(EXIT_FAILURE); },
@@ -86,8 +91,11 @@ int main(int argc, char *argv[])
     MpvPlayer *player = engine.rootObjects().isEmpty()
         ? nullptr
         : engine.rootObjects().constFirst()->findChild<MpvPlayer *>(QStringLiteral("videoPlayer"));
+    QObject::connect(&subtitleManager, &OpenSubtitlesManager::subtitleReady,
+                     &app, [player](const QUrl &url) { if (player) player->addSubtitleFile(url); });
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&, player] {
         if (player) player->stop();
+        subtitleManager.cancel();
         torrentEngine.shutdown();
         prowlarrManager.shutdown();
         vpnManager.shutdown();
