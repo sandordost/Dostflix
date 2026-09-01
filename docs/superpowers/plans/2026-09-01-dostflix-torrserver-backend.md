@@ -18,9 +18,13 @@ prioritizes the active playback range and readahead window.
    protected systemd scope.
 3. Its HTTP API binds to `127.0.0.1` on a random port and uses a private database
    below `$XDG_DATA_HOME/dostflix/torrserver/`.
+   Process diagnostics are persisted to `torrserver.log` in that directory.
 4. Magnets and torrent files are submitted only while VPN protection is ready.
 5. On VPN loss TorrServer is killed immediately while firewall protection remains.
 6. Normal shutdown stops TorrServer before the guard and Dostflix-owned VPN.
+
+Startup fails visibly after 20 seconds if the local API does not become ready;
+process launch errors and exit codes include the diagnostic log path.
 
 ## Streaming flow
 

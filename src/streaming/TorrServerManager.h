@@ -2,13 +2,13 @@
 
 #include "streaming/TorrentFileModel.h"
 
+#include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QPointer>
 #include <QProcess>
 #include <QTimer>
 #include <QUrlQuery>
-#include <QJsonObject>
 #include <functional>
 
 class QNetworkReply;
@@ -85,10 +85,12 @@ private:
                   std::function<void(QNetworkReply *)> finished);
 
     QString m_dataDir;
+    QString m_logPath;
     QProcess m_process;
     QNetworkAccessManager m_network;
     QPointer<QNetworkReply> m_reply;
     QTimer m_pollTimer;
+    QTimer m_startupTimer;
     QUrl m_baseUrl;
     TorrentFileModel m_videoFiles;
     QString m_title;

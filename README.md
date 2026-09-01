@@ -16,6 +16,10 @@ the default route, and protected firewall state have all been verified.
 
 TorrServer is started only after `networkReady`, listens for control requests on
 loopback, inherits Dostflix's protected cgroup, and is stopped before the VPN.
+If its local API does not become ready within 20 seconds, Dostflix reports a
+startup error instead of waiting indefinitely. Backend diagnostics are stored in
+`$XDG_DATA_HOME/dostflix/torrserver/torrserver.log` (normally
+`~/.local/share/dostflix/torrserver/torrserver.log`).
 The embedded mpv player and subtitle behavior remain later phases.
 
 ## Arch installation and dependencies

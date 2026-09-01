@@ -11,7 +11,6 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QRandomGenerator>
 #include <QTcpServer>
 #include <utility>
 
@@ -40,13 +39,31 @@ QString replyError(QNetworkReply *reply)
 }
 
 TorrServerManager::TorrServerManager(QString dataDir, QObject *parent)
-    : QObject(parent), m_dataDir(std::move(dataDir))
+    : QObject(parent)
+    , m_dataDir(std::move(dataDir))
+    , m_logPath(QDir(m_dataDir).filePath(QStringLiteral("torrserver.log")))
 {
     m_pollTimer.setInterval(500);
     connect(&m_pollTimer, &QTimer::timeout, this, &TorrServerManager::poll);
-    connect(&m_process, &QProcess::finished, this, [this](int, QProcess::ExitStatus) {
+    m_startupTimer.setSingleShot(true);
+    m_startupTimer.setInterval(20'000);
+    connect(&m_startupTimer, &QTimer::timeout, this, [this] {
+        if (m_daemonReady || !m_networkReady) return;
+        stopDaemon(true);
+        fail(tr("TorrServer did not open its local API within 20 seconds. Log: %1")
+                 .arg(m_logPath));
+    });
+    connect(&m_process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+        if (m_stopping || error == QProcess::Crashed) return;
+        fail(tr("Could not start TorrServer: %1. Log: %2")
+                 .arg(m_process.errorString(), m_logPath));
+    });
+    connect(&m_process, &QProcess::finished, this, [this](int exitCode, QProcess::ExitStatus) {
         m_daemonReady = false;
-        if (!m_stopping && m_networkReady) fail(tr("The TorrServer streaming service stopped unexpectedly"));
+        if (!m_stopping && m_networkReady) {
+            fail(tr("TorrServer stopped unexpectedly (exit %1). Log: %2")
+                     .arg(exitCode).arg(m_logPath));
+        }
     });
 }
 
@@ -115,7 +132,6 @@ void TorrServerManager::startDaemon()
     }
     const quint16 apiPort = portProbe.serverPort();
     portProbe.close();
-    const quint16 peerPort = static_cast<quint16>(QRandomGenerator::global()->bounded(20'000, 60'000));
     m_baseUrl = QUrl(QStringLiteral("http://127.0.0.1:%1/").arg(apiPort));
     m_stopping = false;
     m_daemonReady = false;
@@ -123,10 +139,16 @@ void TorrServerManager::startDaemon()
     m_process.setArguments({QStringLiteral("--ip"), QStringLiteral("127.0.0.1"),
                             QStringLiteral("--port"), QString::number(apiPort),
                             QStringLiteral("--path"), m_dataDir,
-                            QStringLiteral("--torrentaddr"),
-                            QStringLiteral(":%1").arg(peerPort)});
-    m_process.setProcessChannelMode(QProcess::MergedChannels);
+                            QStringLiteral("--logpath"), m_logPath});
+    m_process.setStandardOutputFile(QProcess::nullDevice());
+    m_process.setStandardErrorFile(QProcess::nullDevice());
     m_process.start();
+    if (!m_process.waitForStarted(3'000)) {
+        fail(tr("Could not start TorrServer: %1. Log: %2")
+                 .arg(m_process.errorString(), m_logPath));
+        return;
+    }
+    m_startupTimer.start();
     m_pollTimer.start();
     if (!m_active) m_stateLabel = tr("Starting TorrServer…");
     emit stateChanged();
@@ -135,6 +157,7 @@ void TorrServerManager::startDaemon()
 void TorrServerManager::stopDaemon(bool force)
 {
     m_pollTimer.stop();
+    m_startupTimer.stop();
     if (m_reply) {
         QNetworkReply *reply = m_reply;
         m_reply = nullptr;
@@ -164,6 +187,7 @@ void TorrServerManager::probeApi()
 {
     get(QStringLiteral("echo"), {}, [this](QNetworkReply *reply) {
         if (!successful(reply)) return;
+        m_startupTimer.stop();
         m_daemonReady = true;
         emit stateChanged();
         submitPendingRelease();
@@ -383,7 +407,9 @@ void TorrServerManager::get(const QString &path, const QUrlQuery &query,
 {
     QUrl url = m_baseUrl.resolved(QUrl(path));
     url.setQuery(query);
-    QNetworkReply *reply = m_network.get(QNetworkRequest(url));
+    QNetworkRequest apiRequest(url);
+    apiRequest.setTransferTimeout(15'000);
+    QNetworkReply *reply = m_network.get(apiRequest);
     m_reply = reply;
     connect(reply, &QNetworkReply::finished, this, [this, reply, finished = std::move(finished)] {
         if (m_reply != reply) return;

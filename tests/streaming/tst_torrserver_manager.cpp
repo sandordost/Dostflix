@@ -1,5 +1,6 @@
 #include "streaming/TorrServerManager.h"
 
+#include <QFileInfo>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -36,6 +37,8 @@ private slots:
         TorrServerManager manager(directory.filePath(QStringLiteral("data")));
         manager.setNetworkReady(true);
         QTRY_VERIFY_WITH_TIMEOUT(manager.backendReady(), 10'000);
+        QVERIFY(QFileInfo::exists(directory.filePath(
+            QStringLiteral("data/torrserver.log"))));
         manager.startTorrentData(QStringLiteral("Fixture"), videoTorrentFixture());
         QTRY_COMPARE_WITH_TIMEOUT(manager.selectedFileName(), QStringLiteral("sample.mp4"), 5'000);
         QVERIFY(manager.active());
