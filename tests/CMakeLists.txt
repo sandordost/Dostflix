@@ -190,6 +190,7 @@ add_test(NAME provider_manager COMMAND tst_provider_manager)
 
 qt_add_executable(tst_open_subtitles_manager
     subtitles/tst_open_subtitles_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
     ${PROJECT_SOURCE_DIR}/src/subtitles/OpenSubtitlesManager.cpp
 )
 target_include_directories(tst_open_subtitles_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)

@@ -50,9 +50,11 @@ The networked search is implemented as a separate service with these boundaries:
 2. Enable search only when `networkReady` is true; never bypass the process
    kill-switch or contact the service for embedded/local subtitle operations.
 3. Prefer media hash plus movie identifiers, then present language and release
-   matches before downloading anything.
+   matches before downloading anything. This is implemented for local-library
+   playback, along with an ordered language preference in Settings.
 4. Save the chosen subtitle beside the retained movie when possible, otherwise
    under Dostflix application data, and load it through `addSubtitleFile()`.
+   This is implemented with atomic sidecar writes.
 5. Use a fake local HTTP endpoint in automated tests. Do not call the public API
    from CI or unit tests.
 

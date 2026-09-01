@@ -13,6 +13,8 @@ public:
     void setLibraryDirectory(const QString &value);
     [[nodiscard]] QString vpnConnectionUuid() const;
     void setVpnConnectionUuid(const QString &value);
+    [[nodiscard]] QString subtitleLanguages() const;
+    void setSubtitleLanguages(const QString &value);
     [[nodiscard]] QString ownedVpnConnectionUuid() const;
     [[nodiscard]] qint64 vpnOwnerPid() const;
     void setVpnOwnership(const QString &uuid, qint64 ownerPid);

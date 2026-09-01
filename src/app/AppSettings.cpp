@@ -25,6 +25,18 @@ void AppSettings::setVpnConnectionUuid(const QString &value)
     m_settings.setValue(QStringLiteral("vpn/connectionUuid"), value);
 }
 
+QString AppSettings::subtitleLanguages() const
+{
+    return m_settings.value(QStringLiteral("subtitles/languages"),
+                            QStringLiteral("nl,en")).toString();
+}
+
+void AppSettings::setSubtitleLanguages(const QString &value)
+{
+    m_settings.setValue(QStringLiteral("subtitles/languages"), value);
+    m_settings.sync();
+}
+
 QString AppSettings::ownedVpnConnectionUuid() const
 {
     return m_settings.value(QStringLiteral("vpn/ownedConnectionUuid")).toString();

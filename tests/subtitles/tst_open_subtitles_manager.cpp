@@ -1,5 +1,6 @@
 #include "providers/SecretStore.h"
 #include "subtitles/OpenSubtitlesManager.h"
+#include "app/AppSettings.h"
 
 #include <QFile>
 #include <QHash>
@@ -95,9 +96,10 @@ private slots:
     {
         MemorySecretStore secrets;
         QTemporaryDir data;
+        AppSettings settings(data.filePath(QStringLiteral("settings.ini")));
         FakeOpenSubtitlesServer server;
         QVERIFY(server.listen());
-        OpenSubtitlesManager manager(secrets, data.path(), server.apiBase());
+        OpenSubtitlesManager manager(settings, secrets, data.path(), server.apiBase());
         QVERIFY(manager.saveCredentials("api-key", "viewer", "secret"));
 
         manager.search("Test movie");
@@ -109,20 +111,36 @@ private slots:
     {
         MemorySecretStore secrets;
         QTemporaryDir data;
+        AppSettings settings(data.filePath(QStringLiteral("settings.ini")));
         FakeOpenSubtitlesServer server;
         QVERIFY(server.listen());
-        OpenSubtitlesManager manager(secrets, data.path(), server.apiBase());
+        OpenSubtitlesManager manager(settings, secrets, data.path(), server.apiBase());
         QVERIFY(manager.saveCredentials("api-key", "viewer", "secret"));
         QVERIFY(secrets.values.value("subtitles-opensubtitles").contains("api-key"));
+        QVERIFY(manager.setPreferredLanguages("DE, nl, de"));
+        QCOMPARE(manager.preferredLanguages(), QString("de,nl"));
+        QCOMPARE(settings.subtitleLanguages(), QString("de,nl"));
+        QVERIFY(!manager.setPreferredLanguages("not-a-language"));
+        QCOMPARE(manager.preferredLanguages(), QString("de,nl"));
+
+        const QString videoPath = data.filePath(QStringLiteral("Test Movie.mkv"));
+        QFile video(videoPath);
+        QVERIFY(video.open(QIODevice::WriteOnly));
+        QCOMPARE(video.write(QByteArray(131072, '\0')), 131072);
+        video.close();
+        manager.setMediaContext(QUrl::fromLocalFile(videoPath), QStringLiteral("tt1234567"));
         manager.setNetworkReady(true);
 
-        manager.search("Test movie", "nl,en");
+        manager.search("Test movie");
         QTRY_COMPARE_WITH_TIMEOUT(manager.results().size(), 1, 3000);
         QCOMPARE(manager.results().first().toMap().value("fileId").toInt(), 42);
         QCOMPARE(manager.results().first().toMap().value("language").toString(), QString("nl"));
         QVERIFY(server.requests.at(0).contains("Api-Key: api-key"));
         QVERIFY(server.requests.at(0).contains("Accept: application/json"));
-        QVERIFY(server.requests.at(1).contains("languages=nl,en"));
+        QVERIFY(server.requests.at(1).contains("languages=de,nl"));
+        QVERIFY(server.requests.at(1).contains("imdb_id=1234567"));
+        QVERIFY(server.requests.at(1).contains("moviehash=0000000000020000"));
+        QVERIFY(server.requests.at(1).contains("moviebytesize=131072"));
         QVERIFY(server.requests.at(1).contains("Host: 127.0.0.2:"));
 
         QSignalSpy readySpy(&manager, &OpenSubtitlesManager::subtitleReady);
@@ -132,7 +150,7 @@ private slots:
         QVERIFY(server.requests.at(2).contains("Authorization: Bearer test-token"));
         QVERIFY(server.requests.at(2).contains("Accept: application/json"));
         const QUrl result = readySpy.first().first().toUrl();
-        QCOMPARE(result.toLocalFile(), data.path() + "/subtitles/Test.Release.nl.srt");
+        QCOMPARE(result.toLocalFile(), data.path() + "/Test Movie.nl.srt");
         QFile file(result.toLocalFile());
         QVERIFY(file.open(QIODevice::ReadOnly));
         QVERIFY(file.readAll().contains("Hallo"));

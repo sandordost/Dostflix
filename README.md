@@ -30,6 +30,10 @@ The player lists embedded subtitle tracks, accepts local `.srt`, `.ass`, and
 search Dutch and English releases through a user-configured OpenSubtitles.com
 account, download the selected subtitle, and load it directly into mpv. These
 requests are disabled until VPN protection is verified.
+Preferred subtitle languages are configurable as ordered ISO codes. For a local
+library film, searches also include its IMDb ID and OpenSubtitles movie hash;
+the selected subtitle is atomically stored beside the video as
+`Movie.language.srt` so it remains available with the retained film.
 Users can choose a writable movie-library folder; Dostflix recursively discovers
 supported local videos, registers them in SQLite without duplicates, and plays
 them through embedded mpv even when the VPN is unavailable. The selected
@@ -116,7 +120,8 @@ changing cross-component behavior:
 - `docs/superpowers/plans/2026-09-01-dostflix-subtitle-controls.md` — embedded
   and local subtitle implementation and its networked handoff boundary.
 - `docs/superpowers/plans/2026-09-01-dostflix-opensubtitles.md` — OpenSubtitles
-  API, secret-storage, VPN gating, fake-server tests, and future enhancements.
+  API, language preferences, hash/IMDb matching, sidecar storage, VPN gating,
+  and fake-server tests.
 - `docs/superpowers/plans/2026-09-01-dostflix-local-library.md` — local folder,
   SQLite registration, offline playback, tests, and torrent-retention handoff.
 - `docs/superpowers/plans/2026-09-01-dostflix-library-metadata.md` — filename

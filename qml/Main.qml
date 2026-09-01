@@ -35,6 +35,7 @@ ApplicationWindow {
             return
         window.launchedStreamUrl = url
         window.libraryManager.clearPlaybackSession()
+        window.subtitleManager.setMediaContext("", "")
         videoPlayer.play(url, window.torrentEngine.title)
         window.showingPlayer = true
     }
@@ -76,6 +77,7 @@ ApplicationWindow {
         target: window.downloadManager
         function onLocalPlaybackRequested(fileUrl, title) {
             window.libraryManager.clearPlaybackSession()
+            window.subtitleManager.setMediaContext(fileUrl, "")
             window.stoppedStreamUrl = ""
             window.launchedStreamUrl = ""
             videoPlayer.play(fileUrl, title)
