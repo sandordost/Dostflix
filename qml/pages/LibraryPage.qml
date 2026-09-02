@@ -23,58 +23,12 @@ Item {
     function requestPlayback(index, title, durationSeconds, watchedSeconds) {
         const canResume = watchedSeconds >= 30
                 && (durationSeconds <= 0 || durationSeconds - watchedSeconds > 60)
-        if (!canResume) {
-            libraryManager.play(index, true)
-            return
-        }
-        resumeDialog.movieIndex = index
-        resumeDialog.movieTitle = title
-        resumeDialog.watchedSeconds = watchedSeconds
-        resumeDialog.open()
+        libraryManager.play(index, !canResume)
     }
 
-    Dialog {
-        id: resumeDialog
-        objectName: "resumePlaybackDialog"
-        anchors.centerIn: parent
-        width: Math.min(Theme.px(540), root.width - Theme.px(48))
-        height: Theme.px(220)
-        modal: true
-        title: qsTr("Continue watching?")
-        background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
-        property int movieIndex: -1
-        property string movieTitle: ""
-        property int watchedSeconds: 0
-
-        contentItem: Label {
-            text: qsTr("Resume %1 at %2, or start from the beginning?")
-                    .arg(resumeDialog.movieTitle)
-                    .arg(root.formatTime(resumeDialog.watchedSeconds))
-            color: Theme.textPrimary
-            wrapMode: Text.WordWrap
-        }
-        footer: DialogButtonBox {
-            background: Item {}
-            AppButton {
-                objectName: "restartMovieButton"
-                text: qsTr("Start over")
-                DialogButtonBox.buttonRole: DialogButtonBox.ResetRole
-                onClicked: {
-                    resumeDialog.close()
-                    root.libraryManager.play(resumeDialog.movieIndex, true)
-                }
-            }
-            AppButton {
-                objectName: "resumeMovieButton"
-                text: qsTr("Resume")
-                primary: true
-                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                onClicked: {
-                    resumeDialog.close()
-                    root.libraryManager.play(resumeDialog.movieIndex, false)
-                }
-            }
-        }
+    function focusFirstControl() {
+        libraryRefreshButton.forceActiveFocus(Qt.TabFocusReason)
+        return true
     }
 
     ColumnLayout {
@@ -97,6 +51,8 @@ Item {
                 font.family: Theme.fontFamily
             }
             AppToolButton {
+                id: libraryRefreshButton
+                objectName: "libraryRefreshButton"
                 icon.name: "view-refresh-symbolic"
                 Accessible.name: qsTr("Rescan movie library")
                 onClicked: root.libraryManager.refresh()
@@ -235,6 +191,8 @@ Item {
                               : qsTr("Play")
                         icon.name: "media-playback-start-symbolic"
                         primary: true
+                        activeFocusOnTab: false
+                        focusPolicy: Qt.NoFocus
                         onClicked: root.requestPlayback(
                             movieRow.index, movieRow.title,
                             movieRow.durationSeconds, movieRow.watchedSeconds)

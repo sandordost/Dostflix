@@ -53,16 +53,17 @@ only while VPN protection is verified, then stores the canonical title, year,
 runtime, synopsis, TMDB/IMDb identity, and a locally cached poster. Once cached,
 all library metadata remains available for offline browsing.
 Local playback position is persisted in five-second increments and once more
-before stopping. Returning to a partially watched movie offers Resume or Start
-over; completed movies automatically lose their resume marker.
+before stopping. Returning to a partially watched movie resumes immediately;
+completed movies automatically lose their resume marker.
 
 The UI follows the Dostify reference with matte translucent panels, fixed 2:3
 poster cards, responsive icon-only navigation on small windows, consistent
 Montserrat typography, and Font Awesome icons. Borderless rounded inputs and
 dark popup/hover states avoid the platform-dependent Qt Basic styling. File and
 folder selection uses the same in-app visual system instead of compositor-themed
-dialogs. Discover can switch between a poster grid and compact result list;
-active torrent progress stays visible in the application header. The local
+dialogs. Discover can switch between a poster grid and compact result list. A
+selected release shows its retrieval/buffering spinner and concise status on its
+own thumbnail instead of consuming the application header. The local
 library uses compact poster rows without hover tooltips. Player controls fade
 after 2.8 seconds and return on pointer
 movement, pause, buffering, or keyboard input; only opacity, color, and scale are
@@ -84,9 +85,11 @@ PlayStation, Nintendo Switch Pro, Steam Deck, Steam Controller, Steam Input's
 virtual Xbox controller, and other SDL-mapped gamepads share one action layout.
 Both the D-pad and left stick navigate spatially with dead-zone filtering and
 hold-repeat: up/down follows visual rows and left/right changes columns. The
-south face button confirms, east closes the active context or returns to an
-active movie, Start pauses, triggers or shoulders change section or seek, and west opens
-subtitles. North focuses search while browsing and toggles player fullscreen.
+south face button explicitly activates the focused Qt control, east closes the
+active context or returns to an active movie, Start pauses, triggers or shoulders
+change section or seek 30 seconds, and west opens subtitles. D-pad/stick
+left/right remain spatial navigation inside the player. North focuses search
+while browsing and toggles player fullscreen.
 Controller-only hints adapt between Xbox and PlayStation labels.
 Controllers can be connected or removed while Dostflix is running. Losing the
 last controller during playback pauses the movie, while mouse and keyboard input

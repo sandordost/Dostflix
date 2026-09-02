@@ -8,12 +8,6 @@ Item {
     required property string vpnLabel
     required property bool vpnConnected
     required property bool vpnBusy
-    required property var prowlarrManager
-    required property var torrentEngine
-    readonly property bool transferVisible: prowlarrManager.releaseBusy
-                                             || torrentEngine.active
-                                             || torrentEngine.errorMessage.length > 0
-                                             || prowlarrManager.releaseError.length > 0
     implicitHeight: Theme.headerHeight
 
     Image {
@@ -75,69 +69,4 @@ Item {
         }
     }
 
-    Rectangle {
-        id: transferStatus
-        objectName: "headerTransferStatus"
-        anchors.left: brandTitle.right
-        anchors.right: vpnStatus.left
-        anchors.leftMargin: Theme.px(36)
-        anchors.rightMargin: Theme.px(36)
-        anchors.verticalCenter: parent.verticalCenter
-        height: Theme.px(58)
-        radius: Theme.radius
-        color: Theme.surface
-        visible: root.transferVisible && width >= Theme.px(280)
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: Theme.px(8)
-            spacing: Theme.px(5)
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.px(8)
-                BusyIndicator {
-                    Layout.preferredWidth: Theme.px(18)
-                    Layout.preferredHeight: Theme.px(18)
-                    running: root.prowlarrManager.releaseBusy
-                             || (root.torrentEngine.active && !root.torrentEngine.bufferReady)
-                    visible: running
-                }
-                Label {
-                    Layout.fillWidth: true
-                    text: root.prowlarrManager.releaseBusy
-                          ? qsTr("Retrieving torrent…")
-                          : (root.torrentEngine.errorMessage.length > 0
-                             ? root.torrentEngine.errorMessage
-                             : (root.prowlarrManager.releaseError.length > 0
-                                ? root.prowlarrManager.releaseError
-                                : root.torrentEngine.title + " — " + root.torrentEngine.stateLabel))
-                    color: root.torrentEngine.errorMessage.length > 0
-                           || root.prowlarrManager.releaseError.length > 0
-                           ? Theme.danger : Theme.textPrimary
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.captionSize
-                    elide: Text.ElideRight
-                }
-                AppToolButton {
-                    visible: root.torrentEngine.active
-                    icon.name: "media-playback-stop-symbolic"
-                    implicitWidth: Theme.px(34)
-                    implicitHeight: Theme.px(34)
-                    Accessible.name: qsTr("Cancel download")
-                    onClicked: root.torrentEngine.cancel()
-                }
-            }
-
-            ProgressBar {
-                objectName: "headerTransferProgress"
-                Layout.fillWidth: true
-                Layout.preferredHeight: Theme.px(4)
-                visible: root.torrentEngine.active
-                from: 0
-                to: 1
-                value: root.torrentEngine.progress
-            }
-        }
-    }
 }

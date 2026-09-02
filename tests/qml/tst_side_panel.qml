@@ -48,6 +48,7 @@ TestCase {
         const field = findChild(panel, "searchField")
         verify(field !== null)
         compare(field.activeFocusOnTab, false)
+        compare(field.height, 46)
 
         panel.openControllerSearch()
         compare(panel.controllerSearchActive, true)

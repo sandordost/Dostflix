@@ -126,6 +126,38 @@ private slots:
         QVERIFY(manager.moveFocus(1, 0));
         QCOMPARE(window.activeFocusItem(), &right);
     }
+
+    void treatsOverlappingRowsAsTheSameNavigationColumn()
+    {
+        ControllerManager manager(nullptr, false);
+        QQuickWindow window;
+        window.setGeometry(0, 0, 900, 500);
+
+        QQuickItem refresh(window.contentItem());
+        refresh.setPosition({820, 20});
+        refresh.setSize({50, 50});
+        refresh.setActiveFocusOnTab(true);
+
+        QQuickItem fullWidthMovie(window.contentItem());
+        fullWidthMovie.setPosition({220, 120});
+        fullWidthMovie.setSize({650, 120});
+        fullWidthMovie.setActiveFocusOnTab(true);
+
+        QQuickItem sidebarItem(window.contentItem());
+        sidebarItem.setPosition({20, 100});
+        sidebarItem.setSize({170, 50});
+        sidebarItem.setActiveFocusOnTab(true);
+
+        window.show();
+        window.requestActivate();
+        QTRY_COMPARE(QGuiApplication::focusWindow(), &window);
+        fullWidthMovie.forceActiveFocus();
+
+        QVERIFY(manager.moveFocus(0, -1));
+        QCOMPARE(window.activeFocusItem(), &refresh);
+        QVERIFY(manager.moveFocus(0, 1));
+        QCOMPARE(window.activeFocusItem(), &fullWidthMovie);
+    }
 };
 
 QTEST_MAIN(ControllerManagerTest)

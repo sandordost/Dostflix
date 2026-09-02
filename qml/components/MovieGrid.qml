@@ -7,9 +7,17 @@ GridView {
     id: root
     required property var movieModel
     signal releaseSelected(string title, string magnetUrl, string downloadUrl, string posterUrl)
+    property string selectedReleaseKey: ""
+    property bool transferLoading: false
+    property string transferStatusText: ""
+    property bool transferHasError: false
     property int cardWidth: Theme.posterWidth
     property int cardGap: Theme.px(18)
     readonly property int columnCount: Math.max(1, Math.floor(width / (cardWidth + cardGap)))
+
+    function releaseKey(title, magnetUrl, downloadUrl) {
+        return title + "\n" + magnetUrl + "\n" + downloadUrl
+    }
 
     function focusFirstResult() {
         if (count < 1)
@@ -46,6 +54,12 @@ GridView {
             seederCount: parent.model.seederCount
             posterUrl: parent.model.posterUrl
             sourceLabel: parent.model.sourceLabel
+            transferActive: root.selectedReleaseKey === root.releaseKey(
+                                parent.model.title, parent.model.magnetUrl,
+                                parent.model.downloadUrl)
+            transferLoading: transferActive && root.transferLoading
+            transferStatusText: transferActive ? root.transferStatusText : ""
+            transferHasError: transferActive && root.transferHasError
             onSelected: root.releaseSelected(parent.model.title, parent.model.magnetUrl,
                                              parent.model.downloadUrl, parent.model.posterUrl)
         }

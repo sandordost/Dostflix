@@ -42,7 +42,7 @@ Primary references:
 | Left/right trigger or shoulder | Previous/next page; seek 30 seconds in player |
 | West / X / Square | Open subtitles in player |
 | North / Y / Triangle | Focus search while browsing; toggle player fullscreen |
-| Left/right while playing | Seek 10 seconds |
+| D-pad/stick left/right while playing | Navigate player controls |
 
 The analog stick uses separate press and release thresholds to prevent dead-zone
 chatter. D-pad and stick directions share one state so overlapping inputs do not
@@ -50,13 +50,19 @@ double-fire. Held directions repeat after 360 ms and then every 95 ms.
 
 ## UI and lifecycle
 
-Controller navigation scores controls by their actual on-screen position instead
-of translating every direction into Tab. Up/down therefore follows rows and
-left/right changes columns; modal popups constrain focus to their overlay. Search
+Controller navigation scores control rectangles by their actual on-screen
+position instead of translating every direction into Tab. Overlapping row/column
+bounds count as the same navigation lane, so a toolbar control above a full-width
+movie row is not skipped. Up/down therefore follows rows and left/right changes
+columns; modal popups constrain focus to their overlay. Search
 is intentionally excluded from this directional graph and entered only through
 Y/Triangle. B/Circle first closes search, subtitles, or another popup, then
 returns to an active movie when browsing. Movie cards, result rows, library rows,
 file-picker entries, and the Now Playing card accept controller activation.
+Confirmation invokes the focused Qt control explicitly rather than relying on a
+synthetic Return key, which also covers Settings and Downloads controls reliably.
+Changing section with a trigger focuses that page's first meaningful action;
+Library starts with Refresh and then continues downward into movie rows.
 
 When a controller is connected, the sidebar shows LT/RT or L2/R2 section hints,
 search shows Y/Triangle, and the Return to movie card shows B/Circle. PlayStation

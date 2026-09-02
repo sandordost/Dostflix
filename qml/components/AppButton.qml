@@ -22,6 +22,12 @@ Button {
     palette.buttonText: enabled ? Theme.textPrimary : Theme.textMuted
     focusPolicy: Qt.StrongFocus
 
+    // Controller confirmation should invoke the control directly. Synthesized
+    // Return keys are not handled consistently by every Qt Quick style.
+    function controllerActivate() {
+        root.clicked()
+    }
+
     contentItem: Item {
         implicitWidth: contentRow.implicitWidth
         implicitHeight: contentRow.implicitHeight

@@ -37,6 +37,12 @@ Item {
         revealControls()
     }
 
+    function focusDefaultControl() {
+        revealControls()
+        pauseButton.forceActiveFocus(Qt.TabFocusReason)
+        return true
+    }
+
     function openSubtitleMenu() {
         revealControls()
         subtitleMenu.popup(subtitleButton, 0, -subtitleMenu.implicitHeight)
@@ -272,6 +278,7 @@ Item {
                     onClicked: { root.player.seek(-10); root.revealControls() }
                 }
                 AppToolButton {
+                    id: pauseButton
                     objectName: "pauseButton"
                     icon.name: root.player.paused ? "media-playback-start-symbolic" : "media-playback-pause-symbolic"
                     icon.width: Theme.iconSizeLarge

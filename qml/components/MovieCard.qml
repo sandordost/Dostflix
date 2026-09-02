@@ -10,6 +10,10 @@ Item {
     required property int seederCount
     required property url posterUrl
     required property string sourceLabel
+    property bool transferActive: false
+    property bool transferLoading: false
+    property string transferStatusText: ""
+    property bool transferHasError: false
     signal selected()
     activeFocusOnTab: true
     width: Theme.posterWidth
@@ -21,7 +25,8 @@ Item {
     Accessible.onPressAction: selected()
 
     function controllerActivate() {
-        selected()
+        if (!transferLoading)
+            selected()
     }
 
     Behavior on scale {
@@ -64,6 +69,46 @@ Item {
             }
 
             Rectangle {
+                anchors.fill: parent
+                visible: root.transferActive
+                         && (root.transferLoading || root.transferHasError)
+                color: Qt.rgba(0.02, 0.02, 0.025, 0.78)
+
+                Column {
+                    anchors.centerIn: parent
+                    width: parent.width - Theme.px(20)
+                    spacing: Theme.px(8)
+
+                    BusyIndicator {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: Theme.px(36)
+                        height: Theme.px(36)
+                        running: root.transferLoading
+                        visible: running
+                    }
+                    AppIcon {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: root.transferHasError && !root.transferLoading
+                        glyph: "\uf071"
+                        color: Theme.danger
+                        font.pixelSize: Theme.iconSizeLarge
+                    }
+                    Label {
+                        width: parent.width
+                        text: root.transferStatusText
+                        color: root.transferHasError ? Theme.danger : Theme.textPrimary
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.captionSize
+                        font.weight: Font.DemiBold
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                    }
+                }
+            }
+
+            Rectangle {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.margins: Theme.px(9)
@@ -90,6 +135,7 @@ Item {
                 radius: Theme.px(26)
                 color: Theme.button
                 opacity: cardMouse.containsMouse || root.activeFocus ? 1 : 0
+                visible: !root.transferLoading && !root.transferHasError
                 scale: cardMouse.containsMouse || root.activeFocus ? 1 : 0.88
                 Label {
                     anchors.centerIn: parent
@@ -139,13 +185,13 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.selected()
+        onClicked: if (!root.transferLoading) root.selected()
     }
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
-            root.selected()
+            root.controllerActivate()
             event.accepted = true
         }
     }

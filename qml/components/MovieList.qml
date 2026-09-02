@@ -9,6 +9,14 @@ ListView {
     id: root
     required property var movieModel
     signal releaseSelected(string title, string magnetUrl, string downloadUrl, string posterUrl)
+    property string selectedReleaseKey: ""
+    property bool transferLoading: false
+    property string transferStatusText: ""
+    property bool transferHasError: false
+
+    function releaseKey(title, magnetUrl, downloadUrl) {
+        return title + "\n" + magnetUrl + "\n" + downloadUrl
+    }
 
     function focusFirstResult() {
         if (count < 1)
@@ -40,11 +48,16 @@ ListView {
         border.color: Theme.accent
         Accessible.role: Accessible.Button
         Accessible.name: model.title
+        readonly property bool transferActive: root.selectedReleaseKey === root.releaseKey(
+                                                   model.title, model.magnetUrl,
+                                                   model.downloadUrl)
         Accessible.onPressAction: root.releaseSelected(
             model.title, model.magnetUrl, model.downloadUrl, model.posterUrl)
 
         function controllerActivate() {
-            root.releaseSelected(model.title, model.magnetUrl, model.downloadUrl, model.posterUrl)
+            if (!root.transferLoading)
+                root.releaseSelected(model.title, model.magnetUrl,
+                                     model.downloadUrl, model.posterUrl)
         }
 
         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -69,6 +82,26 @@ ListView {
                     asynchronous: true
                     cache: true
                     sourceSize: Qt.size(Theme.px(100), Theme.px(152))
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    visible: releaseRow.transferActive
+                             && (root.transferLoading || root.transferHasError)
+                    color: Qt.rgba(0.02, 0.02, 0.025, 0.76)
+                    BusyIndicator {
+                        anchors.centerIn: parent
+                        width: Theme.px(25)
+                        height: Theme.px(25)
+                        running: root.transferLoading
+                        visible: running
+                    }
+                    AppIcon {
+                        anchors.centerIn: parent
+                        visible: root.transferHasError && !root.transferLoading
+                        glyph: "\uf071"
+                        color: Theme.danger
+                        font.pixelSize: Theme.iconSize
+                    }
                 }
             }
 
@@ -96,8 +129,11 @@ ListView {
                 }
                 Label {
                     Layout.fillWidth: true
-                    text: releaseRow.model.sourceLabel
-                    color: Theme.textMuted
+                    text: releaseRow.transferActive && root.transferStatusText.length > 0
+                          ? root.transferStatusText : releaseRow.model.sourceLabel
+                    color: releaseRow.transferActive && root.transferHasError
+                           ? Theme.danger : (releaseRow.transferActive
+                                             ? Theme.accent : Theme.textMuted)
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.captionSize
                     elide: Text.ElideRight
@@ -131,9 +167,13 @@ ListView {
 
         HoverHandler { id: rowHover }
         TapHandler {
-            onTapped: root.releaseSelected(
-                releaseRow.model.title, releaseRow.model.magnetUrl,
-                releaseRow.model.downloadUrl, releaseRow.model.posterUrl)
+            onTapped: {
+                if (!root.transferLoading)
+                    root.releaseSelected(releaseRow.model.title,
+                                         releaseRow.model.magnetUrl,
+                                         releaseRow.model.downloadUrl,
+                                         releaseRow.model.posterUrl)
+            }
         }
         Keys.onPressed: event => {
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter

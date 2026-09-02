@@ -9,6 +9,18 @@ Item {
     id: root
     required property var downloadManager
 
+    function focusFirstControl() {
+        const controls = [pauseDownloadButton, resumeDownloadButton,
+                          playDownloadButton, removeDownloadButton]
+        for (let index = 0; index < controls.length; ++index) {
+            if (controls[index].visible && controls[index].enabled) {
+                controls[index].forceActiveFocus(Qt.TabFocusReason)
+                return true
+            }
+        }
+        return false
+    }
+
     Dialog {
         id: removeDialog
         objectName: "removeDownloadDialog"
@@ -89,11 +101,14 @@ Item {
                         elide: Text.ElideRight
                     }
                     AppButton {
+                        id: pauseDownloadButton
+                        objectName: "pauseDownloadButton"
                         text: qsTr("Pause")
                         visible: root.downloadManager.active
                         onClicked: root.downloadManager.pause()
                     }
                     AppButton {
+                        id: resumeDownloadButton
                         objectName: "resumeDownloadButton"
                         text: qsTr("Resume")
                         visible: root.downloadManager.hasPending
@@ -101,6 +116,7 @@ Item {
                         onClicked: root.downloadManager.resume()
                     }
                     AppButton {
+                        id: playDownloadButton
                         objectName: "playDownloadButton"
                         text: qsTr("Play")
                         icon.name: "media-playback-start-symbolic"
@@ -108,6 +124,7 @@ Item {
                         onClicked: root.downloadManager.play()
                     }
                     AppButton {
+                        id: removeDownloadButton
                         objectName: "removeDownloadButton"
                         text: qsTr("Remove")
                         icon.name: "edit-delete-symbolic"

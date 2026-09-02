@@ -12,13 +12,43 @@ Item {
     required property var torrentEngine
     property bool listMode: false
     property string selectionError: ""
+    property string selectedReleaseKey: ""
+
+    readonly property bool transferLoading: prowlarrManager.releaseBusy
+                                                   || (torrentEngine.active
+                                                       && !torrentEngine.bufferReady)
+    readonly property bool transferHasError: prowlarrManager.releaseError.length > 0
+                                              || torrentEngine.errorMessage.length > 0
+                                              || selectionError.length > 0
+    readonly property string transferStatusText: {
+        if (prowlarrManager.releaseBusy)
+            return qsTr("Retrieving torrent…")
+        if (torrentEngine.errorMessage.length > 0)
+            return torrentEngine.errorMessage
+        if (prowlarrManager.releaseError.length > 0)
+            return prowlarrManager.releaseError
+        if (selectionError.length > 0)
+            return selectionError
+        if (torrentEngine.active)
+            return torrentEngine.stateLabel
+        return ""
+    }
+
+    function releaseKey(title, magnetUrl, downloadUrl) {
+        return title + "\n" + magnetUrl + "\n" + downloadUrl
+    }
 
     function focusFirstResult() {
         return listMode ? movieList.focusFirstResult() : movieGrid.focusFirstResult()
     }
 
+    function focusFirstControl() {
+        return root.focusFirstResult()
+    }
+
     function startRelease(title, magnetUrl, downloadUrl) {
         selectionError = ""
+        selectedReleaseKey = releaseKey(title, magnetUrl, downloadUrl)
         if (magnetUrl.length === 0 && downloadUrl.length === 0) {
             selectionError = qsTr("This release has no usable download link.")
             return
@@ -133,12 +163,20 @@ Item {
             MovieGrid {
                 id: movieGrid
                 movieModel: root.movieModel
+                selectedReleaseKey: root.selectedReleaseKey
+                transferLoading: root.transferLoading
+                transferStatusText: root.transferStatusText
+                transferHasError: root.transferHasError
                 onReleaseSelected: (title, magnetUrl, downloadUrl, posterUrl) =>
                     root.startRelease(title, magnetUrl, downloadUrl)
             }
             MovieList {
                 id: movieList
                 movieModel: root.movieModel
+                selectedReleaseKey: root.selectedReleaseKey
+                transferLoading: root.transferLoading
+                transferStatusText: root.transferStatusText
+                transferHasError: root.transferHasError
                 onReleaseSelected: (title, magnetUrl, downloadUrl, posterUrl) =>
                     root.startRelease(title, magnetUrl, downloadUrl)
             }

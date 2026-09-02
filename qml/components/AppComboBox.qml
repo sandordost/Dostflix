@@ -16,6 +16,13 @@ ComboBox {
     palette.highlight: Theme.accentSoft
     palette.highlightedText: Theme.textPrimary
 
+    function controllerActivate() {
+        if (root.popup.opened)
+            root.popup.close()
+        else
+            root.popup.open()
+    }
+
     contentItem: Text {
         text: root.displayText
         color: root.enabled ? Theme.textPrimary : Theme.textMuted

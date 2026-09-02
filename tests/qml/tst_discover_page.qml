@@ -28,6 +28,10 @@ TestCase {
         id: fakeTorrent
         property bool needsFileSelection: false
         property var videoFiles: []
+        property bool active: false
+        property bool bufferReady: false
+        property string errorMessage: ""
+        property string stateLabel: "Building playback buffer…"
         function selectVideoFile(index) {}
     }
     ApplicationWindow {
@@ -45,7 +49,12 @@ TestCase {
 
     function init() {
         page.listMode = false
+        page.selectedReleaseKey = ""
         fakeProwlarr.prepareCalls = 0
+        fakeProwlarr.releaseBusy = false
+        fakeProwlarr.releaseError = ""
+        fakeTorrent.active = false
+        fakeTorrent.errorMessage = ""
     }
 
     function test_view_toggle() {
@@ -62,5 +71,13 @@ TestCase {
     function test_release_starts_without_confirmation() {
         page.startRelease("Movie", "magnet:?xt=test", "")
         compare(fakeProwlarr.prepareCalls, 1)
+    }
+
+    function test_selected_thumbnail_owns_transfer_status() {
+        page.startRelease("Movie", "magnet:?xt=test", "")
+        fakeProwlarr.releaseBusy = true
+        compare(page.transferLoading, true)
+        compare(page.transferStatusText, "Retrieving torrent…")
+        verify(page.selectedReleaseKey.length > 0)
     }
 }

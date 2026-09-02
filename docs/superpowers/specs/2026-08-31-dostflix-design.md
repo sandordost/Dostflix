@@ -146,7 +146,11 @@ The search field queries configured providers after the VPN is protected. Result
 
 ### 7.3 Buffer and playback
 
-After release and file selection, the detail view shows metadata acquisition, connected peers and seeds, speed, cached amount, and estimated time until the 30-second buffer is safe. Playback then opens fullscreen or in a dedicated player view. Seeking moves TorrServer's active reader and may return to buffering.
+After release and file selection, the selected result thumbnail shows metadata
+acquisition or buffering with a local spinner and concise state text. The header
+remains reserved for brand and VPN state. Playback then opens fullscreen or in a
+dedicated player view. Seeking moves TorrServer's active reader and may return to
+buffering.
 
 ### 7.4 Library and seeding
 
@@ -166,6 +170,7 @@ Dostflix follows Dostify's visual language rather than copying controls without 
 - Bright blue is reserved for meaningful separation or progress.
 - Purple is used sparingly for brand and active actions.
 - The header contains the Dostflix brand and VPN status. It has no decorative Films button.
+- Transfer progress belongs to the selected release card, never to a global header bar.
 - Typography uses one documented family and a small, consistent token scale.
 - Menu items have semantically appropriate icons with uniform size and optical alignment.
 - The movie grid wraps responsively based on available width.
@@ -177,6 +182,8 @@ Dostflix follows Dostify's visual language rather than copying controls without 
   in visual columns, horizontal input changes columns, and modal overlays contain
   focus. Search opens explicitly with Y/Triangle, while controller hints adapt
   between Xbox and PlayStation layouts. Keyboard and mouse remain active.
+- Player D-pad/stick directions navigate controls; L2/R2 or LT/RT seek by 30 seconds.
+- Partially watched local movies resume directly instead of opening a resume/start-over prompt.
 
 ## 9. Error handling
 

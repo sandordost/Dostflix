@@ -42,10 +42,22 @@ TestCase {
         }
     }
 
+    function init() {
+        fakeDownload.resumeCalls = 0
+        fakeDownload.playCalls = 0
+        fakeDownload.removeCalls = 0
+    }
+
     function test_pausedDownloadCanResume() {
         const button = findChild(page, "resumeDownloadButton")
         verify(button !== null)
         mouseClick(button)
+        compare(fakeDownload.resumeCalls, 1)
+    }
+
+    function test_controller_activation_resumes_download() {
+        const button = findChild(page, "resumeDownloadButton")
+        button.controllerActivate()
         compare(fakeDownload.resumeCalls, 1)
     }
 

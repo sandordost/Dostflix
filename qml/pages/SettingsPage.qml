@@ -16,6 +16,11 @@ Item {
     required property var controllerManager
     readonly property var settingsFlickable: settingsScroll.contentItem
 
+    function focusFirstControl() {
+        profileBox.forceActiveFocus(Qt.TabFocusReason)
+        return true
+    }
+
     function keepFocusVisible(item) {
         if (!item || !root.settingsFlickable || !item.visible)
             return

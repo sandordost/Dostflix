@@ -64,15 +64,19 @@ TestCase {
         verify(fakeLibrary.lastRestart)
     }
 
-    function test_resumeChoice() {
+    function test_continue_resumes_without_a_dialog() {
         movies.setProperty(0, "watchedSeconds", 125)
         const button = findChild(page, "libraryPlayButton")
         mouseClick(button)
-        const dialog = findChild(page, "resumePlaybackDialog")
-        tryCompare(dialog, "opened", true)
-        const resume = findChild(page, "resumeMovieButton")
-        mouseClick(resume)
         compare(fakeLibrary.playCalls, 1)
         verify(!fakeLibrary.lastRestart)
+        verify(findChild(page, "resumePlaybackDialog") === null)
+    }
+
+    function test_refresh_is_the_top_controller_target() {
+        verify(page.focusFirstControl())
+        const refresh = findChild(page, "libraryRefreshButton")
+        verify(refresh !== null)
+        compare(refresh.focus, true)
     }
 }

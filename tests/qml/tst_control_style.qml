@@ -45,6 +45,16 @@ TestCase {
         }
     }
 
+    SignalSpy {
+        id: buttonClickSpy
+        target: button
+        signalName: "clicked"
+    }
+
+    function init() {
+        buttonClickSpy.clear()
+    }
+
     function test_font_and_borderless_radius() {
         compare(field.font.family, "Montserrat")
         compare(field.background.radius, Theme.radius)
@@ -74,6 +84,11 @@ TestCase {
         const row = iconButton.contentItem.children[0]
         verify(row !== null)
         compare(Math.round(row.x), Math.round((iconButton.contentItem.width - row.width) / 2))
+    }
+
+    function test_controller_activation_clicks_buttons() {
+        button.controllerActivate()
+        compare(buttonClickSpy.count, 1)
     }
 
     function test_file_picker_uses_app_surface() {

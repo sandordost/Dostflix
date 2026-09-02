@@ -10,7 +10,6 @@
 #include <QQuickWindow>
 #include <QWindow>
 
-#include <cmath>
 #include <limits>
 #include <utility>
 
@@ -48,6 +47,14 @@ QQuickItem *overlayAncestor(QQuickItem *item)
             return ancestor;
     }
     return nullptr;
+}
+
+double axisGap(const double firstStart, const double firstEnd,
+               const double secondStart, const double secondEnd)
+{
+    if (firstEnd < secondStart) return secondStart - firstEnd;
+    if (secondEnd < firstStart) return firstStart - secondEnd;
+    return 0.0;
 }
 
 bool hasOpenedPopup(const QObject *object)
@@ -271,6 +278,16 @@ void ControllerManager::sendKey(const int key, const int modifiers)
     QCoreApplication::sendEvent(window, &release);
 }
 
+bool ControllerManager::activateFocus()
+{
+    auto *window = qobject_cast<QQuickWindow *>(QGuiApplication::focusWindow());
+    QQuickItem *item = window ? window->activeFocusItem() : nullptr;
+    if (item && item->metaObject()->indexOfMethod("controllerActivate()") >= 0)
+        return QMetaObject::invokeMethod(item, "controllerActivate", Qt::DirectConnection);
+    sendKey(Qt::Key_Return);
+    return item != nullptr;
+}
+
 bool ControllerManager::moveFocus(const int horizontal, const int vertical)
 {
     if ((horizontal == 0) == (vertical == 0)) return false;
@@ -284,9 +301,9 @@ bool ControllerManager::moveFocus(const int horizontal, const int vertical)
     QQuickItem *current = window->activeFocusItem();
     const bool currentIsUsable = isEffectivelyNavigable(current);
     QQuickItem *currentOverlay = overlayAncestor(current);
-    const QPointF origin = currentIsUsable
-        ? current->mapToItem(window->contentItem(), current->width() / 2, current->height() / 2)
-        : QPointF(0, 0);
+    const QRectF currentRect = currentIsUsable
+        ? current->mapRectToItem(window->contentItem(), current->boundingRect())
+        : QRectF();
 
     QQuickItem *best = nullptr;
     double bestScore = std::numeric_limits<double>::max();
@@ -296,19 +313,31 @@ bool ControllerManager::moveFocus(const int horizontal, const int vertical)
         const QPointF point = candidate->mapToItem(window->contentItem(),
                                                    candidate->width() / 2,
                                                    candidate->height() / 2);
+        const QRectF candidateRect = candidate->mapRectToItem(
+            window->contentItem(), candidate->boundingRect());
         if (!currentIsUsable) {
             const double score = point.y() * 10.0 + point.x();
             if (score < bestScore) { bestScore = score; best = candidate; }
             continue;
         }
 
-        const double primary = horizontal != 0
-            ? (point.x() - origin.x()) * horizontal
-            : (point.y() - origin.y()) * vertical;
-        if (primary <= 2.0) continue;
+        const double primary = horizontal > 0
+            ? candidateRect.left() - currentRect.right()
+            : (horizontal < 0
+               ? currentRect.left() - candidateRect.right()
+               : (vertical > 0
+                  ? candidateRect.top() - currentRect.bottom()
+                  : currentRect.top() - candidateRect.bottom()));
+        if (primary < -2.0) continue;
+        // Treat overlapping rows/columns as aligned. This keeps a compact
+        // toolbar button directly above a full-width row in the same vertical
+        // navigation lane instead of incorrectly jumping back to the sidebar.
         const double perpendicular = horizontal != 0
-            ? std::abs(point.y() - origin.y()) : std::abs(point.x() - origin.x());
-        const double score = primary + perpendicular * 2.75;
+            ? axisGap(currentRect.top(), currentRect.bottom(),
+                      candidateRect.top(), candidateRect.bottom())
+            : axisGap(currentRect.left(), currentRect.right(),
+                      candidateRect.left(), candidateRect.right());
+        const double score = std::max(0.0, primary) + perpendicular * 2.75;
         if (score < bestScore) { bestScore = score; best = candidate; }
     }
 

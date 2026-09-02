@@ -67,7 +67,21 @@ ApplicationWindow {
     }
 
     function activateControllerFocus() {
-        window.controllerManager.sendKey(Qt.Key_Return)
+        window.controllerManager.activateFocus()
+    }
+
+    function focusPageEntry(index) {
+        let focused = false
+        if (index === 0)
+            focused = discoverPage.focusFirstControl()
+        else if (index === 1)
+            focused = libraryPage.focusFirstControl()
+        else if (index === 2)
+            focused = downloadsPage.focusFirstControl()
+        else if (index === 3)
+            focused = settingsPage.focusFirstControl()
+        if (focused) return
+        sidePanel.focusCurrentPage()
     }
 
     onClosing: videoPlayer.stop()
@@ -146,11 +160,8 @@ ApplicationWindow {
                 return
             }
             if (window.showingPlayer) {
-                if (horizontal !== 0)
-                    videoPlayer.seek(horizontal < 0 ? -10 : 10)
-                else
-                    window.controllerManager.moveFocus(0, vertical)
                 playerPage.revealControls()
+                window.controllerManager.moveFocus(horizontal, vertical)
             } else {
                 window.controllerManager.moveFocus(horizontal, vertical)
             }
@@ -194,7 +205,7 @@ ApplicationWindow {
                 playerPage.revealControls()
             } else {
                 window.pageIndex = Math.max(0, Math.min(3, window.pageIndex + delta))
-                Qt.callLater(sidePanel.focusCurrentPage)
+                Qt.callLater(function() { window.focusPageEntry(window.pageIndex) })
             }
         }
 
@@ -252,13 +263,12 @@ ApplicationWindow {
             vpnLabel: window.vpnManager.stateLabel
             vpnConnected: window.vpnManager.connected
             vpnBusy: window.vpnManager.busy
-            prowlarrManager: window.prowlarrManager
-            torrentEngine: window.torrentEngine
         }
 
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            enabled: !window.showingPlayer
             spacing: Theme.contentGap
 
             SidePanel {
@@ -297,13 +307,16 @@ ApplicationWindow {
                         torrentEngine: window.torrentEngine
                     }
                     LibraryPage {
+                        id: libraryPage
                         libraryManager: window.libraryManager
                         metadataManager: window.metadataManager
                     }
                     DownloadsPage {
+                        id: downloadsPage
                         downloadManager: window.downloadManager
                     }
                     SettingsPage {
+                        id: settingsPage
                         vpnManager: window.vpnManager
                         providerManager: window.providerManager
                         prowlarrManager: window.prowlarrManager
@@ -342,6 +355,11 @@ ApplicationWindow {
             subtitleSearch.query = videoPlayer.activeTitle
             subtitleSearch.open()
         }
+    }
+
+    onShowingPlayerChanged: {
+        if (showingPlayer)
+            Qt.callLater(playerPage.focusDefaultControl)
     }
 
     SubtitleSearchDialog {

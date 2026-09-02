@@ -133,7 +133,9 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
+            Layout.minimumHeight: Theme.px(46)
             Layout.preferredHeight: Theme.px(46)
+            Layout.maximumHeight: Theme.px(46)
             visible: !root.compact
             spacing: Theme.px(8)
 
@@ -141,7 +143,9 @@ Item {
                 id: searchField
                 objectName: "searchField"
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.minimumHeight: Theme.px(46)
+                Layout.preferredHeight: Theme.px(46)
+                Layout.maximumHeight: Theme.px(46)
                 placeholderText: qsTr("Search movies…")
                 enabled: root.searchEnabled
                 activeFocusOnTab: false

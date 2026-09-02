@@ -56,6 +56,7 @@ public:
     void processButton(SDL_GamepadButton button, bool pressed);
     void processAxis(SDL_GamepadAxis axis, qint16 value);
     Q_INVOKABLE void sendKey(int key, int modifiers = 0);
+    Q_INVOKABLE bool activateFocus();
     Q_INVOKABLE bool moveFocus(int horizontal, int vertical);
     Q_INVOKABLE bool popupActive() const;
 
