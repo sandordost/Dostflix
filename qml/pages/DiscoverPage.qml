@@ -10,6 +10,7 @@ Item {
     required property var movieModel
     required property var prowlarrManager
     required property var torrentEngine
+    property var controllerManager: null
     property bool listMode: false
     property string selectionError: ""
     property string selectedReleaseKey: ""
@@ -57,6 +58,19 @@ Item {
                 : movieGrid.handleControllerNavigation(horizontal, vertical)
     }
 
+    function toggleViewMode() {
+        const previousIndex = listMode ? movieList.currentIndex
+                                       : movieGrid.currentIndex
+        listMode = !listMode
+        Qt.callLater(function() {
+            const nextView = root.listMode ? movieList : movieGrid
+            if (previousIndex >= 0 && previousIndex < nextView.count)
+                nextView.focusIndex(previousIndex)
+            else
+                nextView.focusFirstResult()
+        })
+    }
+
     function startRelease(title, magnetUrl, downloadUrl) {
         selectionError = ""
         selectedReleaseKey = releaseKey(title, magnetUrl, downloadUrl)
@@ -98,6 +112,14 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.text: Accessible.name
                 onClicked: root.listMode = true
+            }
+            ControllerHint {
+                objectName: "viewToggleControllerHint"
+                visible: root.controllerManager
+                         && root.controllerManager.connected
+                buttonLabel: root.controllerManager
+                             ? root.controllerManager.secondaryActionLabel : "X"
+                description: qsTr("Switch between grid and list view")
             }
         }
 

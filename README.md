@@ -91,7 +91,8 @@ Both the D-pad and left stick navigate spatially with dead-zone filtering and
 hold-repeat: up/down follows visual rows and left/right changes columns. The
 south face button explicitly activates the focused Qt control, east closes the
 active context or returns to an active movie, Start pauses, triggers or shoulders
-change section or seek 30 seconds, and west opens subtitles. D-pad/stick
+change section or seek 30 seconds. West/X/Square switches the Discover result
+view and opens subtitles in the player. D-pad/stick
 left/right remain spatial navigation inside the player. North focuses search
 while browsing and toggles player fullscreen.
 Controller-only hints adapt between Xbox and PlayStation labels.

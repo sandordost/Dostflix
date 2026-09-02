@@ -19,6 +19,7 @@ class ControllerManager final : public QObject
     Q_PROPERTY(bool playStationLayout READ playStationLayout NOTIFY connectionChanged)
     Q_PROPERTY(QString backButtonLabel READ backButtonLabel NOTIFY connectionChanged)
     Q_PROPERTY(QString searchButtonLabel READ searchButtonLabel NOTIFY connectionChanged)
+    Q_PROPERTY(QString secondaryActionLabel READ secondaryActionLabel NOTIFY connectionChanged)
     Q_PROPERTY(QString previousPageLabel READ previousPageLabel NOTIFY connectionChanged)
     Q_PROPERTY(QString nextPageLabel READ nextPageLabel NOTIFY connectionChanged)
 
@@ -34,7 +35,7 @@ public:
         PreviousPage,
         NextPage,
         ToggleFullscreen,
-        OpenSubtitles
+        SecondaryAction
     };
     Q_ENUM(Action)
 
@@ -48,6 +49,7 @@ public:
     [[nodiscard]] bool playStationLayout() const;
     [[nodiscard]] QString backButtonLabel() const;
     [[nodiscard]] QString searchButtonLabel() const;
+    [[nodiscard]] QString secondaryActionLabel() const;
     [[nodiscard]] QString previousPageLabel() const;
     [[nodiscard]] QString nextPageLabel() const;
 
@@ -71,7 +73,7 @@ signals:
     void previousPageRequested();
     void nextPageRequested();
     void fullscreenRequested();
-    void subtitlesRequested();
+    void secondaryActionRequested();
 
 private slots:
     void pollEvents();

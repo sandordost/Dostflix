@@ -40,7 +40,7 @@ Primary references:
 | East / B / Circle or Back | Return or close |
 | Start | Play or pause an active movie |
 | Left/right trigger or shoulder | Previous/next page; seek 30 seconds in player |
-| West / X / Square | Open subtitles in player |
+| West / X / Square | Toggle Discover grid/list view; open subtitles in player |
 | North / Y / Triangle | Focus search while browsing; toggle player fullscreen |
 | D-pad/stick left/right while playing | Navigate player controls |
 
@@ -66,6 +66,8 @@ Library starts with Refresh and then continues downward into movie rows.
 Discover grid focus is index-based and moves by row or column. Discover list
 rows and Library rows consume horizontal input, keeping focus on the current
 item rather than allowing it to escape into an invisible geometric lane.
+X/Square switches Discover directly between grid and list while preserving the
+selected result; the header displays the matching controller hint.
 
 When a controller is connected, the sidebar shows LT/RT or L2/R2 section hints,
 search shows Y/Triangle, and the Return to movie card shows B/Circle. PlayStation

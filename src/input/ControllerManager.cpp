@@ -116,6 +116,10 @@ QString ControllerManager::searchButtonLabel() const
 {
     return m_playStationLayout ? QStringLiteral("△") : QStringLiteral("Y");
 }
+QString ControllerManager::secondaryActionLabel() const
+{
+    return m_playStationLayout ? QStringLiteral("□") : QStringLiteral("X");
+}
 QString ControllerManager::previousPageLabel() const
 {
     return m_playStationLayout ? QStringLiteral("L2") : QStringLiteral("LT");
@@ -244,7 +248,7 @@ void ControllerManager::processButton(const SDL_GamepadButton button, const bool
     case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: trigger(PreviousPage); break;
     case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: trigger(NextPage); break;
     case SDL_GAMEPAD_BUTTON_NORTH: trigger(ToggleFullscreen); break;
-    case SDL_GAMEPAD_BUTTON_WEST: trigger(OpenSubtitles); break;
+    case SDL_GAMEPAD_BUTTON_WEST: trigger(SecondaryAction); break;
     default: break;
     }
 }
@@ -404,7 +408,7 @@ void ControllerManager::trigger(const Action action)
     case PreviousPage: emit previousPageRequested(); break;
     case NextPage: emit nextPageRequested(); break;
     case ToggleFullscreen: emit fullscreenRequested(); break;
-    case OpenSubtitles: emit subtitlesRequested(); break;
+    case SecondaryAction: emit secondaryActionRequested(); break;
     }
 }
 

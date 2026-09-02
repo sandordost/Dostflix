@@ -30,7 +30,8 @@ private slots:
         QCOMPARE(spy.at(3).at(0).value<ControllerManager::Action>(), ControllerManager::PreviousPage);
         QCOMPARE(spy.at(4).at(0).value<ControllerManager::Action>(), ControllerManager::NextPage);
         QCOMPARE(spy.at(5).at(0).value<ControllerManager::Action>(), ControllerManager::ToggleFullscreen);
-        QCOMPARE(spy.at(6).at(0).value<ControllerManager::Action>(), ControllerManager::OpenSubtitles);
+        QCOMPARE(spy.at(6).at(0).value<ControllerManager::Action>(), ControllerManager::SecondaryAction);
+        QCOMPARE(manager.secondaryActionLabel(), QStringLiteral("X"));
     }
 
     void ignoresButtonRelease()

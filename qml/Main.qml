@@ -273,13 +273,17 @@ ApplicationWindow {
                 sidePanel.openControllerSearch()
         }
 
-        function onSubtitlesRequested() {
+        function onSecondaryActionRequested() {
             if (Theme.controllerKeyboardOpen) {
                 Theme.activeControllerKeyboard.deletePrevious()
                 return
             }
             if (window.showingPlayer)
                 playerPage.openSubtitleMenu()
+            else if (window.pageIndex === 0
+                     && !sidePanel.controllerSearchActive
+                     && !window.controllerManager.popupActive())
+                discoverPage.toggleViewMode()
         }
     }
 
@@ -360,6 +364,7 @@ ApplicationWindow {
                         movieModel: window.movieModel
                         prowlarrManager: window.prowlarrManager
                         torrentEngine: window.torrentEngine
+                        controllerManager: window.controllerManager
                     }
                     LibraryPage {
                         id: libraryPage

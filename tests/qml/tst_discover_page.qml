@@ -34,6 +34,11 @@ TestCase {
         property string stateLabel: "Building playback buffer…"
         function selectVideoFile(index) {}
     }
+    QtObject {
+        id: fakeControllerManager
+        property bool connected: true
+        property string secondaryActionLabel: "X"
+    }
     ApplicationWindow {
         id: discoverWindow
         width: 760
@@ -45,6 +50,7 @@ TestCase {
             movieModel: releases
             prowlarrManager: fakeProwlarr
             torrentEngine: fakeTorrent
+            controllerManager: fakeControllerManager
         }
     }
 
@@ -78,6 +84,21 @@ TestCase {
         verify(page.listMode)
         mouseClick(gridButton)
         verify(!page.listMode)
+
+        const hint = findChild(page, "viewToggleControllerHint")
+        verify(hint !== null)
+        compare(hint.visible, true)
+        compare(hint.buttonLabel, "X")
+
+        verify(page.focusFirstControl())
+        page.toggleViewMode()
+        tryCompare(page, "listMode", true)
+        const list = findChild(page, "movieList")
+        tryCompare(list, "currentIndex", 0)
+        page.toggleViewMode()
+        tryCompare(page, "listMode", false)
+        const grid = findChild(page, "movieGrid")
+        tryCompare(grid, "currentIndex", 0)
     }
 
     function test_release_starts_without_confirmation() {
