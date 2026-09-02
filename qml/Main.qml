@@ -163,6 +163,10 @@ ApplicationWindow {
                             horizontal, vertical)
                 return
             }
+            if (subtitleSearch.opened
+                    && subtitleSearch.handleControllerNavigation(
+                        horizontal, vertical))
+                return
             if (sidePanel.controllerSearchActive)
                 return
             if (window.showingPlayer) {

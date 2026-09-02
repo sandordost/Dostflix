@@ -88,6 +88,8 @@ mode where left/right changes volume by five percentage points and A/Cross or
 B/Circle returns to normal focus navigation. Editable text fields open a modal
 QWERTY controller keyboard; its rows own directional focus until Done or B/Circle,
 and it chooses the opposite screen edge from the active input.
+The OpenSubtitles search dialog provides its own semantic rows for the query,
+search action, dynamically loaded download actions, Settings fallback, and Close.
 
 Controller initialization and shutdown are local input operations and do not
 touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.

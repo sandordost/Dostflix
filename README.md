@@ -105,6 +105,9 @@ with left/right, and activating Volume enters a five-percent adjustment mode
 until A/Cross or B/Circle exits. Activating an editable text field opens an
 in-app controller QWERTY keyboard. It appears below upper inputs and above lower
 inputs so typed text remains visible.
+The OpenSubtitles search dialog follows the same controller row model: the
+query/search row, each result download, and Close are all reachable with the
+D-pad or left stick.
 
 ## Arch installation and dependencies
 
