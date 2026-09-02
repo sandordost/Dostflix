@@ -63,6 +63,9 @@ Confirmation invokes the focused Qt control explicitly rather than relying on a
 synthetic Return key, which also covers Settings and Downloads controls reliably.
 Changing section with a trigger focuses that page's first meaningful action;
 Library starts with Refresh and then continues downward into movie rows.
+Discover grid focus is index-based and moves by row or column. Discover list
+rows and Library rows consume horizontal input, keeping focus on the current
+item rather than allowing it to escape into an invisible geometric lane.
 
 When a controller is connected, the sidebar shows LT/RT or L2/R2 section hints,
 search shows Y/Triangle, and the Return to movie card shows B/Circle. PlayStation
@@ -82,12 +85,15 @@ popups own controller focus until A/Cross selects the highlighted option or
 B/Circle cancels; an empty combo box never opens.
 
 Player overlays also use explicit input modes. The subtitle popup is an in-window
-Qt Quick overlay navigated vertically. The central play/pause action is the
-default player focus and uses a visible focus animation. Subtitle delay is a
+Qt Quick overlay navigated vertically. Vertical player navigation follows the
+visible top bar, central play/pause action, and timeline in that order. The
+central action is the default player focus and uses a visible focus animation.
+Subtitle delay is a
 display-only value between separately focusable half-second decrement/increment
-actions, so controller focus never enters a numeric editor. Activating Volume
-enters an exclusive adjustment mode where left/right changes volume by five
-percentage points and A/Cross or B/Circle returns to normal focus navigation.
+actions, so controller focus never enters a numeric editor. The speaker action
+toggles mute/unmute. Activating the volume slider enters an exclusive adjustment
+mode where left/right changes volume by five percentage points and A/Cross or
+B/Circle returns to normal focus navigation.
 Editable text fields open a modal SteamOS-style QWERTY controller keyboard with
 number/symbol, Tab, Caps, Shift, cursor and wide space rows. Its rows own
 directional focus until Done or B/Circle. L2 toggles Shift, X/Square erases,

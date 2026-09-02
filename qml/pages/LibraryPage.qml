@@ -39,6 +39,50 @@ Item {
         return true
     }
 
+    function itemContainsFocus(item) {
+        let focused = root.Window.window ? root.Window.window.activeFocusItem : null
+        while (focused) {
+            if (focused === item)
+                return true
+            focused = focused.parent
+        }
+        return false
+    }
+
+    function focusMovie(index) {
+        if (!ensureMovieVisible(index))
+            return false
+        Qt.callLater(function() {
+            if (libraryList.currentItem)
+                libraryList.currentItem.forceActiveFocus(Qt.TabFocusReason)
+        })
+        return true
+    }
+
+    function handleControllerNavigation(horizontal, vertical) {
+        if (itemContainsFocus(libraryRefreshButton)) {
+            if (vertical > 0 && libraryList.count > 0)
+                focusMovie(0)
+            return horizontal !== 0 || vertical !== 0
+        }
+        if (!itemContainsFocus(libraryList))
+            return false
+        if (horizontal !== 0)
+            return true
+        if (vertical < 0 && libraryList.currentIndex <= 0) {
+            libraryRefreshButton.forceActiveFocus(Qt.TabFocusReason)
+            return true
+        }
+        if (vertical !== 0) {
+            const nextIndex = Math.max(0, Math.min(libraryList.count - 1,
+                    libraryList.currentIndex + (vertical > 0 ? 1 : -1)))
+            if (nextIndex !== libraryList.currentIndex)
+                focusMovie(nextIndex)
+            return true
+        }
+        return false
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: Theme.px(12)
@@ -128,8 +172,10 @@ Item {
                 Accessible.role: Accessible.Button
                 Accessible.name: movieRow.title
                 onActiveFocusChanged: {
-                    if (activeFocus)
+                    if (activeFocus) {
+                        libraryList.currentIndex = movieRow.index
                         root.ensureMovieVisible(movieRow.index)
+                    }
                 }
                 Accessible.onPressAction: root.requestPlayback(
                     movieRow.index, movieRow.title,

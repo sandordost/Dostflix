@@ -66,7 +66,9 @@ selected release shows its retrieval/buffering spinner and concise status on its
 own thumbnail instead of consuming the application header. The local
 library uses compact poster rows without hover tooltips. Discover cards and
 Library rows automatically scroll fully into view as controller focus moves.
-Player controls fade
+Grid view uses deterministic row/column navigation; list view and Library
+consume horizontal input so focus cannot escape into an invisible neighbouring
+column. Player controls fade
 after 2.8 seconds of meaningful pointer inactivity, even when the pointer rests
 over a control; sub-six-pixel mouse jitter does not keep them visible. Only
 opacity, color, and scale are animated to keep frame pacing smooth.
@@ -102,8 +104,10 @@ Settings uses explicit focus rows: left/right stays within one visual row, while
 up/down moves to the first available control of the previous or next row. Open
 select boxes trap controller navigation on their options until A/Cross confirms
 or B/Circle closes them; empty select boxes do not open.
-In the player, the subtitle popup has contained controller focus, delay uses
-separately focusable minus/plus actions, and activating Volume enters a
+In the player, vertical navigation follows the visible order from the top bar to
+the central play/pause action and then the timeline. The subtitle popup has
+contained controller focus, delay uses separately focusable minus/plus actions,
+the speaker button toggles mute, and activating the volume slider enters a
 five-percent adjustment mode until A/Cross or B/Circle exits. Activating an
 editable text field opens a SteamOS-style in-app controller QWERTY keyboard.
 It includes number/symbol, Tab, Caps, Shift, cursor and wide space rows; L2

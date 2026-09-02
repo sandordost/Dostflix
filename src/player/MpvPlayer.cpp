@@ -39,6 +39,7 @@ enum PropertyId : uint64_t {
     Pause,
     PausedForCache,
     Volume,
+    Muted,
     SubtitleTracks,
     SubtitleDelay,
 };
@@ -191,6 +192,7 @@ MpvPlayer::MpvPlayer(QQuickItem *parent)
     mpv_observe_property(m_handle, Pause, "pause", MPV_FORMAT_FLAG);
     mpv_observe_property(m_handle, PausedForCache, "paused-for-cache", MPV_FORMAT_FLAG);
     mpv_observe_property(m_handle, Volume, "volume", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(m_handle, Muted, "mute", MPV_FORMAT_FLAG);
     mpv_observe_property(m_handle, SubtitleTracks, "track-list", MPV_FORMAT_NODE);
     mpv_observe_property(m_handle, SubtitleDelay, "sub-delay", MPV_FORMAT_DOUBLE);
     mpv_set_wakeup_callback(m_handle, wakeup, m_state.get());
@@ -223,6 +225,7 @@ double MpvPlayer::duration() const { return m_duration; }
 bool MpvPlayer::paused() const { return m_paused; }
 bool MpvPlayer::buffering() const { return m_buffering; }
 double MpvPlayer::volume() const { return m_volume; }
+bool MpvPlayer::muted() const { return m_muted; }
 QString MpvPlayer::errorMessage() const { return m_error; }
 bool MpvPlayer::renderReady() const { return m_renderReady; }
 QVariantList MpvPlayer::subtitleTracks() const { return m_subtitleTracks; }
@@ -278,6 +281,20 @@ void MpvPlayer::setVolume(double value)
     m_volume = bounded;
     if (m_handle) mpv_set_property_async(m_handle, 0, "volume", MPV_FORMAT_DOUBLE, &bounded);
     emit volumeChanged();
+}
+
+void MpvPlayer::setMuted(const bool muted)
+{
+    if (m_muted == muted) return;
+    m_muted = muted;
+    int value = muted ? 1 : 0;
+    if (m_handle) mpv_set_property_async(m_handle, 0, "mute", MPV_FORMAT_FLAG, &value);
+    emit mutedChanged();
+}
+
+void MpvPlayer::toggleMuted()
+{
+    setMuted(!m_muted);
 }
 
 void MpvPlayer::selectSubtitle(const QString &trackId)
@@ -434,6 +451,10 @@ void MpvPlayer::processEvents()
         case Volume:
             m_volume = *static_cast<double *>(property->data);
             emit volumeChanged();
+            break;
+        case Muted:
+            m_muted = *static_cast<int *>(property->data) != 0;
+            emit mutedChanged();
             break;
         case SubtitleTracks:
             updateSubtitleTracks(static_cast<mpv_node *>(property->data));

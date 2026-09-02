@@ -72,6 +72,7 @@ TestCase {
                     button => button.resultIndex === 0)
         verify(first !== undefined)
         tryCompare(first, "activeFocus", true)
+        compare(first.focusBorderColor, Theme.textPrimary)
         verify(dialog.handleControllerNavigation(0, 1))
         const second = dialog.controllerResultButtons.find(
                     button => button.resultIndex === 1)

@@ -14,12 +14,14 @@ Item {
     property bool transferLoading: false
     property string transferStatusText: ""
     property bool transferHasError: false
+    property bool controllerFocused: false
+    readonly property bool highlighted: activeFocus || controllerFocused
     signal selected()
     activeFocusOnTab: true
     width: Theme.posterWidth
     height: width / Theme.posterAspectRatio + Theme.px(62)
-    scale: cardMouse.containsMouse || activeFocus ? 1.025 : 1
-    z: cardMouse.containsMouse || activeFocus ? 2 : 0
+    scale: cardMouse.containsMouse || highlighted ? 1.025 : 1
+    z: cardMouse.containsMouse || highlighted ? 2 : 0
     Accessible.role: Accessible.Button
     Accessible.name: title
     Accessible.onPressAction: selected()
@@ -37,7 +39,7 @@ Item {
         anchors.fill: parent
         radius: Theme.radius
         color: Theme.surface
-        border.width: root.activeFocus ? Theme.px(2) : 0
+        border.width: root.highlighted ? Theme.px(2) : 0
         border.color: Theme.accent
 
         Rectangle {
@@ -134,9 +136,9 @@ Item {
                 height: Theme.px(52)
                 radius: Theme.px(26)
                 color: Theme.button
-                opacity: cardMouse.containsMouse || root.activeFocus ? 1 : 0
+                opacity: cardMouse.containsMouse || root.highlighted ? 1 : 0
                 visible: !root.transferLoading && !root.transferHasError
-                scale: cardMouse.containsMouse || root.activeFocus ? 1 : 0.88
+                scale: cardMouse.containsMouse || root.highlighted ? 1 : 0.88
                 Label {
                     anchors.centerIn: parent
                     anchors.horizontalCenterOffset: Theme.px(2)

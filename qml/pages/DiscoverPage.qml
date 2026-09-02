@@ -51,6 +51,12 @@ Item {
                         : movieGrid.ensureIndexVisible(index)
     }
 
+    function handleControllerNavigation(horizontal, vertical) {
+        return listMode
+                ? movieList.handleControllerNavigation(horizontal, vertical)
+                : movieGrid.handleControllerNavigation(horizontal, vertical)
+    }
+
     function startRelease(title, magnetUrl, downloadUrl) {
         selectionError = ""
         selectedReleaseKey = releaseKey(title, magnetUrl, downloadUrl)

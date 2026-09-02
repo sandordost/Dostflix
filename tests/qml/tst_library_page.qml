@@ -35,6 +35,7 @@ TestCase {
         function clearPlaybackSession() {}
     }
     ApplicationWindow {
+        id: libraryWindow
         width: 700
         height: 500
         visible: true
@@ -47,6 +48,8 @@ TestCase {
     }
 
     function init() {
+        libraryWindow.requestActivate()
+        tryCompare(libraryWindow, "active", true)
         while (movies.count < 12) {
             const index = movies.count
             movies.append({
@@ -95,5 +98,21 @@ TestCase {
         tryVerify(function() { return list.contentHeight > list.height })
         verify(page.ensureMovieVisible(movies.count - 1))
         tryVerify(function() { return list.contentY > 0 })
+    }
+
+    function test_list_controller_navigation_stays_on_rows() {
+        const list = findChild(page, "libraryList")
+        verify(page.focusMovie(0))
+        tryCompare(list, "currentIndex", 0)
+        tryCompare(list.currentItem, "activeFocus", true)
+        verify(page.handleControllerNavigation(-1, 0))
+        compare(list.currentIndex, 0)
+        compare(list.currentItem.activeFocus, true)
+        verify(page.handleControllerNavigation(0, 1))
+        tryCompare(list, "currentIndex", 1)
+        verify(page.handleControllerNavigation(0, -1))
+        tryCompare(list, "currentIndex", 0)
+        verify(page.handleControllerNavigation(0, -1))
+        tryCompare(findChild(page, "libraryRefreshButton"), "activeFocus", true)
     }
 }

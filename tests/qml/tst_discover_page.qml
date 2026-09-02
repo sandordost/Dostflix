@@ -35,6 +35,7 @@ TestCase {
         function selectVideoFile(index) {}
     }
     ApplicationWindow {
+        id: discoverWindow
         width: 760
         height: 520
         visible: true
@@ -48,6 +49,8 @@ TestCase {
     }
 
     function init() {
+        discoverWindow.requestActivate()
+        tryCompare(discoverWindow, "active", true)
         while (releases.count < 24) {
             const index = releases.count
             releases.append({
@@ -104,5 +107,30 @@ TestCase {
         tryVerify(function() { return list.contentHeight > list.height })
         verify(page.ensureResultVisible(releases.count - 1))
         tryVerify(function() { return list.contentY > 0 })
+    }
+
+    function test_grid_uses_row_and_column_controller_navigation() {
+        const grid = findChild(page, "movieGrid")
+        verify(page.focusFirstControl())
+        tryCompare(grid, "currentIndex", 0)
+        verify(page.handleControllerNavigation(1, 0))
+        tryCompare(grid, "currentIndex", 1)
+        verify(page.handleControllerNavigation(0, 1))
+        tryCompare(grid, "currentIndex", 1 + grid.columnCount)
+        verify(page.handleControllerNavigation(-1, 0))
+        tryCompare(grid, "currentIndex", grid.columnCount)
+    }
+
+    function test_list_horizontal_navigation_keeps_focus() {
+        page.listMode = true
+        verify(page.focusFirstControl())
+        const list = findChild(page, "movieList")
+        tryCompare(list, "currentIndex", 0)
+        tryCompare(list.currentItem, "activeFocus", true)
+        verify(page.handleControllerNavigation(-1, 0))
+        compare(list.currentIndex, 0)
+        compare(list.currentItem.activeFocus, true)
+        verify(page.handleControllerNavigation(0, 1))
+        tryCompare(list, "currentIndex", 1)
     }
 }

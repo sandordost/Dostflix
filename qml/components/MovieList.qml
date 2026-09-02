@@ -21,13 +21,8 @@ ListView {
     function focusFirstResult() {
         if (count < 1)
             return false
-        currentIndex = 0
         positionViewAtIndex(0, ListView.Beginning)
-        Qt.callLater(function() {
-            if (root.currentItem)
-                root.currentItem.forceActiveFocus(Qt.TabFocusReason)
-        })
-        return true
+        return focusIndex(0)
     }
 
     function ensureIndexVisible(index) {
@@ -36,6 +31,41 @@ ListView {
         currentIndex = index
         positionViewAtIndex(index, ListView.Contain)
         return true
+    }
+
+    function ownsActiveFocus() {
+        let item = root.Window.window ? root.Window.window.activeFocusItem : null
+        while (item) {
+            if (item === root)
+                return true
+            item = item.parent
+        }
+        return false
+    }
+
+    function focusIndex(index) {
+        if (!ensureIndexVisible(index))
+            return false
+        Qt.callLater(function() {
+            if (root.currentItem)
+                root.currentItem.forceActiveFocus(Qt.TabFocusReason)
+        })
+        return true
+    }
+
+    function handleControllerNavigation(horizontal, vertical) {
+        if (!ownsActiveFocus() || count < 1)
+            return false
+        if (horizontal !== 0)
+            return true
+        if (vertical !== 0) {
+            const nextIndex = Math.max(0, Math.min(count - 1,
+                    currentIndex + (vertical > 0 ? 1 : -1)))
+            if (nextIndex !== currentIndex)
+                focusIndex(nextIndex)
+            return true
+        }
+        return false
     }
 
     objectName: "movieList"
@@ -65,8 +95,10 @@ ListView {
         Accessible.onPressAction: root.releaseSelected(
             model.title, model.magnetUrl, model.downloadUrl, model.posterUrl)
         onActiveFocusChanged: {
-            if (activeFocus)
+            if (activeFocus) {
+                root.currentIndex = releaseRow.index
                 root.ensureIndexVisible(releaseRow.index)
+            }
         }
 
         function controllerActivate() {

@@ -228,6 +228,7 @@ Dialog {
                         objectName: "subtitleDownloadButton-" + resultIndex
                         text: qsTr("Download")
                         primary: true
+                        focusBorderColor: Theme.textPrimary
                         enabled: !root.manager.busy
                         onClicked: root.manager.download(resultDelegate.index)
                         onActiveFocusChanged: {

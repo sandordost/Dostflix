@@ -73,6 +73,7 @@ QtObject {
             "media-playback-pause-symbolic": "\uf04c",
             "media-seek-forward-symbolic": "\uf051",
             "audio-volume-high-symbolic": "\uf028",
+            "audio-volume-muted-symbolic": "\uf6a9",
             "view-refresh-symbolic": "\uf2f1",
             "document-open-symbolic": "\uf56f",
             "folder-open-symbolic": "\uf07c",

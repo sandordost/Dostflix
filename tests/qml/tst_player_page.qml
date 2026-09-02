@@ -16,6 +16,7 @@ TestCase {
         property bool paused: false
         property bool buffering: false
         property real volume: 80
+        property bool muted: false
         property string errorMessage: ""
         property var subtitleTracks: [
             { id: "2", label: "English", language: "eng", selected: true, external: false }
@@ -27,10 +28,12 @@ TestCase {
         property int subtitleCalls: 0
         property int stopCalls: 0
         property int volumeCalls: 0
+        property int muteCalls: 0
         function stop() { stopCalls += 1 }
         function seek(offset) { seekCalls += 1 }
         function setPosition(seconds) {}
         function setVolume(value) { volume = value; volumeCalls += 1 }
+        function toggleMuted() { muted = !muted; muteCalls += 1 }
         function togglePaused() { pauseCalls += 1 }
         function selectSubtitle(id) { selectedSubtitleId = id; subtitleCalls += 1 }
         function addSubtitleFile(url) {}
@@ -70,6 +73,8 @@ TestCase {
         fakePlayer.buffering = false
         fakePlayer.volume = 80
         fakePlayer.volumeCalls = 0
+        fakePlayer.muted = false
+        fakePlayer.muteCalls = 0
         fakePlayer.subtitleDelay = 0
         fakePlayer.pauseCalls = 0
         fakePlayer.seekCalls = 0
@@ -138,17 +143,19 @@ TestCase {
         page.closeSubtitleMenu()
     }
 
-    function test_delay_buttons_and_volume_controller_adjustment() {
+    function test_delay_buttons_mute_and_volume_controller_adjustment() {
         const delay = findChild(page, "subtitleDelayControl")
         const decrease = findChild(page, "subtitleDelayDownButton")
         const increase = findChild(page, "subtitleDelayUpButton")
         const display = findChild(page, "subtitleDelayValue")
         const volume = findChild(page, "volumeButton")
+        const volumeSlider = findChild(page, "volumeSlider")
         verify(delay !== null)
         verify(decrease !== null)
         verify(increase !== null)
         verify(display !== null)
         verify(volume !== null)
+        verify(volumeSlider !== null)
 
         compare(delay.activeFocusOnTab, false)
         compare(display.activeFocusOnTab, false)
@@ -160,13 +167,35 @@ TestCase {
         compare(fakePlayer.subtitleDelay, 0)
 
         volume.controllerActivate()
+        compare(fakePlayer.muted, true)
+        compare(fakePlayer.muteCalls, 1)
+        compare(page.volumeAdjustmentActive, false)
+
+        volumeSlider.controllerActivate()
         compare(page.volumeAdjustmentActive, true)
         verify(page.handleControllerNavigation(-1, 0))
         compare(fakePlayer.volume, 75)
         verify(fakePlayer.volumeCalls > 0)
         verify(page.finishVolumeAdjustment())
         compare(page.volumeAdjustmentActive, false)
-        compare(volume.activeFocus, true)
+        compare(volumeSlider.activeFocus, true)
+    }
+
+    function test_vertical_player_focus_visits_center_pause() {
+        const browse = findChild(page, "browseButton")
+        const center = findChild(page, "centerPauseButton")
+        const timeline = findChild(page, "positionSlider")
+        verify(browse !== null)
+        verify(center !== null)
+        verify(timeline !== null)
+
+        browse.forceActiveFocus(Qt.TabFocusReason)
+        verify(page.handleControllerNavigation(0, 1))
+        tryCompare(center, "activeFocus", true)
+        verify(page.handleControllerNavigation(0, 1))
+        tryCompare(timeline, "activeFocus", true)
+        verify(page.handleControllerNavigation(0, -1))
+        tryCompare(center, "activeFocus", true)
     }
 
     function test_controls_auto_hide_and_reveal() {

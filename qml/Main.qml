@@ -174,6 +174,14 @@ ApplicationWindow {
                 if (playerPage.handleControllerNavigation(horizontal, vertical))
                     return
                 window.controllerManager.moveFocus(horizontal, vertical)
+            } else if (window.pageIndex === 0
+                       && discoverPage.handleControllerNavigation(
+                           horizontal, vertical)) {
+                return
+            } else if (window.pageIndex === 1
+                       && libraryPage.handleControllerNavigation(
+                           horizontal, vertical)) {
+                return
             } else if (window.pageIndex === 3
                        && settingsPage.handleControllerNavigation(
                            horizontal, vertical)) {

@@ -119,6 +119,24 @@ Item {
             revealControls()
             return true
         }
+        if (vertical > 0 && itemContainsFocus(playerTopBar)) {
+            centerPauseButton.forceActiveFocus(Qt.TabFocusReason)
+            revealControls()
+            return true
+        }
+        if (itemContainsFocus(centerPauseButton) && vertical !== 0) {
+            if (vertical < 0)
+                playerTopBar.defaultControl.forceActiveFocus(Qt.TabFocusReason)
+            else
+                positionSlider.forceActiveFocus(Qt.TabFocusReason)
+            revealControls()
+            return true
+        }
+        if (vertical < 0 && itemContainsFocus(positionSlider)) {
+            centerPauseButton.forceActiveFocus(Qt.TabFocusReason)
+            revealControls()
+            return true
+        }
         return false
     }
 
@@ -126,7 +144,7 @@ Item {
         if (!volumeAdjustmentActive)
             return false
         volumeAdjustmentActive = false
-        volumeButton.forceActiveFocus(Qt.TabFocusReason)
+        volumeSlider.forceActiveFocus(Qt.TabFocusReason)
         revealControls()
         return true
     }
@@ -261,6 +279,8 @@ Item {
     }
 
     Rectangle {
+        id: playerTopBar
+        property alias defaultControl: browseButton
         objectName: "playerTopBar"
         anchors.left: parent.left
         anchors.right: parent.right
@@ -283,6 +303,7 @@ Item {
             spacing: Theme.px(12)
 
             AppToolButton {
+                id: browseButton
                 objectName: "browseButton"
                 icon.name: "go-previous-symbolic"
                 icon.width: Theme.iconSizeLarge
@@ -380,6 +401,8 @@ Item {
             spacing: Theme.px(10)
 
             Slider {
+                id: positionSlider
+                objectName: "positionSlider"
                 Layout.fillWidth: true
                 from: 0
                 to: Math.max(1, root.player.duration)
@@ -490,15 +513,16 @@ Item {
                 AppToolButton {
                     id: volumeButton
                     objectName: "volumeButton"
-                    icon.name: "audio-volume-high-symbolic"
+                    icon.name: root.player.muted
+                               ? "audio-volume-muted-symbolic"
+                               : "audio-volume-high-symbolic"
                     icon.width: Theme.iconSize
                     icon.height: Theme.iconSize
                     visible: root.width >= Theme.px(620)
-                    Accessible.name: qsTr("Volume")
-                    primary: root.volumeAdjustmentActive
+                    Accessible.name: root.player.muted
+                                     ? qsTr("Unmute") : qsTr("Mute")
                     onClicked: {
-                        root.volumeAdjustmentActive = true
-                        forceActiveFocus(Qt.TabFocusReason)
+                        root.player.toggleMuted()
                         root.revealControls()
                     }
                 }
@@ -512,6 +536,11 @@ Item {
                     value: root.player.volume
                     Accessible.name: qsTr("Volume")
                     onMoved: root.player.setVolume(value)
+                    function controllerActivate() {
+                        root.volumeAdjustmentActive = true
+                        forceActiveFocus(Qt.TabFocusReason)
+                        root.revealControls()
+                    }
                 }
             }
 
