@@ -11,13 +11,18 @@ Item {
     required property url posterUrl
     required property string sourceLabel
     signal selected()
+    activeFocusOnTab: true
     width: Theme.posterWidth
     height: width / Theme.posterAspectRatio + Theme.px(62)
-    scale: cardMouse.containsMouse ? 1.025 : 1
-    z: cardMouse.containsMouse ? 2 : 0
+    scale: cardMouse.containsMouse || activeFocus ? 1.025 : 1
+    z: cardMouse.containsMouse || activeFocus ? 2 : 0
     Accessible.role: Accessible.Button
     Accessible.name: title
     Accessible.onPressAction: selected()
+
+    function controllerActivate() {
+        selected()
+    }
 
     Behavior on scale {
         NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic }
@@ -27,6 +32,8 @@ Item {
         anchors.fill: parent
         radius: Theme.radius
         color: Theme.surface
+        border.width: root.activeFocus ? Theme.px(2) : 0
+        border.color: Theme.accent
 
         Rectangle {
             id: posterFrame
@@ -82,8 +89,8 @@ Item {
                 height: Theme.px(52)
                 radius: Theme.px(26)
                 color: Theme.button
-                opacity: cardMouse.containsMouse ? 1 : 0
-                scale: cardMouse.containsMouse ? 1 : 0.88
+                opacity: cardMouse.containsMouse || root.activeFocus ? 1 : 0
+                scale: cardMouse.containsMouse || root.activeFocus ? 1 : 0.88
                 Label {
                     anchors.centerIn: parent
                     anchors.horizontalCenterOffset: Theme.px(2)
@@ -133,6 +140,14 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.selected()
+    }
+
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                || event.key === Qt.Key_Space) {
+            root.selected()
+            event.accepted = true
+        }
     }
 
     ToolTip.visible: cardMouse.containsMouse && root.sourceLabel.length > 0

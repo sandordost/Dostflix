@@ -130,6 +130,15 @@ target_link_libraries(tst_display_environment PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_display_environment)
 add_test(NAME display_environment COMMAND tst_display_environment)
 
+qt_add_executable(tst_controller_manager
+    input/tst_controller_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/input/ControllerManager.cpp
+)
+target_include_directories(tst_controller_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_controller_manager PRIVATE Qt6::Core Qt6::Gui Qt6::Test PkgConfig::SDL3)
+dostflix_enable_warnings(tst_controller_manager)
+add_test(NAME controller_manager COMMAND tst_controller_manager)
+
 qt_add_executable(tst_mpv_player player/tst_mpv_player.cpp)
 target_include_directories(tst_mpv_player PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(tst_mpv_player PRIVATE

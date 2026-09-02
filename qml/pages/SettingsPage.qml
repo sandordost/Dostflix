@@ -12,6 +12,7 @@ Item {
     required property var prowlarrManager
     required property var subtitleManager
     required property var libraryManager
+    required property var controllerManager
 
     PathPickerDialog {
         id: profileDialog
@@ -140,6 +141,66 @@ Item {
                 color: Theme.textSecondary
                 wrapMode: Text.WordWrap
             }
+        }
+
+        Label {
+            text: qsTr("Controller")
+            color: Theme.textPrimary
+            font.pixelSize: Theme.headingSize
+            font.weight: Font.DemiBold
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: controllerRow.implicitHeight + Theme.px(24)
+            radius: Theme.radiusLarge
+            color: Theme.surface
+
+            RowLayout {
+                id: controllerRow
+                anchors.fill: parent
+                anchors.margins: Theme.px(12)
+                spacing: Theme.px(12)
+                AppIcon {
+                    iconName: "input-gaming-symbolic"
+                    color: root.controllerManager.connected ? Theme.safe : Theme.textMuted
+                    font.pixelSize: Theme.iconSizeLarge
+                    Layout.preferredWidth: Theme.iconSizeLarge
+                    Layout.preferredHeight: Theme.iconSizeLarge
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.px(3)
+                    Label {
+                        Layout.fillWidth: true
+                        text: root.controllerManager.connected
+                              ? root.controllerManager.controllerName
+                              : qsTr("No controller connected")
+                        color: Theme.textPrimary
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: qsTr("D-pad/stick: navigate · A/Cross: select · B/Circle: back · Start: pause · shoulders: page or seek · X/Square: subtitles · Y/Triangle: fullscreen")
+                        color: Theme.textSecondary
+                        wrapMode: Text.WordWrap
+                    }
+                }
+                Label {
+                    visible: root.controllerManager.controllerCount > 1
+                    text: qsTr("%1 connected").arg(root.controllerManager.controllerCount)
+                    color: Theme.textSecondary
+                }
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.controllerManager.errorMessage.length > 0
+            text: qsTr("Controller support unavailable: %1").arg(root.controllerManager.errorMessage)
+            color: Theme.danger
+            wrapMode: Text.WordWrap
         }
 
         Label {

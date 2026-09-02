@@ -8,6 +8,8 @@ Pane {
     required property var controller
     signal returnRequested()
     visible: controller.hasActivePlayback
+    activeFocusOnTab: true
+    focusPolicy: Qt.StrongFocus
     implicitWidth: Theme.px(360)
     implicitHeight: Theme.px(72)
     padding: Theme.px(10)
@@ -15,9 +17,15 @@ Pane {
     Accessible.name: qsTr("Return to %1").arg(controller.activeTitle)
     Accessible.onPressAction: returnRequested()
 
+    function controllerActivate() {
+        returnRequested()
+    }
+
     background: Rectangle {
         radius: Theme.radius
         color: hoverHandler.hovered ? Theme.raisedHover : Theme.raised
+        border.width: root.activeFocus ? Theme.px(2) : 0
+        border.color: Theme.accent
         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
     }
 
@@ -77,5 +85,12 @@ Pane {
     TapHandler {
         acceptedButtons: Qt.LeftButton
         onTapped: root.returnRequested()
+    }
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                || event.key === Qt.Key_Space) {
+            root.returnRequested()
+            event.accepted = true
+        }
     }
 }

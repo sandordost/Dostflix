@@ -155,13 +155,21 @@ Item {
                 required property int watchedSeconds
                 width: libraryList.width
                 height: Theme.px(132)
+                activeFocusOnTab: true
                 radius: Theme.radius
-                color: movieHover.hovered ? Theme.raisedHover : Theme.surface
+                color: movieHover.hovered || activeFocus ? Theme.raisedHover : Theme.surface
+                border.width: activeFocus ? Theme.px(2) : 0
+                border.color: Theme.accent
                 Accessible.role: Accessible.Button
                 Accessible.name: movieRow.title
                 Accessible.onPressAction: root.requestPlayback(
                     movieRow.index, movieRow.title,
                     movieRow.durationSeconds, movieRow.watchedSeconds)
+
+                function controllerActivate() {
+                    root.requestPlayback(movieRow.index, movieRow.title,
+                                         movieRow.durationSeconds, movieRow.watchedSeconds)
+                }
 
                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -234,6 +242,13 @@ Item {
                 }
 
                 HoverHandler { id: movieHover }
+                Keys.onPressed: event => {
+                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                            || event.key === Qt.Key_Space) {
+                        movieRow.controllerActivate()
+                        event.accepted = true
+                    }
+                }
             }
 
             ScrollBar.vertical: ScrollBar {}

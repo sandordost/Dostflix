@@ -24,11 +24,28 @@ TestCase {
             controller: fakeController
         }
     }
+    SignalSpy {
+        id: returnSpy
+        target: card
+        signalName: "returnRequested"
+    }
+
+    function init() {
+        fakeController.hasActivePlayback = false
+        returnSpy.clear()
+    }
 
     function test_visibility_tracks_session() {
         compare(card.visible, false)
         fakeController.hasActivePlayback = true
         compare(card.controller.hasActivePlayback, true)
         tryCompare(card, "visible", true)
+    }
+
+    function test_controller_activation_returns_to_movie() {
+        fakeController.hasActivePlayback = true
+        tryCompare(card, "visible", true)
+        card.controllerActivate()
+        compare(returnSpy.count, 1)
     }
 }

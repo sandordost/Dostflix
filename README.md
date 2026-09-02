@@ -79,12 +79,23 @@ output therefore renders typography, icons, controls, posters, and spacing at
 when the output width changes. `dostflix --fullscreen` and
 `dostflix --windowed` provide explicit launch-option overrides.
 
+Controller input is handled through SDL3's standardized gamepad API. Xbox,
+PlayStation, Nintendo Switch Pro, Steam Deck, Steam Controller, Steam Input's
+virtual Xbox controller, and other SDL-mapped gamepads share one action layout.
+Both the D-pad and left stick navigate with dead-zone filtering and hold-repeat;
+the south face button confirms, east goes back, Start pauses, shoulders change
+page or seek, west opens subtitles, and north toggles player fullscreen.
+Controllers can be connected or removed while Dostflix is running. Losing the
+last controller during playback pauses the movie, while mouse and keyboard input
+remain usable at all times. Settings shows the detected controller and mapping.
+
 ## Arch installation and dependencies
 
 The recommended local installation route is the Arch package. `makepkg -si`
 installs Dostflix's declared runtime and build dependencies through pacman,
 including NetworkManager's OpenVPN plugin, OpenVPN, nftables, Polkit, TorrServer,
-mpv, Secret Service support, and Qt's Wayland platform integration.
+mpv, SDL3 controller support, Secret Service support, and Qt's Wayland platform
+integration.
 
 ```bash
 cd packaging/arch
@@ -165,6 +176,9 @@ changing cross-component behavior:
 - `docs/superpowers/plans/2026-09-01-dostflix-ui-overhaul.md` — Dostify-inspired
   visual tokens, responsive layout, animation performance rules, player auto-hide,
   keyboard controls, accessibility, and visual-regression follow-up.
+- `docs/superpowers/plans/2026-09-02-dostflix-controller-support.md` — SDL3
+  controller coverage, Steam Input behavior, action mapping, focus, hot-plugging,
+  and verification.
 - `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
   process-isolation rules that networking changes must preserve.
 

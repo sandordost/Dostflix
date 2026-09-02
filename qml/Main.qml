@@ -7,6 +7,7 @@ import Dostflix
 ApplicationWindow {
     id: window
     required property var appController
+    required property var controllerManager
     required property var movieModel
     required property var libraryManager
     required property var metadataManager
@@ -44,6 +45,7 @@ ApplicationWindow {
     readonly property bool compactNavigation: referenceLayoutWidth < 980
     property string launchedStreamUrl: ""
     property string stoppedStreamUrl: ""
+    property bool controllerWasConnected: controllerManager.connected
 
     Binding {
         target: Theme
@@ -62,6 +64,15 @@ ApplicationWindow {
         window.subtitleManager.setMediaContext("", "")
         videoPlayer.play(url, window.torrentEngine.title)
         window.showingPlayer = true
+    }
+
+    function moveControllerFocus(forward) {
+        window.controllerManager.sendKey(Qt.Key_Tab,
+                                         forward ? Qt.NoModifier : Qt.ShiftModifier)
+    }
+
+    function activateControllerFocus() {
+        window.controllerManager.sendKey(Qt.Key_Return)
     }
 
     onClosing: videoPlayer.stop()
@@ -116,6 +127,68 @@ ApplicationWindow {
             window.stoppedStreamUrl = ""
             window.launchedStreamUrl = ""
             window.openReadyStream()
+        }
+    }
+
+    Connections {
+        target: window.controllerManager
+
+        function onConnectionChanged() {
+            if (window.controllerWasConnected && !window.controllerManager.connected
+                    && videoPlayer.hasActivePlayback && !videoPlayer.paused)
+                videoPlayer.togglePaused()
+            window.controllerWasConnected = window.controllerManager.connected
+        }
+
+        function onNavigationRequested(horizontal, vertical) {
+            if (vertical !== 0) {
+                window.moveControllerFocus(vertical > 0)
+                if (window.showingPlayer) playerPage.revealControls()
+                return
+            }
+            if (window.showingPlayer) {
+                videoPlayer.seek(horizontal < 0 ? -10 : 10)
+                playerPage.revealControls()
+            } else {
+                window.moveControllerFocus(horizontal > 0)
+            }
+        }
+
+        function onConfirmRequested() {
+            window.activateControllerFocus()
+        }
+
+        function onBackRequested() {
+            window.controllerManager.sendKey(Qt.Key_Escape)
+        }
+
+        function onPlayPauseRequested() {
+            if (videoPlayer.hasActivePlayback) {
+                videoPlayer.togglePaused()
+                if (window.showingPlayer) playerPage.revealControls()
+            }
+        }
+
+        function changePageOrSeek(delta) {
+            if (window.showingPlayer) {
+                videoPlayer.seek(delta * 30)
+                playerPage.revealControls()
+            } else {
+                window.pageIndex = Math.max(0, Math.min(3, window.pageIndex + delta))
+            }
+        }
+
+        function onPreviousPageRequested() { changePageOrSeek(-1) }
+        function onNextPageRequested() { changePageOrSeek(1) }
+
+        function onFullscreenRequested() {
+            if (window.showingPlayer)
+                playerPage.fullscreenRequested()
+        }
+
+        function onSubtitlesRequested() {
+            if (window.showingPlayer)
+                playerPage.openSubtitleMenu()
         }
     }
 
@@ -203,6 +276,7 @@ ApplicationWindow {
                         prowlarrManager: window.prowlarrManager
                         subtitleManager: window.subtitleManager
                         libraryManager: window.libraryManager
+                        controllerManager: window.controllerManager
                     }
                 }
             }
@@ -220,6 +294,7 @@ ApplicationWindow {
     }
 
     PlayerPage {
+        id: playerPage
         anchors.fill: parent
         visible: window.showingPlayer
         z: 11

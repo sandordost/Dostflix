@@ -36,6 +36,11 @@ Item {
         revealControls()
     }
 
+    function openSubtitleMenu() {
+        revealControls()
+        subtitleMenu.popup()
+    }
+
     Timer {
         id: hideControls
         interval: root.controlsHideInterval
@@ -72,6 +77,7 @@ Item {
 
     Menu {
         id: subtitleMenu
+        objectName: "subtitleMenu"
         onAboutToShow: root.revealControls()
         background: Rectangle { radius: Theme.radius; color: Theme.surface }
 
@@ -327,10 +333,10 @@ Item {
         }
     }
 
-    Shortcut { sequence: "Space"; onActivated: root.togglePlayback() }
-    Shortcut { sequence: "Left"; onActivated: { root.player.seek(-10); root.revealControls() } }
-    Shortcut { sequence: "Right"; onActivated: { root.player.seek(10); root.revealControls() } }
-    Shortcut { sequence: "F"; onActivated: { root.fullscreenRequested(); root.revealControls() } }
+    Shortcut { sequence: "Space"; enabled: root.visible; onActivated: root.togglePlayback() }
+    Shortcut { sequence: "Left"; enabled: root.visible; onActivated: { root.player.seek(-10); root.revealControls() } }
+    Shortcut { sequence: "Right"; enabled: root.visible; onActivated: { root.player.seek(10); root.revealControls() } }
+    Shortcut { sequence: "F"; enabled: root.visible; onActivated: { root.fullscreenRequested(); root.revealControls() } }
 
     Connections {
         target: root.player

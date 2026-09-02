@@ -73,6 +73,7 @@ QtObject {
             "view-refresh-symbolic": "\uf2f1",
             "document-open-symbolic": "\uf56f",
             "folder-open-symbolic": "\uf07c",
+            "input-gaming-symbolic": "\uf11b",
             "edit-delete-symbolic": "\uf1f8"
         }
         return icons[name] || ""

@@ -21,12 +21,19 @@ ListView {
         required property var model
         width: root.width
         height: Theme.px(92)
+        activeFocusOnTab: true
         radius: Theme.radius
-        color: rowHover.hovered ? Theme.raisedHover : Theme.surface
+        color: rowHover.hovered || activeFocus ? Theme.raisedHover : Theme.surface
+        border.width: activeFocus ? Theme.px(2) : 0
+        border.color: Theme.accent
         Accessible.role: Accessible.Button
         Accessible.name: model.title
         Accessible.onPressAction: root.releaseSelected(
             model.title, model.magnetUrl, model.downloadUrl, model.posterUrl)
+
+        function controllerActivate() {
+            root.releaseSelected(model.title, model.magnetUrl, model.downloadUrl, model.posterUrl)
+        }
 
         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -113,6 +120,13 @@ ListView {
             onTapped: root.releaseSelected(
                 releaseRow.model.title, releaseRow.model.magnetUrl,
                 releaseRow.model.downloadUrl, releaseRow.model.posterUrl)
+        }
+        Keys.onPressed: event => {
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                    || event.key === Qt.Key_Space) {
+                releaseRow.controllerActivate()
+                event.accepted = true
+            }
         }
     }
 

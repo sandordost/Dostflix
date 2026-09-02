@@ -1,5 +1,6 @@
 #include "app/AppPaths.h"
 #include "app/AppSettings.h"
+#include "input/ControllerManager.h"
 #include "library/LibraryDatabase.h"
 #include "library/DownloadManager.h"
 #include "library/LibraryMetadataManager.h"
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
     if (app.arguments().contains(QStringLiteral("--windowed"))) fullscreenSession = false;
 
     AppController controller;
+    ControllerManager controllerManager;
     MovieListModel movies;
     movies.replaceMovies({
         {"m1", "Arrival", 2016, {}, "4K", 128, 14'200'000'000LL, {}, {}, {}},
@@ -132,6 +134,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
+        {QStringLiteral("controllerManager"), QVariant::fromValue(&controllerManager)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
         {QStringLiteral("libraryManager"), QVariant::fromValue(&libraryManager)},
         {QStringLiteral("metadataManager"), QVariant::fromValue(&metadataManager)},

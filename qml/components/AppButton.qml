@@ -57,6 +57,8 @@ Button {
 
     background: Rectangle {
         radius: root.cornerRadius
+        border.width: root.activeFocus ? Theme.px(2) : 0
+        border.color: Theme.accent
         color: {
             if (!root.enabled)
                 return Qt.rgba(0.16, 0.16, 0.18, 0.55)

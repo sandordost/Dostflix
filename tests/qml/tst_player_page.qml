@@ -79,6 +79,14 @@ TestCase {
         verify(findChild(page, "findSubtitlesButton") !== null)
     }
 
+    function test_controller_can_open_subtitle_menu() {
+        const menu = findChild(page, "subtitleMenu")
+        verify(menu !== null)
+        page.openSubtitleMenu()
+        tryCompare(menu, "opened", true)
+        menu.close()
+    }
+
     function test_controls_auto_hide_and_reveal() {
         page.revealControls()
         mouseMove(page, page.width / 2, page.height / 2)
