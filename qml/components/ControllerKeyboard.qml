@@ -8,26 +8,74 @@ import Dostflix
 Popup {
     id: root
     required property var targetField
-    property bool uppercase: false
+    property bool shiftActive: false
+    property bool capsLock: false
+    readonly property bool uppercase: shiftActive || capsLock
     property var firstKeyButton: null
     property bool openedAbove: false
     property var keyboardRows: [
-        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
-        ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-        ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-        ["z", "x", "c", "v", "b", "n", "m"],
-        ["-", "_", ".", ":", "/", "@", "+", "=", "?", "&", "%", "#"]
+        [
+            { value: "\u0060", shifted: "~" },
+            { value: "1", shifted: "!" },
+            { value: "2", shifted: "@" },
+            { value: "3", shifted: "#" },
+            { value: "4", shifted: "$" },
+            { value: "5", shifted: "%" },
+            { value: "6", shifted: "^" },
+            { value: "7", shifted: "&" },
+            { value: "8", shifted: "*" },
+            { value: "9", shifted: "(" },
+            { value: "0", shifted: ")" },
+            { value: "-", shifted: "_" },
+            { value: "=", shifted: "+" },
+            { label: "X/□  Backspace", action: "backspace", units: 2.4 }
+        ],
+        [
+            { label: "Tab", action: "tab", units: 1.45 },
+            { value: "q" }, { value: "w" }, { value: "e" },
+            { value: "r" }, { value: "t" }, { value: "y" },
+            { value: "u" }, { value: "i" }, { value: "o" },
+            { value: "p" }, { value: "[", shifted: "{" },
+            { value: "]", shifted: "}" },
+            { value: "\\", shifted: "|" }
+        ],
+        [
+            { label: "Caps", action: "caps", units: 1.8 },
+            { value: "a" }, { value: "s" }, { value: "d" },
+            { value: "f" }, { value: "g" }, { value: "h" },
+            { value: "j" }, { value: "k" }, { value: "l" },
+            { value: ";", shifted: ":" },
+            { value: "'", shifted: "\"" },
+            { label: "R2  Done", action: "done", units: 2.1 }
+        ],
+        [
+            { label: "L2  Shift", action: "shift", units: 2.1 },
+            { value: "z" }, { value: "x" }, { value: "c" },
+            { value: "v" }, { value: "b" }, { value: "n" },
+            { value: "m" }, { value: ",", shifted: "<" },
+            { value: ".", shifted: ">" },
+            { value: "/", shifted: "?" },
+            { label: "L2  Shift", action: "shift", units: 2.1 }
+        ],
+        [
+            { label: "Y/△  Move", action: "move", units: 1.8 },
+            { label: "←", action: "cursorLeft" },
+            { label: "Space", action: "space", units: 7 },
+            { label: "→", action: "cursorRight" },
+            { label: "Clear", action: "clear", units: 1.5 },
+            { label: "Done", action: "done", units: 1.5 }
+        ]
     ]
 
     objectName: "controllerKeyboard"
     parent: targetField ? targetField.Overlay.overlay : null
-    width: parent ? Math.min(Theme.px(900), parent.width - Theme.px(32))
-                  : Theme.px(900)
+    width: parent ? Math.min(Theme.px(1080), parent.width - Theme.px(32))
+                  : Theme.px(1080)
     height: keyboardContent.implicitHeight + padding * 2
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? (openedAbove ? Theme.px(18)
                              : parent.height - height - Theme.px(18)) : 0
-    padding: Theme.px(14)
+    padding: Theme.px(12)
     modal: true
     dim: false
     focus: true
@@ -42,7 +90,8 @@ Popup {
                 ? targetField.mapToItem(overlay, 0, targetField.height / 2).y
                         > overlay.height / 2
                 : false
-        uppercase = false
+        shiftActive = false
+        capsLock = false
         open()
         return true
     }
@@ -58,8 +107,9 @@ Popup {
 
     function insertText(value) {
         replaceSelection()
-        targetField.insert(targetField.cursorPosition,
-                           uppercase ? value.toUpperCase() : value)
+        targetField.insert(targetField.cursorPosition, value)
+        if (shiftActive)
+            shiftActive = false
     }
 
     function deletePrevious() {
@@ -71,6 +121,44 @@ Popup {
             return
         const position = targetField.cursorPosition
         targetField.remove(position - 1, position)
+    }
+
+    function moveCursor(offset) {
+        targetField.cursorPosition = Math.max(0, Math.min(targetField.length,
+                targetField.cursorPosition + offset))
+    }
+
+    function toggleShift() {
+        shiftActive = !shiftActive
+    }
+
+    function togglePlacement() {
+        openedAbove = !openedAbove
+    }
+
+    function displayText(key) {
+        if (key.label)
+            return key.label
+        if (root.uppercase && key.shifted)
+            return key.shifted
+        const value = String(key.value)
+        return root.uppercase ? value.toUpperCase() : value
+    }
+
+    function activateKey(key) {
+        switch (key.action || "") {
+        case "backspace": deletePrevious(); break
+        case "tab": insertText("\t"); break
+        case "caps": capsLock = !capsLock; break
+        case "shift": toggleShift(); break
+        case "done": acceptInput(); break
+        case "space": insertText(" "); break
+        case "cursorLeft": moveCursor(-1); break
+        case "cursorRight": moveCursor(1); break
+        case "clear": targetField.clear(); break
+        case "move": togglePlacement(); break
+        default: insertText(displayText(key)); break
+        }
     }
 
     function focusFirstKey() {
@@ -94,8 +182,6 @@ Popup {
             if (buttons.length > 0)
                 rows.push(buttons)
         }
-        rows.push([shiftButton, backspaceButton, spaceButton,
-                   clearButton, doneButton])
         return rows
     }
 
@@ -150,30 +236,14 @@ Popup {
 
     background: Rectangle {
         radius: Theme.radiusLarge
-        color: Qt.rgba(0.055, 0.055, 0.065, 0.98)
+        color: Qt.rgba(0.045, 0.045, 0.052, 0.985)
         border.width: Theme.px(1)
         border.color: Theme.separator
     }
 
     contentItem: ColumnLayout {
         id: keyboardContent
-        spacing: Theme.px(7)
-
-        RowLayout {
-            Layout.fillWidth: true
-            Label {
-                Layout.fillWidth: true
-                text: qsTr("Controller keyboard")
-                color: Theme.textSecondary
-                font.pixelSize: Theme.captionSize
-            }
-            Label {
-                text: root.openedAbove ? qsTr("Shown above input")
-                                       : qsTr("Shown below input")
-                color: Theme.textMuted
-                font.pixelSize: Theme.captionSize
-            }
-        }
+        spacing: Theme.px(6)
 
         Repeater {
             id: rowRepeater
@@ -183,65 +253,33 @@ Popup {
                 required property int index
                 required property var modelData
                 Layout.fillWidth: true
-                Layout.alignment: Qt.AlignHCenter
-                spacing: Theme.px(6)
+                spacing: Theme.px(5)
 
                 Repeater {
-                    id: keyRepeater
                     model: keyboardRow.modelData
                     delegate: AppButton {
                         id: keyButton
                         required property int index
                         required property var modelData
                         Layout.fillWidth: true
-                        Layout.preferredHeight: Theme.px(42)
-                        text: root.uppercase ? String(modelData).toUpperCase()
-                                             : String(modelData)
-                        Accessible.name: qsTr("Type %1").arg(text)
-                        onClicked: root.insertText(String(modelData))
+                        Layout.preferredWidth: Theme.px(52)
+                                               * (modelData.units || 1)
+                        Layout.preferredHeight: Theme.px(43)
+                        text: root.displayText(modelData)
+                        checkable: modelData.action === "caps"
+                                   || modelData.action === "shift"
+                        checked: modelData.action === "caps" ? root.capsLock
+                                 : (modelData.action === "shift"
+                                    ? root.shiftActive : false)
+                        Accessible.name: modelData.action
+                                ? text : qsTr("Type %1").arg(text)
+                        onClicked: root.activateKey(modelData)
                         Component.onCompleted: {
                             if (keyboardRow.index === 0 && keyButton.index === 0)
                                 root.firstKeyButton = keyButton
                         }
                     }
                 }
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Theme.px(7)
-
-            AppButton {
-                id: shiftButton
-                text: root.uppercase ? qsTr("Lowercase") : qsTr("Shift")
-                symbol: "\uf062"
-                checkable: true
-                checked: root.uppercase
-                onClicked: root.uppercase = !root.uppercase
-            }
-            AppButton {
-                id: backspaceButton
-                text: qsTr("Backspace")
-                symbol: "\uf55a"
-                onClicked: root.deletePrevious()
-            }
-            AppButton {
-                id: spaceButton
-                Layout.fillWidth: true
-                text: qsTr("Space")
-                onClicked: root.insertText(" ")
-            }
-            AppButton {
-                id: clearButton
-                text: qsTr("Clear")
-                onClicked: root.targetField.clear()
-            }
-            AppButton {
-                id: doneButton
-                text: qsTr("Done")
-                primary: true
-                onClicked: root.acceptInput()
             }
         }
     }

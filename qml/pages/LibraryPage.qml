@@ -31,6 +31,14 @@ Item {
         return true
     }
 
+    function ensureMovieVisible(index) {
+        if (index < 0 || index >= libraryList.count)
+            return false
+        libraryList.currentIndex = index
+        libraryList.positionViewAtIndex(index, ListView.Contain)
+        return true
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: Theme.px(12)
@@ -99,6 +107,7 @@ Item {
             clip: true
             spacing: Theme.px(8)
             boundsBehavior: Flickable.StopAtBounds
+            cacheBuffer: height
             model: root.libraryManager.model
 
             delegate: Rectangle {
@@ -118,6 +127,10 @@ Item {
                 border.color: Theme.accent
                 Accessible.role: Accessible.Button
                 Accessible.name: movieRow.title
+                onActiveFocusChanged: {
+                    if (activeFocus)
+                        root.ensureMovieVisible(movieRow.index)
+                }
                 Accessible.onPressAction: root.requestPlayback(
                     movieRow.index, movieRow.title,
                     movieRow.durationSeconds, movieRow.watchedSeconds)

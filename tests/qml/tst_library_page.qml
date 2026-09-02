@@ -47,9 +47,18 @@ TestCase {
     }
 
     function init() {
+        while (movies.count < 12) {
+            const index = movies.count
+            movies.append({
+                title: "Local movie " + index, posterUrl: "", year: 2000 + index,
+                durationSeconds: 7200, watchedSeconds: 0,
+                synopsis: "A local movie synopsis."
+            })
+        }
         movies.setProperty(0, "watchedSeconds", 0)
         fakeLibrary.playCalls = 0
         fakeLibrary.lastRestart = false
+        page.ensureMovieVisible(0)
     }
 
     function test_localMovieCanBePlayed() {
@@ -78,5 +87,13 @@ TestCase {
         const refresh = findChild(page, "libraryRefreshButton")
         verify(refresh !== null)
         compare(refresh.focus, true)
+    }
+
+    function test_controller_selection_scrolls_into_view() {
+        const list = findChild(page, "libraryList")
+        verify(list !== null)
+        tryVerify(function() { return list.contentHeight > list.height })
+        verify(page.ensureMovieVisible(movies.count - 1))
+        tryVerify(function() { return list.contentY > 0 })
     }
 }

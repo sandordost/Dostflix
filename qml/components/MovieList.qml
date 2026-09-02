@@ -30,14 +30,25 @@ ListView {
         return true
     }
 
+    function ensureIndexVisible(index) {
+        if (index < 0 || index >= count)
+            return false
+        currentIndex = index
+        positionViewAtIndex(index, ListView.Contain)
+        return true
+    }
+
+    objectName: "movieList"
     model: movieModel
     spacing: Theme.px(7)
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: true
+    cacheBuffer: height
 
     delegate: Rectangle {
         id: releaseRow
+        required property int index
         required property var model
         width: root.width
         height: Theme.px(92)
@@ -53,6 +64,10 @@ ListView {
                                                    model.downloadUrl)
         Accessible.onPressAction: root.releaseSelected(
             model.title, model.magnetUrl, model.downloadUrl, model.posterUrl)
+        onActiveFocusChanged: {
+            if (activeFocus)
+                root.ensureIndexVisible(releaseRow.index)
+        }
 
         function controllerActivate() {
             if (!root.transferLoading)

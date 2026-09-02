@@ -236,10 +236,26 @@ ApplicationWindow {
             }
         }
 
-        function onPreviousPageRequested() { changePageOrSeek(-1) }
-        function onNextPageRequested() { changePageOrSeek(1) }
+        function onPreviousPageRequested() {
+            if (Theme.controllerKeyboardOpen) {
+                Theme.activeControllerKeyboard.toggleShift()
+                return
+            }
+            changePageOrSeek(-1)
+        }
+        function onNextPageRequested() {
+            if (Theme.controllerKeyboardOpen) {
+                Theme.activeControllerKeyboard.acceptInput()
+                return
+            }
+            changePageOrSeek(1)
+        }
 
         function onFullscreenRequested() {
+            if (Theme.controllerKeyboardOpen) {
+                Theme.activeControllerKeyboard.togglePlacement()
+                return
+            }
             if (window.controllerManager.popupActive()
                     && !playerPage.subtitleMenuOpened)
                 return
@@ -250,6 +266,10 @@ ApplicationWindow {
         }
 
         function onSubtitlesRequested() {
+            if (Theme.controllerKeyboardOpen) {
+                Theme.activeControllerKeyboard.deletePrevious()
+                return
+            }
             if (window.showingPlayer)
                 playerPage.openSubtitleMenu()
         }

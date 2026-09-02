@@ -78,11 +78,34 @@ TestCase {
         tryCompare(keyboard, "opened", true)
         tryCompare(keyboard.firstKeyButton, "activeFocus", true)
         keyboard.handleControllerNavigation(1, 0)
-        compare(keyboardWindow.activeFocusItem.text, "2")
+        compare(keyboardWindow.activeFocusItem.text, "1")
         keyboard.handleControllerNavigation(0, 1)
-        compare(keyboardWindow.activeFocusItem.text, "w")
+        compare(keyboardWindow.activeFocusItem.text, "q")
         keyboardWindow.activeFocusItem.controllerActivate()
-        compare(topField.text, "w")
+        compare(topField.text, "q")
+        keyboard.close()
+    }
+
+    function test_steamos_layout_and_shortcuts() {
+        topField.controllerActivate()
+        const keyboard = keyboardFor(topField)
+        tryCompare(keyboard, "opened", true)
+        compare(keyboard.keyboardRows.length, 5)
+        compare(keyboard.keyboardRows[0][13].action, "backspace")
+        compare(keyboard.keyboardRows[2][12].action, "done")
+        compare(keyboard.keyboardRows[3][0].action, "shift")
+
+        keyboard.toggleShift()
+        verify(keyboard.shiftActive)
+        keyboard.activateKey({ value: "q" })
+        compare(topField.text, "Q")
+        verify(!keyboard.shiftActive)
+        keyboard.deletePrevious()
+        compare(topField.text, "")
+
+        const previousPlacement = keyboard.openedAbove
+        keyboard.togglePlacement()
+        compare(keyboard.openedAbove, !previousPlacement)
         keyboard.close()
     }
 

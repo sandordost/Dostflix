@@ -186,8 +186,10 @@ Dostflix follows Dostify's visual language rather than copying controls without 
 - Player subtitle, delay, and volume controls use contained focus modes. Volume
   adjustment exits on confirmation or back, while small pointer jitter does not
   prevent the player chrome from auto-hiding.
-- Activating an editable field with a controller opens a responsive in-app QWERTY
-  keyboard on the screen edge opposite that field.
+- Activating an editable field with a controller opens a responsive SteamOS-style
+  QWERTY keyboard on the screen edge opposite that field. Its number/symbol,
+  modifier, letter, space and cursor rows support controller shortcuts.
+- Discover and Library keep the focused card or row fully inside the viewport.
 - Partially watched local movies resume directly instead of opening a resume/start-over prompt.
 - Settings groups interactive controls into semantic rows. Horizontal input
   moves inside the current row; vertical input always enters the first available

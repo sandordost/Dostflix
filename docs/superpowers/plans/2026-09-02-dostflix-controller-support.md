@@ -88,11 +88,15 @@ display-only value between separately focusable half-second decrement/increment
 actions, so controller focus never enters a numeric editor. Activating Volume
 enters an exclusive adjustment mode where left/right changes volume by five
 percentage points and A/Cross or B/Circle returns to normal focus navigation.
-Editable text fields open a modal
-QWERTY controller keyboard; its rows own directional focus until Done or B/Circle,
-and it chooses the opposite screen edge from the active input.
+Editable text fields open a modal SteamOS-style QWERTY controller keyboard with
+number/symbol, Tab, Caps, Shift, cursor and wide space rows. Its rows own
+directional focus until Done or B/Circle. L2 toggles Shift, X/Square erases,
+R2 accepts, and Y/Triangle moves the keyboard between screen edges.
 The OpenSubtitles search dialog provides its own semantic rows for the query,
 search action, dynamically loaded download actions, Settings fallback, and Close.
+Discover grid/list delegates and Library rows position their containing view at
+the focused index, with enough delegate cache to keep directional navigation
+moving across viewport boundaries.
 
 Controller initialization and shutdown are local input operations and do not
 touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.
@@ -104,7 +108,8 @@ touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.
   popup detection, and spatial direction selection.
 - QML tests cover controller activation of movie and Now Playing cards, subtitle
   menu access through mouse, keyboard and controller, controller-only search,
-  player delay/volume modes, controller-keyboard typing/placement, and focus behavior.
+  player delay/volume modes, SteamOS keyboard typing/placement, automatic
+  Discover/Library scrolling, and focus behavior.
 - QML lint, the complete CTest suite, and Arch packaging remain required.
 - Final hardware validation should include Steam Controller through Steam Input,
   one Xbox-layout controller, and one PlayStation-layout controller in Gamescope.

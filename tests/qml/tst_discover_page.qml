@@ -48,6 +48,14 @@ TestCase {
     }
 
     function init() {
+        while (releases.count < 24) {
+            const index = releases.count
+            releases.append({
+                title: "Movie " + index, year: 2026, quality: "1080p",
+                seederCount: 42, posterUrl: "", sourceLabel: "Indexer",
+                magnetUrl: "magnet:?xt=test" + index, downloadUrl: ""
+            })
+        }
         page.listMode = false
         page.selectedReleaseKey = ""
         fakeProwlarr.prepareCalls = 0
@@ -55,6 +63,7 @@ TestCase {
         fakeProwlarr.releaseError = ""
         fakeTorrent.active = false
         fakeTorrent.errorMessage = ""
+        page.ensureResultVisible(0)
     }
 
     function test_view_toggle() {
@@ -79,5 +88,21 @@ TestCase {
         compare(page.transferLoading, true)
         compare(page.transferStatusText, "Retrieving torrent…")
         verify(page.selectedReleaseKey.length > 0)
+    }
+
+    function test_grid_and_list_selection_scroll_into_view() {
+        const grid = findChild(page, "movieGrid")
+        const list = findChild(page, "movieList")
+        verify(grid !== null)
+        verify(list !== null)
+        tryVerify(function() { return grid.contentHeight > grid.height })
+        verify(page.ensureResultVisible(releases.count - 1))
+        tryVerify(function() { return grid.contentY > 0 })
+
+        page.listMode = true
+        tryVerify(function() { return list.visible })
+        tryVerify(function() { return list.contentHeight > list.height })
+        verify(page.ensureResultVisible(releases.count - 1))
+        tryVerify(function() { return list.contentY > 0 })
     }
 }

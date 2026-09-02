@@ -46,6 +46,11 @@ Item {
         return root.focusFirstResult()
     }
 
+    function ensureResultVisible(index) {
+        return listMode ? movieList.ensureIndexVisible(index)
+                        : movieGrid.ensureIndexVisible(index)
+    }
+
     function startRelease(title, magnetUrl, downloadUrl) {
         selectionError = ""
         selectedReleaseKey = releaseKey(title, magnetUrl, downloadUrl)

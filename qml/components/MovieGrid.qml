@@ -31,15 +31,26 @@ GridView {
         return true
     }
 
+    function ensureIndexVisible(index) {
+        if (index < 0 || index >= count)
+            return false
+        currentIndex = index
+        positionViewAtIndex(index, GridView.Contain)
+        return true
+    }
+
+    objectName: "movieGrid"
     model: movieModel
     cellWidth: width / columnCount
     cellHeight: cardWidth / Theme.posterAspectRatio + Theme.px(82)
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: true
+    cacheBuffer: cellHeight * 2
 
     delegate: Item {
         id: gridDelegate
+        required property int index
         required property var model
         width: root.cellWidth
         height: root.cellHeight
@@ -60,6 +71,10 @@ GridView {
             transferLoading: transferActive && root.transferLoading
             transferStatusText: transferActive ? root.transferStatusText : ""
             transferHasError: transferActive && root.transferHasError
+            onActiveFocusChanged: {
+                if (activeFocus)
+                    root.ensureIndexVisible(gridDelegate.index)
+            }
             onSelected: root.releaseSelected(parent.model.title, parent.model.magnetUrl,
                                              parent.model.downloadUrl, parent.model.posterUrl)
         }
