@@ -96,6 +96,10 @@ last controller during playback pauses the movie, while mouse and keyboard input
 remain usable at all times. Search stays outside the directional focus graph and
 is entered with Y/Triangle; one B/Circle press leaves it and restores the prior
 selection or focuses the first displayed result. Settings shows the controller.
+Settings uses explicit focus rows: left/right stays within one visual row, while
+up/down moves to the first available control of the previous or next row. Open
+select boxes trap controller navigation on their options until A/Cross confirms
+or B/Circle closes them; empty select boxes do not open.
 
 ## Arch installation and dependencies
 

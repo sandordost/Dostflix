@@ -74,6 +74,13 @@ SDL initialization failures. Mouse, keyboard, and controller input remain active
 simultaneously. Removing the final controller during unpaused playback pauses the
 movie instead of allowing playback to continue without an input device.
 
+Settings deliberately overrides global geometric focus with semantic rows.
+Left/right walks every enabled control in a row, including trailing provider and
+OpenSubtitles fields. Up/down moves to the first enabled control in the previous
+or next row, independent of the previous column and scroll position. Combo-box
+popups own controller focus until A/Cross selects the highlighted option or
+B/Circle cancels; an empty combo box never opens.
+
 Controller initialization and shutdown are local input operations and do not
 touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.
 

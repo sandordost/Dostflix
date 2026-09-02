@@ -162,12 +162,19 @@ ApplicationWindow {
             if (window.showingPlayer) {
                 playerPage.revealControls()
                 window.controllerManager.moveFocus(horizontal, vertical)
+            } else if (window.pageIndex === 3
+                       && settingsPage.handleControllerNavigation(
+                           horizontal, vertical)) {
+                return
             } else {
                 window.controllerManager.moveFocus(horizontal, vertical)
             }
         }
 
         function onConfirmRequested() {
+            if (!window.showingPlayer && window.pageIndex === 3
+                    && settingsPage.activateControllerPopup())
+                return
             window.activateControllerFocus()
         }
 

@@ -184,6 +184,10 @@ Dostflix follows Dostify's visual language rather than copying controls without 
   between Xbox and PlayStation layouts. Keyboard and mouse remain active.
 - Player D-pad/stick directions navigate controls; L2/R2 or LT/RT seek by 30 seconds.
 - Partially watched local movies resume directly instead of opening a resume/start-over prompt.
+- Settings groups interactive controls into semantic rows. Horizontal input
+  moves inside the current row; vertical input always enters the first available
+  control of the adjacent row. Open select boxes exclusively consume navigation
+  until selection or cancellation.
 
 ## 9. Error handling
 

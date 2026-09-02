@@ -28,6 +28,11 @@ TestCase {
                 width: parent.width
                 model: ["Torznab", "Prowlarr"]
             }
+            AppComboBox {
+                id: emptyCombo
+                visible: false
+                model: []
+            }
             AppButton {
                 id: button
                 text: "Save settings"
@@ -89,6 +94,11 @@ TestCase {
     function test_controller_activation_clicks_buttons() {
         button.controllerActivate()
         compare(buttonClickSpy.count, 1)
+    }
+
+    function test_empty_combo_does_not_open_for_controller() {
+        emptyCombo.controllerActivate()
+        compare(emptyCombo.popup.opened, false)
     }
 
     function test_file_picker_uses_app_surface() {
