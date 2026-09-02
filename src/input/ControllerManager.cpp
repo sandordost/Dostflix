@@ -111,11 +111,11 @@ QString ControllerManager::searchButtonLabel() const
 }
 QString ControllerManager::previousPageLabel() const
 {
-    return m_playStationLayout ? QStringLiteral("L1") : QStringLiteral("LB");
+    return m_playStationLayout ? QStringLiteral("L2") : QStringLiteral("LT");
 }
 QString ControllerManager::nextPageLabel() const
 {
-    return m_playStationLayout ? QStringLiteral("R1") : QStringLiteral("RB");
+    return m_playStationLayout ? QStringLiteral("R2") : QStringLiteral("RT");
 }
 
 void ControllerManager::initialize()
@@ -246,7 +246,17 @@ void ControllerManager::processAxis(const SDL_GamepadAxis axis, const qint16 val
 {
     if (axis == SDL_GAMEPAD_AXIS_LEFTX) m_leftX = value;
     else if (axis == SDL_GAMEPAD_AXIS_LEFTY) m_leftY = value;
-    else return;
+    else if (axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER
+             || axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+        const int index = axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER ? 0 : 1;
+        const qint16 threshold = m_triggerPressed[index]
+            ? AxisReleaseThreshold : AxisPressThreshold;
+        const bool pressed = value >= threshold;
+        if (pressed == m_triggerPressed[index]) return;
+        m_triggerPressed[index] = pressed;
+        if (pressed) trigger(index == 0 ? PreviousPage : NextPage);
+        return;
+    } else return;
     updateAxisDirections();
 }
 

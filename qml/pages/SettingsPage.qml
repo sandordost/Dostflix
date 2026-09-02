@@ -210,7 +210,7 @@ Item {
                     }
                     Label {
                         Layout.fillWidth: true
-                        text: qsTr("D-pad/stick: spatial navigation · A/Cross: select · B/Circle: back or return to movie · Start: pause · shoulders: switch section or seek · X/Square: subtitles · Y/Triangle: search or fullscreen")
+                        text: qsTr("D-pad/stick: spatial navigation · A/Cross: select · B/Circle: back or return to movie · Start: pause · triggers/shoulders: switch section or seek · X/Square: subtitles · Y/Triangle: search or fullscreen")
                         color: Theme.textSecondary
                         wrapMode: Text.WordWrap
                     }

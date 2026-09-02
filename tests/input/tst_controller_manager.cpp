@@ -74,6 +74,21 @@ private slots:
         QCOMPARE(spy.at(0).at(0).value<ControllerManager::Action>(), ControllerManager::NavigateLeft);
     }
 
+    void mapsAnalogTriggersWithHysteresis()
+    {
+        ControllerManager manager(nullptr, false);
+        QSignalSpy spy(&manager, &ControllerManager::actionTriggered);
+
+        manager.processAxis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, 17'000);
+        manager.processAxis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, 12'000);
+        manager.processAxis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, 9'000);
+        manager.processAxis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, 17'000);
+
+        QCOMPARE(spy.size(), 2);
+        QCOMPARE(spy.at(0).at(0).value<ControllerManager::Action>(), ControllerManager::PreviousPage);
+        QCOMPARE(spy.at(1).at(0).value<ControllerManager::Action>(), ControllerManager::NextPage);
+    }
+
     void movesFocusInTheRequestedVisualDirection()
     {
         ControllerManager manager(nullptr, false);

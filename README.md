@@ -85,7 +85,7 @@ virtual Xbox controller, and other SDL-mapped gamepads share one action layout.
 Both the D-pad and left stick navigate spatially with dead-zone filtering and
 hold-repeat: up/down follows visual rows and left/right changes columns. The
 south face button confirms, east closes the active context or returns to an
-active movie, Start pauses, shoulders change section or seek, and west opens
+active movie, Start pauses, triggers or shoulders change section or seek, and west opens
 subtitles. North focuses search while browsing and toggles player fullscreen.
 Controller-only hints adapt between Xbox and PlayStation labels.
 Controllers can be connected or removed while Dostflix is running. Losing the

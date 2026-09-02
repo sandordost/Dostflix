@@ -11,8 +11,8 @@ TestCase {
         id: fakeControllerManager
         property bool connected: true
         property string searchButtonLabel: "Y"
-        property string previousPageLabel: "LB"
-        property string nextPageLabel: "RB"
+        property string previousPageLabel: "LT"
+        property string nextPageLabel: "RT"
     }
 
     ApplicationWindow {

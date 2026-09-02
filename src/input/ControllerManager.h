@@ -95,6 +95,7 @@ private:
     std::array<bool, DirectionCount> m_axisDirections{};
     std::array<bool, DirectionCount> m_activeDirections{};
     std::array<qint64, DirectionCount> m_nextRepeatAt{};
+    std::array<bool, 2> m_triggerPressed{};
     qint16 m_leftX = 0;
     qint16 m_leftY = 0;
     QString m_controllerName;

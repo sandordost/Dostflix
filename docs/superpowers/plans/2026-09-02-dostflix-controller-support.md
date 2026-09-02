@@ -39,7 +39,7 @@ Primary references:
 | South / A / Cross | Confirm the focused control |
 | East / B / Circle or Back | Return or close |
 | Start | Play or pause an active movie |
-| Left/right shoulder | Previous/next page; seek 30 seconds in player |
+| Left/right trigger or shoulder | Previous/next page; seek 30 seconds in player |
 | West / X / Square | Open subtitles in player |
 | North / Y / Triangle | Focus search while browsing; toggle player fullscreen |
 | Left/right while playing | Seek 10 seconds |
@@ -58,7 +58,7 @@ Y/Triangle. B/Circle first closes search, subtitles, or another popup, then
 returns to an active movie when browsing. Movie cards, result rows, library rows,
 file-picker entries, and the Now Playing card accept controller activation.
 
-When a controller is connected, the sidebar shows LB/RB or L1/R1 section hints,
+When a controller is connected, the sidebar shows LT/RT or L2/R2 section hints,
 search shows Y/Triangle, and the Return to movie card shows B/Circle. PlayStation
 controllers are detected from SDL's gamepad type/name; all other mapped devices
 use Xbox-style labels without changing the normalized action mapping.
