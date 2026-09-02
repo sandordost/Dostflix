@@ -65,9 +65,9 @@ dialogs. Discover can switch between a poster grid and compact result list. A
 selected release shows its retrieval/buffering spinner and concise status on its
 own thumbnail instead of consuming the application header. The local
 library uses compact poster rows without hover tooltips. Player controls fade
-after 2.8 seconds and return on pointer
-movement, pause, buffering, or keyboard input; only opacity, color, and scale are
-animated to keep frame pacing smooth.
+after 2.8 seconds of meaningful pointer inactivity, even when the pointer rests
+over a control; sub-six-pixel mouse jitter does not keep them visible. Only
+opacity, color, and scale are animated to keep frame pacing smooth.
 
 In a Gamescope/Steam session Dostflix detects `STEAM_GAMESCOPE_SESSION`,
 `GAMESCOPE_WAYLAND_DISPLAY`, or a Gamescope desktop-session name and opens on
@@ -100,6 +100,11 @@ Settings uses explicit focus rows: left/right stays within one visual row, while
 up/down moves to the first available control of the previous or next row. Open
 select boxes trap controller navigation on their options until A/Cross confirms
 or B/Circle closes them; empty select boxes do not open.
+In the player, the subtitle popup has contained controller focus, delay changes
+with left/right, and activating Volume enters a five-percent adjustment mode
+until A/Cross or B/Circle exits. Activating an editable text field opens an
+in-app controller QWERTY keyboard. It appears below upper inputs and above lower
+inputs so typed text remains visible.
 
 ## Arch installation and dependencies
 

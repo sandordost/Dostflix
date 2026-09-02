@@ -3,6 +3,9 @@ import QtQuick
 
 QtObject {
     property real scaleFactor: 1.0
+    property bool controllerConnected: false
+    property var activeControllerKeyboard: null
+    readonly property bool controllerKeyboardOpen: activeControllerKeyboard !== null
     readonly property int referenceWidth: 1280
     readonly property color canvas: "#020307"
     readonly property color panel: "#121214"

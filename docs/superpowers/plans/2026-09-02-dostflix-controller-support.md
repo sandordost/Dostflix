@@ -81,6 +81,14 @@ or next row, independent of the previous column and scroll position. Combo-box
 popups own controller focus until A/Cross selects the highlighted option or
 B/Circle cancels; an empty combo box never opens.
 
+Player overlays also use explicit input modes. The subtitle popup is an in-window
+Qt Quick overlay navigated vertically. A focused subtitle-delay control consumes
+left/right for half-second steps. Activating Volume enters an exclusive adjustment
+mode where left/right changes volume by five percentage points and A/Cross or
+B/Circle returns to normal focus navigation. Editable text fields open a modal
+QWERTY controller keyboard; its rows own directional focus until Done or B/Circle,
+and it chooses the opposite screen edge from the active input.
+
 Controller initialization and shutdown are local input operations and do not
 touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.
 
@@ -90,7 +98,8 @@ touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.
   D-pad input, analog dead-zone hysteresis, overlapping stick/D-pad state,
   popup detection, and spatial direction selection.
 - QML tests cover controller activation of movie and Now Playing cards, subtitle
-  menu access, controller-only search entry/exit, and visible focus behavior.
+  menu access through mouse, keyboard and controller, controller-only search,
+  player delay/volume modes, controller-keyboard typing/placement, and focus behavior.
 - QML lint, the complete CTest suite, and Arch packaging remain required.
 - Final hardware validation should include Steam Controller through Steam Input,
   one Xbox-layout controller, and one PlayStation-layout controller in Gamescope.

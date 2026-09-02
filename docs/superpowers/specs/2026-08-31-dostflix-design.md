@@ -183,6 +183,11 @@ Dostflix follows Dostify's visual language rather than copying controls without 
   focus. Search opens explicitly with Y/Triangle, while controller hints adapt
   between Xbox and PlayStation layouts. Keyboard and mouse remain active.
 - Player D-pad/stick directions navigate controls; L2/R2 or LT/RT seek by 30 seconds.
+- Player subtitle, delay, and volume controls use contained focus modes. Volume
+  adjustment exits on confirmation or back, while small pointer jitter does not
+  prevent the player chrome from auto-hiding.
+- Activating an editable field with a controller opens a responsive in-app QWERTY
+  keyboard on the screen edge opposite that field.
 - Partially watched local movies resume directly instead of opening a resume/start-over prompt.
 - Settings groups interactive controls into semantic rows. Horizontal input
   moves inside the current row; vertical input always enters the first available

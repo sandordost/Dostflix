@@ -53,6 +53,12 @@ ApplicationWindow {
         value: window.uiScale
     }
 
+    Binding {
+        target: Theme
+        property: "controllerConnected"
+        value: window.controllerManager.connected
+    }
+
     function openReadyStream() {
         const url = window.torrentEngine.streamUrl
         if (!window.torrentEngine.bufferReady || url.length === 0
@@ -152,15 +158,17 @@ ApplicationWindow {
         }
 
         function onNavigationRequested(horizontal, vertical) {
-            if (sidePanel.controllerSearchActive)
-                return
-            if (window.showingPlayer && playerPage.subtitleMenuOpened) {
-                if (vertical !== 0)
-                    playerPage.navigateSubtitleMenu(vertical)
+            if (Theme.controllerKeyboardOpen) {
+                Theme.activeControllerKeyboard.handleControllerNavigation(
+                            horizontal, vertical)
                 return
             }
+            if (sidePanel.controllerSearchActive)
+                return
             if (window.showingPlayer) {
                 playerPage.revealControls()
+                if (playerPage.handleControllerNavigation(horizontal, vertical))
+                    return
                 window.controllerManager.moveFocus(horizontal, vertical)
             } else if (window.pageIndex === 3
                        && settingsPage.handleControllerNavigation(
@@ -172,6 +180,8 @@ ApplicationWindow {
         }
 
         function onConfirmRequested() {
+            if (window.showingPlayer && playerPage.finishVolumeAdjustment())
+                return
             if (!window.showingPlayer && window.pageIndex === 3
                     && settingsPage.activateControllerPopup())
                 return
@@ -179,7 +189,13 @@ ApplicationWindow {
         }
 
         function onBackRequested() {
+            if (Theme.controllerKeyboardOpen) {
+                Theme.activeControllerKeyboard.close()
+                return
+            }
             if (sidePanel.closeControllerSearch())
+                return
+            if (window.showingPlayer && playerPage.finishVolumeAdjustment())
                 return
             if (window.showingPlayer && playerPage.subtitleMenuOpened) {
                 playerPage.closeSubtitleMenu()

@@ -10,6 +10,8 @@ Item {
     required property var player
     property bool controlsVisible: true
     readonly property bool subtitleMenuOpened: subtitleMenu.opened
+    property bool volumeAdjustmentActive: false
+    property point lastSignificantPointerPosition: Qt.point(-1, -1)
     property int controlsHideInterval: Theme.controlsTimeout
     signal browseRequested()
     signal fullscreenRequested()
@@ -32,6 +34,17 @@ Item {
         hideControls.restart()
     }
 
+    function handlePointerMove(x, y) {
+        const threshold = Theme.px(6)
+        const dx = x - lastSignificantPointerPosition.x
+        const dy = y - lastSignificantPointerPosition.y
+        if (lastSignificantPointerPosition.x < 0
+                || dx * dx + dy * dy >= threshold * threshold) {
+            lastSignificantPointerPosition = Qt.point(x, y)
+            revealControls()
+        }
+    }
+
     function togglePlayback() {
         player.togglePaused()
         revealControls()
@@ -45,7 +58,8 @@ Item {
 
     function openSubtitleMenu() {
         revealControls()
-        subtitleMenu.popup(subtitleButton, 0, -subtitleMenu.implicitHeight)
+        volumeAdjustmentActive = false
+        subtitleMenu.open()
     }
 
     function closeSubtitleMenu() {
@@ -55,16 +69,64 @@ Item {
     function navigateSubtitleMenu(direction) {
         if (!subtitleMenu.opened || direction === 0)
             return
-        let index = subtitleMenu.currentIndex
-        for (let attempt = 0; attempt < subtitleMenu.count; ++attempt) {
-            index = (index + (direction > 0 ? 1 : -1) + subtitleMenu.count)
-                    % subtitleMenu.count
-            const item = subtitleMenu.itemAt(index)
-            if (item && item.enabled) {
-                subtitleMenu.currentIndex = index
-                break
-            }
+        const items = subtitleMenuItems()
+        if (items.length === 0)
+            return
+        subtitleMenu.currentIndex = (subtitleMenu.currentIndex
+                + (direction > 0 ? 1 : -1) + items.length) % items.length
+        items[subtitleMenu.currentIndex].forceActiveFocus(Qt.TabFocusReason)
+    }
+
+    function subtitleMenuItems() {
+        const items = [noSubtitleButton]
+        for (let index = 0; index < subtitleTrackRepeater.count; ++index) {
+            const item = subtitleTrackRepeater.itemAt(index)
+            if (item && item.enabled)
+                items.push(item)
         }
+        items.push(localSubtitleButton)
+        items.push(findSubtitlesButton)
+        return items
+    }
+
+    function itemContainsFocus(item) {
+        let focused = root.Window.window ? root.Window.window.activeFocusItem : null
+        while (focused) {
+            if (focused === item)
+                return true
+            focused = focused.parent
+        }
+        return false
+    }
+
+    function handleControllerNavigation(horizontal, vertical) {
+        if (subtitleMenu.opened) {
+            if (vertical !== 0)
+                navigateSubtitleMenu(vertical)
+            return true
+        }
+        if (volumeAdjustmentActive) {
+            if (horizontal !== 0)
+                player.setVolume(Math.max(0, Math.min(100,
+                        player.volume + horizontal * 5)))
+            revealControls()
+            return true
+        }
+        if (horizontal !== 0 && itemContainsFocus(subtitleDelayControl)) {
+            subtitleDelayControl.controllerAdjust(horizontal)
+            revealControls()
+            return true
+        }
+        return false
+    }
+
+    function finishVolumeAdjustment() {
+        if (!volumeAdjustmentActive)
+            return false
+        volumeAdjustmentActive = false
+        volumeButton.forceActiveFocus(Qt.TabFocusReason)
+        revealControls()
+        return true
     }
 
     Timer {
@@ -73,9 +135,7 @@ Item {
         repeat: false
         running: root.visible && root.player.hasActivePlayback
         onTriggered: {
-            if (!root.player.paused && !root.player.buffering
-                    && !topHover.hovered && !bottomHover.hovered
-                    && !subtitleMenu.opened)
+            if (!root.player.buffering && !subtitleMenu.opened)
                 root.controlsVisible = false
             else
                 restart()
@@ -92,7 +152,7 @@ Item {
         acceptedButtons: Qt.NoButton
         hoverEnabled: true
         cursorShape: root.controlsVisible ? Qt.ArrowCursor : Qt.BlankCursor
-        onPositionChanged: root.revealControls()
+        onPositionChanged: mouse => root.handlePointerMove(mouse.x, mouse.y)
     }
 
     PathPickerDialog {
@@ -102,41 +162,99 @@ Item {
         onPathChosen: path => root.player.addSubtitleFile(path)
     }
 
-    Menu {
+    Popup {
         id: subtitleMenu
         objectName: "subtitleMenu"
-        onAboutToShow: root.revealControls()
-        onOpened: currentIndex = 0
-        background: Rectangle { radius: Theme.radius; color: Theme.surface }
+        property int currentIndex: 0
+        parent: Overlay.overlay
+        width: Math.min(Theme.px(360), parent ? parent.width - Theme.px(32) : Theme.px(360))
+        height: subtitleMenuContent.implicitHeight + padding * 2
+        x: parent ? Math.max(Theme.px(16), Math.min(parent.width - width - Theme.px(16),
+                subtitleButton.mapToItem(parent, 0, 0).x)) : 0
+        y: parent ? Math.max(Theme.px(16),
+                subtitleButton.mapToItem(parent, 0, 0).y - height - Theme.px(10)) : 0
+        padding: Theme.px(8)
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        popupType: Popup.Item
+        onOpened: {
+            root.revealControls()
+            currentIndex = 0
+            Qt.callLater(function() { noSubtitleButton.forceActiveFocus(Qt.PopupFocusReason) })
+        }
+        onClosed: {
+            if (root.visible)
+                subtitleButton.forceActiveFocus(Qt.PopupFocusReason)
+            root.revealControls()
+        }
+        background: Rectangle {
+            radius: Theme.radius
+            color: Theme.surface
+            border.width: Theme.px(1)
+            border.color: Theme.separator
+        }
+        contentItem: ColumnLayout {
+            id: subtitleMenuContent
+            spacing: Theme.px(4)
 
-        AppMenuItem {
+        AppButton {
+            id: noSubtitleButton
+            objectName: "noSubtitleButton"
+            Layout.fillWidth: true
+            alignLeft: true
             text: qsTr("No subtitles")
             checkable: true
             checked: root.player.selectedSubtitleId === "no"
-            onTriggered: root.player.selectSubtitle("no")
-        }
-
-        Repeater {
-            model: root.player.subtitleTracks
-            delegate: AppMenuItem {
-                required property var modelData
-                text: modelData.label
-                checkable: true
-                checked: modelData.selected
-                onTriggered: root.player.selectSubtitle(modelData.id)
+            onClicked: {
+                root.player.selectSubtitle("no")
+                subtitleMenu.close()
             }
         }
 
-        MenuSeparator {}
-        AppMenuItem {
-            objectName: "localSubtitleButton"
-            text: qsTr("Open local subtitle…")
-            onTriggered: subtitleFileDialog.openAt("")
+        Repeater {
+            id: subtitleTrackRepeater
+            model: root.player.subtitleTracks
+            delegate: AppButton {
+                required property var modelData
+                Layout.fillWidth: true
+                alignLeft: true
+                text: modelData.label
+                checkable: true
+                checked: modelData.selected
+                onClicked: {
+                    root.player.selectSubtitle(modelData.id)
+                    subtitleMenu.close()
+                }
+            }
         }
-        AppMenuItem {
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: Theme.px(1)
+            color: Theme.separator
+        }
+        AppButton {
+            id: localSubtitleButton
+            objectName: "localSubtitleButton"
+            Layout.fillWidth: true
+            alignLeft: true
+            text: qsTr("Open local subtitle…")
+            onClicked: {
+                subtitleMenu.close()
+                subtitleFileDialog.openAt("")
+            }
+        }
+        AppButton {
+            id: findSubtitlesButton
             objectName: "findSubtitlesButton"
+            Layout.fillWidth: true
+            alignLeft: true
             text: qsTr("Find subtitles…")
-            onTriggered: root.findSubtitlesRequested()
+            onClicked: {
+                subtitleMenu.close()
+                root.findSubtitlesRequested()
+            }
+        }
         }
     }
 
@@ -154,7 +272,7 @@ Item {
             NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic }
         }
 
-        HoverHandler { id: topHover; onHoveredChanged: if (hovered) root.revealControls() }
+        HoverHandler { onHoveredChanged: if (hovered) root.revealControls() }
 
         RowLayout {
             anchors.fill: parent
@@ -244,7 +362,7 @@ Item {
             NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic }
         }
 
-        HoverHandler { id: bottomHover; onHoveredChanged: if (hovered) root.revealControls() }
+        HoverHandler { onHoveredChanged: if (hovered) root.revealControls() }
 
         ColumnLayout {
             id: controls
@@ -314,6 +432,14 @@ Item {
                     ToolTip.visible: hovered
                     ToolTip.text: Accessible.name
                     onClicked: root.openSubtitleMenu()
+                    Keys.onReturnPressed: event => {
+                        root.openSubtitleMenu()
+                        event.accepted = true
+                    }
+                    Keys.onEnterPressed: event => {
+                        root.openSubtitleMenu()
+                        event.accepted = true
+                    }
                 }
                 Label {
                     text: qsTr("Delay")
@@ -321,6 +447,7 @@ Item {
                     visible: root.width >= Theme.px(760)
                 }
                 AppSpinBox {
+                    id: subtitleDelayControl
                     objectName: "subtitleDelayControl"
                     visible: root.width >= Theme.px(760)
                     from: -600
@@ -336,13 +463,23 @@ Item {
                     onValueModified: root.player.setSubtitleDelay(value / 10)
                 }
                 AppToolButton {
+                    id: volumeButton
+                    objectName: "volumeButton"
                     icon.name: "audio-volume-high-symbolic"
                     icon.width: Theme.iconSize
                     icon.height: Theme.iconSize
                     visible: root.width >= Theme.px(620)
                     Accessible.name: qsTr("Volume")
+                    primary: root.volumeAdjustmentActive
+                    onClicked: {
+                        root.volumeAdjustmentActive = true
+                        forceActiveFocus(Qt.TabFocusReason)
+                        root.revealControls()
+                    }
                 }
                 Slider {
+                    id: volumeSlider
+                    objectName: "volumeSlider"
                     Layout.preferredWidth: Math.min(Theme.px(150), Math.max(Theme.px(86), root.width * 0.12))
                     visible: root.width >= Theme.px(620)
                     from: 0
