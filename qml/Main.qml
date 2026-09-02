@@ -66,11 +66,6 @@ ApplicationWindow {
         window.showingPlayer = true
     }
 
-    function moveControllerFocus(forward) {
-        window.controllerManager.sendKey(Qt.Key_Tab,
-                                         forward ? Qt.NoModifier : Qt.ShiftModifier)
-    }
-
     function activateControllerFocus() {
         window.controllerManager.sendKey(Qt.Key_Return)
     }
@@ -138,19 +133,26 @@ ApplicationWindow {
                     && videoPlayer.hasActivePlayback && !videoPlayer.paused)
                 videoPlayer.togglePaused()
             window.controllerWasConnected = window.controllerManager.connected
+            if (window.controllerManager.connected && !window.showingPlayer)
+                Qt.callLater(sidePanel.focusCurrentPage)
         }
 
         function onNavigationRequested(horizontal, vertical) {
-            if (vertical !== 0) {
-                window.moveControllerFocus(vertical > 0)
-                if (window.showingPlayer) playerPage.revealControls()
+            if (sidePanel.controllerSearchActive)
+                return
+            if (window.showingPlayer && playerPage.subtitleMenuOpened) {
+                if (vertical !== 0)
+                    playerPage.navigateSubtitleMenu(vertical)
                 return
             }
             if (window.showingPlayer) {
-                videoPlayer.seek(horizontal < 0 ? -10 : 10)
+                if (horizontal !== 0)
+                    videoPlayer.seek(horizontal < 0 ? -10 : 10)
+                else
+                    window.controllerManager.moveFocus(0, vertical)
                 playerPage.revealControls()
             } else {
-                window.moveControllerFocus(horizontal > 0)
+                window.controllerManager.moveFocus(horizontal, vertical)
             }
         }
 
@@ -159,6 +161,20 @@ ApplicationWindow {
         }
 
         function onBackRequested() {
+            if (sidePanel.closeControllerSearch())
+                return
+            if (window.showingPlayer && playerPage.subtitleMenuOpened) {
+                playerPage.closeSubtitleMenu()
+                return
+            }
+            if (window.controllerManager.popupActive()) {
+                window.controllerManager.sendKey(Qt.Key_Escape)
+                return
+            }
+            if (!window.showingPlayer && videoPlayer.hasActivePlayback) {
+                window.showingPlayer = true
+                return
+            }
             window.controllerManager.sendKey(Qt.Key_Escape)
         }
 
@@ -170,11 +186,15 @@ ApplicationWindow {
         }
 
         function changePageOrSeek(delta) {
+            if (window.controllerManager.popupActive()
+                    && !playerPage.subtitleMenuOpened)
+                return
             if (window.showingPlayer) {
                 videoPlayer.seek(delta * 30)
                 playerPage.revealControls()
             } else {
                 window.pageIndex = Math.max(0, Math.min(3, window.pageIndex + delta))
+                Qt.callLater(sidePanel.focusCurrentPage)
             }
         }
 
@@ -182,8 +202,13 @@ ApplicationWindow {
         function onNextPageRequested() { changePageOrSeek(1) }
 
         function onFullscreenRequested() {
+            if (window.controllerManager.popupActive()
+                    && !playerPage.subtitleMenuOpened)
+                return
             if (window.showingPlayer)
                 playerPage.fullscreenRequested()
+            else
+                sidePanel.openControllerSearch()
         }
 
         function onSubtitlesRequested() {
@@ -237,14 +262,21 @@ ApplicationWindow {
             spacing: Theme.contentGap
 
             SidePanel {
+                id: sidePanel
                 Layout.preferredWidth: window.compactNavigation
                                        ? Theme.sidebarCompactWidth : Theme.sidebarWidth
                 Layout.fillHeight: true
                 compact: window.compactNavigation
+                controllerManager: window.controllerManager
                 currentIndex: window.pageIndex
                 searchEnabled: window.prowlarrManager.ready
                 onPageRequested: index => window.pageIndex = index
                 onSearchRequested: query => window.prowlarrManager.search(query)
+                onControllerSearchDismissed: searched => {
+                    if (searched && discoverPage.focusFirstResult())
+                        return
+                    sidePanel.restoreControllerFocus()
+                }
             }
 
             Rectangle {
@@ -259,6 +291,7 @@ ApplicationWindow {
                                      ? Theme.px(14) : Theme.pagePadding
                     currentIndex: window.pageIndex
                     DiscoverPage {
+                        id: discoverPage
                         movieModel: window.movieModel
                         prowlarrManager: window.prowlarrManager
                         torrentEngine: window.torrentEngine
@@ -290,6 +323,7 @@ ApplicationWindow {
         z: 3
         visible: videoPlayer.hasActivePlayback && !window.showingPlayer
         controller: videoPlayer
+        controllerManager: window.controllerManager
         onReturnRequested: window.showingPlayer = true
     }
 

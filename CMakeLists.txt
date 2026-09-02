@@ -67,6 +67,7 @@ qt_add_qml_module(dostflix_ui
         qml/components/AppSpinBox.qml
         qml/components/AppTextField.qml
         qml/components/AppToolButton.qml
+        qml/components/ControllerHint.qml
         qml/components/MovieCard.qml
         qml/components/MovieGrid.qml
         qml/components/MovieList.qml

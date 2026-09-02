@@ -6,6 +6,7 @@ import Dostflix
 Pane {
     id: root
     required property var controller
+    required property var controllerManager
     signal returnRequested()
     visible: controller.hasActivePlayback
     activeFocusOnTab: true
@@ -69,10 +70,10 @@ Pane {
             }
         }
 
-        Label {
-            text: "↗"
-            color: Theme.textSecondary
-            font.pixelSize: Theme.iconSize
+        ControllerHint {
+            visible: root.controllerManager.connected
+            buttonLabel: root.controllerManager.backButtonLabel
+            description: qsTr("Return to movie")
         }
     }
 

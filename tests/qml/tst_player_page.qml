@@ -84,7 +84,12 @@ TestCase {
         verify(menu !== null)
         page.openSubtitleMenu()
         tryCompare(menu, "opened", true)
-        menu.close()
+        compare(page.subtitleMenuOpened, true)
+        const startingIndex = menu.currentIndex
+        page.navigateSubtitleMenu(1)
+        verify(menu.currentIndex !== startingIndex)
+        page.closeSubtitleMenu()
+        tryCompare(page, "subtitleMenuOpened", false)
     }
 
     function test_controls_auto_hide_and_reveal() {

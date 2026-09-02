@@ -173,8 +173,10 @@ Dostflix follows Dostify's visual language rather than copying controls without 
 - Cards retain consistent geometry regardless of title or metadata length; text truncates predictably.
 - Layout and icons scale correctly on HiDPI displays.
 - Keyboard navigation, visible focus, screen-reader labels, and sufficient contrast are required.
-- SDL-mapped controllers and Steam Input can navigate and operate the same focus
-  chain without disabling simultaneous keyboard or mouse input.
+- SDL-mapped controllers and Steam Input use spatial focus: vertical input stays
+  in visual columns, horizontal input changes columns, and modal overlays contain
+  focus. Search opens explicitly with Y/Triangle, while controller hints adapt
+  between Xbox and PlayStation layouts. Keyboard and mouse remain active.
 
 ## 9. Error handling
 
@@ -245,5 +247,6 @@ The first release is acceptable when:
 13. Normal shutdown stops torrent traffic before removing protection and disconnecting a Dostflix-owned VPN.
 14. The application installs successfully through its Arch `PKGBUILD`.
 15. Xbox-, PlayStation-, Nintendo-, Steam-, and other SDL-mapped controllers can
-    navigate, confirm, return, pause, seek, open subtitles, and toggle player
-    fullscreen with hot-plugging supported.
+    navigate spatially, enter and leave search, confirm, return to an active
+    movie, pause, seek, operate subtitles, and toggle player fullscreen with
+    hot-plugging and layout-aware hints supported.

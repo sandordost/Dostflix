@@ -9,6 +9,7 @@ Item {
     id: root
     required property var player
     property bool controlsVisible: true
+    readonly property bool subtitleMenuOpened: subtitleMenu.opened
     property int controlsHideInterval: Theme.controlsTimeout
     signal browseRequested()
     signal fullscreenRequested()
@@ -38,7 +39,26 @@ Item {
 
     function openSubtitleMenu() {
         revealControls()
-        subtitleMenu.popup()
+        subtitleMenu.popup(subtitleButton, 0, -subtitleMenu.implicitHeight)
+    }
+
+    function closeSubtitleMenu() {
+        subtitleMenu.close()
+    }
+
+    function navigateSubtitleMenu(direction) {
+        if (!subtitleMenu.opened || direction === 0)
+            return
+        let index = subtitleMenu.currentIndex
+        for (let attempt = 0; attempt < subtitleMenu.count; ++attempt) {
+            index = (index + (direction > 0 ? 1 : -1) + subtitleMenu.count)
+                    % subtitleMenu.count
+            const item = subtitleMenu.itemAt(index)
+            if (item && item.enabled) {
+                subtitleMenu.currentIndex = index
+                break
+            }
+        }
     }
 
     Timer {
@@ -48,7 +68,8 @@ Item {
         running: root.visible && root.player.hasActivePlayback
         onTriggered: {
             if (!root.player.paused && !root.player.buffering
-                    && !topHover.hovered && !bottomHover.hovered)
+                    && !topHover.hovered && !bottomHover.hovered
+                    && !subtitleMenu.opened)
                 root.controlsVisible = false
             else
                 restart()
@@ -79,6 +100,7 @@ Item {
         id: subtitleMenu
         objectName: "subtitleMenu"
         onAboutToShow: root.revealControls()
+        onOpened: currentIndex = 0
         background: Rectangle { radius: Theme.radius; color: Theme.surface }
 
         AppMenuItem {
@@ -278,12 +300,13 @@ Item {
 
                 AppToolButton {
                     objectName: "subtitleButton"
+                    id: subtitleButton
                     text: "CC"
                     font.weight: Font.DemiBold
                     Accessible.name: qsTr("Subtitles")
                     ToolTip.visible: hovered
                     ToolTip.text: Accessible.name
-                    onClicked: subtitleMenu.popup()
+                    onClicked: root.openSubtitleMenu()
                 }
                 Label {
                     text: qsTr("Delay")

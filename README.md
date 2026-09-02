@@ -82,12 +82,17 @@ when the output width changes. `dostflix --fullscreen` and
 Controller input is handled through SDL3's standardized gamepad API. Xbox,
 PlayStation, Nintendo Switch Pro, Steam Deck, Steam Controller, Steam Input's
 virtual Xbox controller, and other SDL-mapped gamepads share one action layout.
-Both the D-pad and left stick navigate with dead-zone filtering and hold-repeat;
-the south face button confirms, east goes back, Start pauses, shoulders change
-page or seek, west opens subtitles, and north toggles player fullscreen.
+Both the D-pad and left stick navigate spatially with dead-zone filtering and
+hold-repeat: up/down follows visual rows and left/right changes columns. The
+south face button confirms, east closes the active context or returns to an
+active movie, Start pauses, shoulders change section or seek, and west opens
+subtitles. North focuses search while browsing and toggles player fullscreen.
+Controller-only hints adapt between Xbox and PlayStation labels.
 Controllers can be connected or removed while Dostflix is running. Losing the
 last controller during playback pauses the movie, while mouse and keyboard input
-remain usable at all times. Settings shows the detected controller and mapping.
+remain usable at all times. Search stays outside the directional focus graph and
+is entered with Y/Triangle; one B/Circle press leaves it and restores the prior
+selection or focuses the first displayed result. Settings shows the controller.
 
 ## Arch installation and dependencies
 

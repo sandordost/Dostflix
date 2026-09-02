@@ -41,7 +41,7 @@ Primary references:
 | Start | Play or pause an active movie |
 | Left/right shoulder | Previous/next page; seek 30 seconds in player |
 | West / X / Square | Open subtitles in player |
-| North / Y / Triangle | Toggle player fullscreen |
+| North / Y / Triangle | Focus search while browsing; toggle player fullscreen |
 | Left/right while playing | Seek 10 seconds |
 
 The analog stick uses separate press and release thresholds to prevent dead-zone
@@ -50,11 +50,18 @@ double-fire. Held directions repeat after 360 ms and then every 95 ms.
 
 ## UI and lifecycle
 
-Controller navigation uses Qt's existing tab focus chain, so dialogs, menus,
-text fields, buttons, cards, and list rows retain the same accessibility order as
-keyboard navigation. Focus is marked by the existing purple accent only while a
-control has focus. Movie cards, result rows, library rows, and the Now Playing
-card accept Return/Enter/Space directly.
+Controller navigation scores controls by their actual on-screen position instead
+of translating every direction into Tab. Up/down therefore follows rows and
+left/right changes columns; modal popups constrain focus to their overlay. Search
+is intentionally excluded from this directional graph and entered only through
+Y/Triangle. B/Circle first closes search, subtitles, or another popup, then
+returns to an active movie when browsing. Movie cards, result rows, library rows,
+file-picker entries, and the Now Playing card accept controller activation.
+
+When a controller is connected, the sidebar shows LB/RB or L1/R1 section hints,
+search shows Y/Triangle, and the Return to movie card shows B/Circle. PlayStation
+controllers are detected from SDL's gamepad type/name; all other mapped devices
+use Xbox-style labels without changing the normalized action mapping.
 
 Settings reports the connected device name, number of controllers, mapping, and
 SDL initialization failures. Mouse, keyboard, and controller input remain active
@@ -67,10 +74,10 @@ touch the VPN, kill switch, Prowlarr, TorrServer, or network lifecycle.
 ## Verification
 
 - Unit tests cover common face/shoulder mapping, button release suppression,
-  D-pad input, analog dead-zone hysteresis, and overlapping stick/D-pad state.
+  D-pad input, analog dead-zone hysteresis, overlapping stick/D-pad state,
+  popup detection, and spatial direction selection.
 - QML tests cover controller activation of movie and Now Playing cards, subtitle
-  menu access, and visible focus behavior.
+  menu access, controller-only search entry/exit, and visible focus behavior.
 - QML lint, the complete CTest suite, and Arch packaging remain required.
 - Final hardware validation should include Steam Controller through Steam Input,
   one Xbox-layout controller, and one PlayStation-layout controller in Gamescope.
-

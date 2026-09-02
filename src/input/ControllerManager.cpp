@@ -6,8 +6,12 @@
 #include <QCoreApplication>
 #include <QGuiApplication>
 #include <QKeyEvent>
+#include <QQuickItem>
+#include <QQuickWindow>
 #include <QWindow>
 
+#include <cmath>
+#include <limits>
 #include <utility>
 
 namespace {
@@ -16,6 +20,46 @@ constexpr qint16 AxisReleaseThreshold = 10'000;
 constexpr qint64 InitialRepeatDelayMs = 360;
 constexpr qint64 RepeatIntervalMs = 95;
 constexpr int PollIntervalMs = 8;
+
+bool isEffectivelyNavigable(const QQuickItem *item)
+{
+    if (!item || !item->activeFocusOnTab() || item->width() < 1 || item->height() < 1)
+        return false;
+    for (const QQuickItem *ancestor = item; ancestor; ancestor = ancestor->parentItem()) {
+        if (!ancestor->isVisible() || !ancestor->isEnabled() || ancestor->opacity() < 0.05)
+            return false;
+    }
+    return true;
+}
+
+void collectNavigableItems(QQuickItem *parent, QList<QQuickItem *> &items)
+{
+    for (QQuickItem *child : parent->childItems()) {
+        if (isEffectivelyNavigable(child)) items.append(child);
+        collectNavigableItems(child, items);
+    }
+}
+
+QQuickItem *overlayAncestor(QQuickItem *item)
+{
+    for (QQuickItem *ancestor = item; ancestor; ancestor = ancestor->parentItem()) {
+        if (QString::fromLatin1(ancestor->metaObject()->className()).contains(
+                QStringLiteral("Overlay"), Qt::CaseInsensitive))
+            return ancestor;
+    }
+    return nullptr;
+}
+
+bool hasOpenedPopup(const QObject *object)
+{
+    const QVariant opened = object->property("opened");
+    if (opened.isValid() && opened.toBool())
+        return true;
+    for (const QObject *child : object->children()) {
+        if (hasOpenedPopup(child)) return true;
+    }
+    return false;
+}
 }
 
 ControllerManager::ControllerManager(QObject *parent, const bool initializeSdl)
@@ -54,6 +98,24 @@ QString ControllerManager::controllerName() const
 QString ControllerManager::errorMessage() const
 {
     return m_errorMessage;
+}
+
+bool ControllerManager::playStationLayout() const { return m_playStationLayout; }
+QString ControllerManager::backButtonLabel() const
+{
+    return m_playStationLayout ? QStringLiteral("○") : QStringLiteral("B");
+}
+QString ControllerManager::searchButtonLabel() const
+{
+    return m_playStationLayout ? QStringLiteral("△") : QStringLiteral("Y");
+}
+QString ControllerManager::previousPageLabel() const
+{
+    return m_playStationLayout ? QStringLiteral("L1") : QStringLiteral("LB");
+}
+QString ControllerManager::nextPageLabel() const
+{
+    return m_playStationLayout ? QStringLiteral("R1") : QStringLiteral("RB");
 }
 
 void ControllerManager::initialize()
@@ -99,15 +161,25 @@ void ControllerManager::closeGamepad(const SDL_JoystickID id)
 void ControllerManager::updateConnectionState()
 {
     QString name;
+    bool playStation = false;
     if (!m_gamepads.isEmpty()) {
-        const char *gamepadName = SDL_GetGamepadName(m_gamepads.constBegin().value());
+        SDL_Gamepad *gamepad = m_gamepads.constBegin().value();
+        const char *gamepadName = SDL_GetGamepadName(gamepad);
         name = gamepadName ? QString::fromUtf8(gamepadName) : tr("Game controller");
+        const SDL_GamepadType type = SDL_GetGamepadType(gamepad);
+        playStation = type == SDL_GAMEPAD_TYPE_PS3 || type == SDL_GAMEPAD_TYPE_PS4
+            || type == SDL_GAMEPAD_TYPE_PS5;
+        const QString lowerName = name.toLower();
+        playStation = playStation || lowerName.contains(QStringLiteral("playstation"))
+            || lowerName.contains(QStringLiteral("dualshock"))
+            || lowerName.contains(QStringLiteral("dualsense"));
     }
-    if (name == m_controllerName && !m_gamepads.isEmpty()) {
+    if (name == m_controllerName && playStation == m_playStationLayout && !m_gamepads.isEmpty()) {
         emit connectionChanged();
         return;
     }
     m_controllerName = name;
+    m_playStationLayout = playStation;
     emit connectionChanged();
 }
 
@@ -187,6 +259,58 @@ void ControllerManager::sendKey(const int key, const int modifiers)
     QKeyEvent release(QEvent::KeyRelease, key, keyboardModifiers);
     QCoreApplication::sendEvent(window, &press);
     QCoreApplication::sendEvent(window, &release);
+}
+
+bool ControllerManager::moveFocus(const int horizontal, const int vertical)
+{
+    if ((horizontal == 0) == (vertical == 0)) return false;
+    auto *window = qobject_cast<QQuickWindow *>(QGuiApplication::focusWindow());
+    if (!window || !window->contentItem()) return false;
+
+    QList<QQuickItem *> candidates;
+    collectNavigableItems(window->contentItem(), candidates);
+    if (candidates.isEmpty()) return false;
+
+    QQuickItem *current = window->activeFocusItem();
+    const bool currentIsUsable = isEffectivelyNavigable(current);
+    QQuickItem *currentOverlay = overlayAncestor(current);
+    const QPointF origin = currentIsUsable
+        ? current->mapToItem(window->contentItem(), current->width() / 2, current->height() / 2)
+        : QPointF(0, 0);
+
+    QQuickItem *best = nullptr;
+    double bestScore = std::numeric_limits<double>::max();
+    for (QQuickItem *candidate : std::as_const(candidates)) {
+        if (candidate == current) continue;
+        if (currentOverlay && overlayAncestor(candidate) != currentOverlay) continue;
+        const QPointF point = candidate->mapToItem(window->contentItem(),
+                                                   candidate->width() / 2,
+                                                   candidate->height() / 2);
+        if (!currentIsUsable) {
+            const double score = point.y() * 10.0 + point.x();
+            if (score < bestScore) { bestScore = score; best = candidate; }
+            continue;
+        }
+
+        const double primary = horizontal != 0
+            ? (point.x() - origin.x()) * horizontal
+            : (point.y() - origin.y()) * vertical;
+        if (primary <= 2.0) continue;
+        const double perpendicular = horizontal != 0
+            ? std::abs(point.y() - origin.y()) : std::abs(point.x() - origin.x());
+        const double score = primary + perpendicular * 2.75;
+        if (score < bestScore) { bestScore = score; best = candidate; }
+    }
+
+    if (!best) return false;
+    best->forceActiveFocus(Qt::TabFocusReason);
+    return true;
+}
+
+bool ControllerManager::popupActive() const
+{
+    QWindow *window = QGuiApplication::focusWindow();
+    return window && hasOpenedPopup(window);
 }
 
 void ControllerManager::updateAxisDirections()

@@ -16,6 +16,11 @@ class ControllerManager final : public QObject
     Q_PROPERTY(int controllerCount READ controllerCount NOTIFY connectionChanged)
     Q_PROPERTY(QString controllerName READ controllerName NOTIFY connectionChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
+    Q_PROPERTY(bool playStationLayout READ playStationLayout NOTIFY connectionChanged)
+    Q_PROPERTY(QString backButtonLabel READ backButtonLabel NOTIFY connectionChanged)
+    Q_PROPERTY(QString searchButtonLabel READ searchButtonLabel NOTIFY connectionChanged)
+    Q_PROPERTY(QString previousPageLabel READ previousPageLabel NOTIFY connectionChanged)
+    Q_PROPERTY(QString nextPageLabel READ nextPageLabel NOTIFY connectionChanged)
 
 public:
     enum Action {
@@ -40,12 +45,19 @@ public:
     [[nodiscard]] int controllerCount() const;
     [[nodiscard]] QString controllerName() const;
     [[nodiscard]] QString errorMessage() const;
+    [[nodiscard]] bool playStationLayout() const;
+    [[nodiscard]] QString backButtonLabel() const;
+    [[nodiscard]] QString searchButtonLabel() const;
+    [[nodiscard]] QString previousPageLabel() const;
+    [[nodiscard]] QString nextPageLabel() const;
 
     // Backend entry points are public so mapping and dead-zone behavior can be
     // verified without requiring physical controller hardware.
     void processButton(SDL_GamepadButton button, bool pressed);
     void processAxis(SDL_GamepadAxis axis, qint16 value);
     Q_INVOKABLE void sendKey(int key, int modifiers = 0);
+    Q_INVOKABLE bool moveFocus(int horizontal, int vertical);
+    Q_INVOKABLE bool popupActive() const;
 
 signals:
     void connectionChanged();
@@ -87,5 +99,6 @@ private:
     qint16 m_leftY = 0;
     QString m_controllerName;
     QString m_errorMessage;
+    bool m_playStationLayout = false;
     bool m_sdlInitialized = false;
 };

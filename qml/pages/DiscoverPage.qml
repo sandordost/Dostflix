@@ -13,6 +13,10 @@ Item {
     property bool listMode: false
     property string selectionError: ""
 
+    function focusFirstResult() {
+        return listMode ? movieList.focusFirstResult() : movieGrid.focusFirstResult()
+    }
+
     function startRelease(title, magnetUrl, downloadUrl) {
         selectionError = ""
         if (magnetUrl.length === 0 && downloadUrl.length === 0) {
@@ -127,11 +131,13 @@ Item {
             currentIndex: root.listMode ? 1 : 0
 
             MovieGrid {
+                id: movieGrid
                 movieModel: root.movieModel
                 onReleaseSelected: (title, magnetUrl, downloadUrl, posterUrl) =>
                     root.startRelease(title, magnetUrl, downloadUrl)
             }
             MovieList {
+                id: movieList
                 movieModel: root.movieModel
                 onReleaseSelected: (title, magnetUrl, downloadUrl, posterUrl) =>
                     root.startRelease(title, magnetUrl, downloadUrl)

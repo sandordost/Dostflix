@@ -1,6 +1,8 @@
 #include "input/ControllerManager.h"
 
 #include <QSignalSpy>
+#include <QQuickItem>
+#include <QQuickWindow>
 #include <QTest>
 
 class ControllerManagerTest final : public QObject
@@ -71,8 +73,45 @@ private slots:
         QCOMPARE(spy.size(), 1);
         QCOMPARE(spy.at(0).at(0).value<ControllerManager::Action>(), ControllerManager::NavigateLeft);
     }
+
+    void movesFocusInTheRequestedVisualDirection()
+    {
+        ControllerManager manager(nullptr, false);
+        QQuickWindow window;
+        window.setGeometry(0, 0, 400, 300);
+
+        QQuickItem current(window.contentItem());
+        current.setPosition({20, 20});
+        current.setSize({60, 40});
+        current.setActiveFocusOnTab(true);
+
+        QQuickItem right(window.contentItem());
+        right.setPosition({140, 20});
+        right.setSize({60, 40});
+        right.setActiveFocusOnTab(true);
+
+        QQuickItem down(window.contentItem());
+        down.setPosition({20, 140});
+        down.setSize({60, 40});
+        down.setActiveFocusOnTab(true);
+
+        window.show();
+        window.requestActivate();
+        QTRY_COMPARE(QGuiApplication::focusWindow(), &window);
+        QObject popupState(&window);
+        popupState.setProperty("opened", true);
+        QVERIFY(manager.popupActive());
+        popupState.setProperty("opened", false);
+        QVERIFY(!manager.popupActive());
+        current.forceActiveFocus();
+
+        QVERIFY(manager.moveFocus(0, 1));
+        QCOMPARE(window.activeFocusItem(), &down);
+        down.forceActiveFocus();
+        QVERIFY(manager.moveFocus(1, 0));
+        QCOMPARE(window.activeFocusItem(), &right);
+    }
 };
 
-QTEST_GUILESS_MAIN(ControllerManagerTest)
+QTEST_MAIN(ControllerManagerTest)
 #include "tst_controller_manager.moc"
-

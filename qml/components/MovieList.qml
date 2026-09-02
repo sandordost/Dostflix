@@ -10,6 +10,18 @@ ListView {
     required property var movieModel
     signal releaseSelected(string title, string magnetUrl, string downloadUrl, string posterUrl)
 
+    function focusFirstResult() {
+        if (count < 1)
+            return false
+        currentIndex = 0
+        positionViewAtIndex(0, ListView.Beginning)
+        Qt.callLater(function() {
+            if (root.currentItem)
+                root.currentItem.forceActiveFocus(Qt.TabFocusReason)
+        })
+        return true
+    }
+
     model: movieModel
     spacing: Theme.px(7)
     clip: true
@@ -109,6 +121,8 @@ ListView {
             AppToolButton {
                 icon.name: "media-playback-start-symbolic"
                 Accessible.name: qsTr("Start %1").arg(releaseRow.model.title)
+                focusPolicy: Qt.NoFocus
+                activeFocusOnTab: false
                 onClicked: root.releaseSelected(
                     releaseRow.model.title, releaseRow.model.magnetUrl,
                     releaseRow.model.downloadUrl, releaseRow.model.posterUrl)

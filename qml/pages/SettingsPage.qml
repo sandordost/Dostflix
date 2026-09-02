@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import Dostflix
 
 Item {
@@ -13,6 +14,32 @@ Item {
     required property var subtitleManager
     required property var libraryManager
     required property var controllerManager
+    readonly property var settingsFlickable: settingsScroll.contentItem
+
+    function keepFocusVisible(item) {
+        if (!item || !root.settingsFlickable || !item.visible)
+            return
+        const viewport = root.settingsFlickable
+        let ancestor = item
+        while (ancestor && ancestor !== viewport)
+            ancestor = ancestor.parent
+        if (ancestor !== viewport)
+            return
+        const point = item.mapToItem(viewport, 0, 0)
+        const margin = Theme.px(24)
+        if (point.y < margin)
+            viewport.contentY = Math.max(0, viewport.contentY + point.y - margin)
+        else if (point.y + item.height > viewport.height - margin)
+            viewport.contentY = Math.min(viewport.contentHeight - viewport.height,
+                    viewport.contentY + point.y + item.height - viewport.height + margin)
+    }
+
+    Connections {
+        target: root.Window.window
+        function onActiveFocusItemChanged() {
+            root.keepFocusVisible(root.Window.window.activeFocusItem)
+        }
+    }
 
     PathPickerDialog {
         id: profileDialog
@@ -29,6 +56,7 @@ Item {
     }
 
     ScrollView {
+        id: settingsScroll
         anchors.fill: parent
         clip: true
         contentWidth: availableWidth
@@ -182,7 +210,7 @@ Item {
                     }
                     Label {
                         Layout.fillWidth: true
-                        text: qsTr("D-pad/stick: navigate · A/Cross: select · B/Circle: back · Start: pause · shoulders: page or seek · X/Square: subtitles · Y/Triangle: fullscreen")
+                        text: qsTr("D-pad/stick: spatial navigation · A/Cross: select · B/Circle: back or return to movie · Start: pause · shoulders: switch section or seek · X/Square: subtitles · Y/Triangle: search or fullscreen")
                         color: Theme.textSecondary
                         wrapMode: Text.WordWrap
                     }

@@ -14,6 +14,12 @@ TestCase {
         property int watchedSeconds: 0
     }
 
+    QtObject {
+        id: fakeControllerManager
+        property bool connected: true
+        property string backButtonLabel: "B"
+    }
+
     ApplicationWindow {
         width: 500
         height: 200
@@ -22,6 +28,7 @@ TestCase {
         NowWatchingCard {
             id: card
             controller: fakeController
+            controllerManager: fakeControllerManager
         }
     }
     SignalSpy {
