@@ -71,6 +71,10 @@ TestCase {
         fakePlayer.volume = 80
         fakePlayer.volumeCalls = 0
         fakePlayer.subtitleDelay = 0
+        fakePlayer.pauseCalls = 0
+        fakePlayer.seekCalls = 0
+        fakePlayer.subtitleCalls = 0
+        fakePlayer.stopCalls = 0
         findSubtitlesSpy.clear()
     }
 
@@ -84,6 +88,16 @@ TestCase {
         const button = findChild(page, "pauseButton")
         verify(button !== null)
         mouseClick(button)
+        compare(fakePlayer.pauseCalls, 1)
+    }
+
+    function test_center_pause_control_is_controller_default() {
+        const button = findChild(page, "centerPauseButton")
+        verify(button !== null)
+        page.focusDefaultControl()
+        tryCompare(button, "activeFocus", true)
+        tryCompare(button, "scale", 1.12)
+        button.controllerActivate()
         compare(fakePlayer.pauseCalls, 1)
     }
 
@@ -124,16 +138,25 @@ TestCase {
         page.closeSubtitleMenu()
     }
 
-    function test_delay_and_volume_controller_adjustment() {
+    function test_delay_buttons_and_volume_controller_adjustment() {
         const delay = findChild(page, "subtitleDelayControl")
+        const decrease = findChild(page, "subtitleDelayDownButton")
+        const increase = findChild(page, "subtitleDelayUpButton")
+        const display = findChild(page, "subtitleDelayValue")
         const volume = findChild(page, "volumeButton")
         verify(delay !== null)
+        verify(decrease !== null)
+        verify(increase !== null)
+        verify(display !== null)
         verify(volume !== null)
 
-        delay.forceActiveFocus(Qt.TabFocusReason)
-        verify(page.handleControllerNavigation(1, 0))
+        compare(delay.activeFocusOnTab, false)
+        compare(display.activeFocusOnTab, false)
+        increase.forceActiveFocus(Qt.TabFocusReason)
+        increase.controllerActivate()
         compare(fakePlayer.subtitleDelay, 0.5)
-        verify(page.handleControllerNavigation(-1, 0))
+        decrease.forceActiveFocus(Qt.TabFocusReason)
+        decrease.controllerActivate()
         compare(fakePlayer.subtitleDelay, 0)
 
         volume.controllerActivate()

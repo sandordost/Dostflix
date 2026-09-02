@@ -52,8 +52,15 @@ Item {
 
     function focusDefaultControl() {
         revealControls()
-        pauseButton.forceActiveFocus(Qt.TabFocusReason)
+        centerPauseButton.forceActiveFocus(Qt.TabFocusReason)
         return true
+    }
+
+    function adjustSubtitleDelay(deltaTenths) {
+        const nextTenths = Math.max(-600, Math.min(600,
+                Math.round(player.subtitleDelay * 10) + deltaTenths))
+        player.setSubtitleDelay(nextTenths / 10)
+        revealControls()
     }
 
     function openSubtitleMenu() {
@@ -109,11 +116,6 @@ Item {
             if (horizontal !== 0)
                 player.setVolume(Math.max(0, Math.min(100,
                         player.volume + horizontal * 5)))
-            revealControls()
-            return true
-        }
-        if (horizontal !== 0 && itemContainsFocus(subtitleDelayControl)) {
-            subtitleDelayControl.controllerAdjust(horizontal)
             revealControls()
             return true
         }
@@ -332,11 +334,14 @@ Item {
     }
 
     AppToolButton {
+        id: centerPauseButton
+        objectName: "centerPauseButton"
         anchors.centerIn: parent
         width: Theme.px(74)
         height: Theme.px(74)
         round: true
         primary: true
+        focusBorderColor: Theme.textPrimary
         visible: root.controlsVisible && !root.player.buffering
         opacity: visible ? 0.96 : 0
         symbol: root.player.paused ? "\uf04b" : "\uf04c"
@@ -344,8 +349,12 @@ Item {
         icon.height: Theme.px(26)
         Accessible.name: root.player.paused ? qsTr("Play") : qsTr("Pause")
         onClicked: root.togglePlayback()
+        scale: activeFocus ? 1.12 : 1
 
         Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+        Behavior on scale {
+            NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic }
+        }
     }
 
     Rectangle {
@@ -446,21 +455,37 @@ Item {
                     color: Theme.textSecondary
                     visible: root.width >= Theme.px(760)
                 }
-                AppSpinBox {
+                RowLayout {
                     id: subtitleDelayControl
                     objectName: "subtitleDelayControl"
                     visible: root.width >= Theme.px(760)
-                    from: -600
-                    to: 600
-                    stepSize: 5
-                    value: Math.round(root.player.subtitleDelay * 10)
-                    editable: true
-                    textFromValue: function(value) { return (value / 10).toFixed(1) + " s" }
-                    valueFromText: function(text) {
-                        const parsed = Number.parseFloat(text)
-                        return Number.isFinite(parsed) ? Math.round(parsed * 10) : 0
+                    spacing: 0
+
+                    AppToolButton {
+                        id: subtitleDelayDownButton
+                        objectName: "subtitleDelayDownButton"
+                        text: "−"
+                        Accessible.name: qsTr("Decrease subtitle delay")
+                        onClicked: root.adjustSubtitleDelay(-5)
                     }
-                    onValueModified: root.player.setSubtitleDelay(value / 10)
+                    Label {
+                        objectName: "subtitleDelayValue"
+                        Layout.preferredWidth: Theme.px(66)
+                        Layout.fillHeight: true
+                        text: root.player.subtitleDelay.toFixed(1) + " s"
+                        color: Theme.textPrimary
+                        font.pixelSize: Theme.bodySize
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        background: Rectangle { color: Theme.input }
+                    }
+                    AppToolButton {
+                        id: subtitleDelayUpButton
+                        objectName: "subtitleDelayUpButton"
+                        text: "+"
+                        Accessible.name: qsTr("Increase subtitle delay")
+                        onClicked: root.adjustSubtitleDelay(5)
+                    }
                 }
                 AppToolButton {
                     id: volumeButton

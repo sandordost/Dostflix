@@ -82,10 +82,13 @@ popups own controller focus until A/Cross selects the highlighted option or
 B/Circle cancels; an empty combo box never opens.
 
 Player overlays also use explicit input modes. The subtitle popup is an in-window
-Qt Quick overlay navigated vertically. A focused subtitle-delay control consumes
-left/right for half-second steps. Activating Volume enters an exclusive adjustment
-mode where left/right changes volume by five percentage points and A/Cross or
-B/Circle returns to normal focus navigation. Editable text fields open a modal
+Qt Quick overlay navigated vertically. The central play/pause action is the
+default player focus and uses a visible focus animation. Subtitle delay is a
+display-only value between separately focusable half-second decrement/increment
+actions, so controller focus never enters a numeric editor. Activating Volume
+enters an exclusive adjustment mode where left/right changes volume by five
+percentage points and A/Cross or B/Circle returns to normal focus navigation.
+Editable text fields open a modal
 QWERTY controller keyboard; its rows own directional focus until Done or B/Circle,
 and it chooses the opposite screen edge from the active input.
 The OpenSubtitles search dialog provides its own semantic rows for the query,

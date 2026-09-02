@@ -11,6 +11,7 @@ Button {
     property bool quiet: false
     property bool alignLeft: false
     property int cornerRadius: Theme.radius
+    property color focusBorderColor: Theme.accent
 
     implicitHeight: Theme.px(42)
     implicitWidth: Math.max(Theme.px(42), contentRow.implicitWidth + leftPadding + rightPadding)
@@ -64,7 +65,7 @@ Button {
     background: Rectangle {
         radius: root.cornerRadius
         border.width: root.activeFocus ? Theme.px(2) : 0
-        border.color: Theme.accent
+        border.color: root.focusBorderColor
         color: {
             if (!root.enabled)
                 return Qt.rgba(0.16, 0.16, 0.18, 0.55)
