@@ -15,4 +15,5 @@ struct Movie final
     QString sourceLabel;
     QString downloadUrl;
     QString magnetUrl;
+    double rating = 0.0;
 };

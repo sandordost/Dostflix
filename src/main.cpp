@@ -6,6 +6,7 @@
 #include "library/LibraryMetadataManager.h"
 #include "library/LibraryManager.h"
 #include "movies/MovieListModel.h"
+#include "movies/MovieHighlightsManager.h"
 #include "network/NetworkGuardClient.h"
 #include "network/SystemdScope.h"
 #include "player/MpvPlayer.h"
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
     QCoreApplication::setOrganizationName(QStringLiteral("SandorDost"));
     QCoreApplication::setApplicationName(QStringLiteral("Dostflix"));
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
 
     QString scopeError;
     if (!SystemdScope::enter(&scopeError)) {
@@ -69,6 +71,7 @@ int main(int argc, char *argv[])
     VpnManager vpnManager(settings, vpnBackend, &networkGuard);
     LibSecretStore secretStore;
     ProviderManager providerManager(settings, secretStore);
+    MovieHighlightsManager highlightManager(providerManager);
     LibraryMetadataManager metadataManager(
         libraryDatabase, libraryManager, providerManager, paths.dataDir());
     OpenSubtitlesManager subtitleManager(settings, secretStore, paths.dataDir());
@@ -102,6 +105,8 @@ int main(int argc, char *argv[])
                      [&] { subtitleManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&vpnManager, &VpnManager::stateChanged, &metadataManager,
                      [&] { metadataManager.setNetworkReady(vpnManager.networkReady()); });
+    QObject::connect(&vpnManager, &VpnManager::stateChanged, &highlightManager,
+                     [&] { highlightManager.setNetworkReady(vpnManager.networkReady()); });
     QObject::connect(&providerManager, &ProviderManager::tmdbTokenChanged,
                      &metadataManager, &LibraryMetadataManager::refresh);
     QObject::connect(&libraryManager, &LibraryManager::stateChanged,
@@ -120,7 +125,15 @@ int main(int argc, char *argv[])
         else torrentEngine.startTorrentData(title, torrentData);
     });
     QObject::connect(&torrentEngine, &TorrServerManager::retentionSourceReady,
-                     &downloadManager, &DownloadManager::beginTransfer);
+                     &downloadManager,
+                     [&](const QString &title, const QString &torrentHash, int fileIndex,
+                         const QString &fileName, qint64 expectedSize, const QUrl &sourceUrl) {
+        downloadManager.beginTransfer(title, torrentHash, fileIndex, fileName,
+                                      expectedSize, sourceUrl);
+        subtitleManager.setMediaContext(
+            downloadManager.finalPath().isEmpty()
+                ? QUrl{} : QUrl::fromLocalFile(downloadManager.finalPath()), QString{});
+    });
     QObject::connect(&downloadManager, &DownloadManager::resumeRequested,
                      &torrentEngine, &TorrServerManager::resumeStoredTorrent);
     QObject::connect(&downloadManager, &DownloadManager::torrentPlaybackRequested,
@@ -136,6 +149,7 @@ int main(int argc, char *argv[])
         {QStringLiteral("appController"), QVariant::fromValue(&controller)},
         {QStringLiteral("controllerManager"), QVariant::fromValue(&controllerManager)},
         {QStringLiteral("movieModel"), QVariant::fromValue(&movies)},
+        {QStringLiteral("highlightManager"), QVariant::fromValue(&highlightManager)},
         {QStringLiteral("libraryManager"), QVariant::fromValue(&libraryManager)},
         {QStringLiteral("metadataManager"), QVariant::fromValue(&metadataManager)},
         {QStringLiteral("downloadManager"), QVariant::fromValue(&downloadManager)},
@@ -154,6 +168,10 @@ int main(int argc, char *argv[])
         ? nullptr
         : engine.rootObjects().constFirst()->findChild<MpvPlayer *>(QStringLiteral("videoPlayer"));
     if (player) {
+        QObject::connect(&libraryManager, &LibraryManager::playbackReplacing,
+                         player, [player] {
+            if (player->hasActivePlayback()) player->stop();
+        });
         QObject::connect(player, &MpvPlayer::positionChanged, &libraryManager, [&] {
             libraryManager.recordPlaybackProgress(player->watchedSeconds(),
                                                    static_cast<int>(player->duration()));

@@ -10,10 +10,15 @@ Item {
     required property var movieModel
     required property var prowlarrManager
     required property var torrentEngine
+    required property var highlightManager
     property var controllerManager: null
+    property string searchQuery: ""
     property bool listMode: false
     property string selectionError: ""
     property string selectedReleaseKey: ""
+    signal playbackReplacementRequested()
+    signal highlightSelected(string title)
+    readonly property bool showingHighlights: searchQuery.trim().length === 0
 
     readonly property bool transferLoading: prowlarrManager.releaseBusy
                                                    || (torrentEngine.active
@@ -40,6 +45,8 @@ Item {
     }
 
     function focusFirstResult() {
+        if (showingHighlights)
+            return highlights.focusFirstResult()
         return listMode ? movieList.focusFirstResult() : movieGrid.focusFirstResult()
     }
 
@@ -53,6 +60,8 @@ Item {
     }
 
     function handleControllerNavigation(horizontal, vertical) {
+        if (showingHighlights)
+            return highlights.handleControllerNavigation(horizontal, vertical)
         return listMode
                 ? movieList.handleControllerNavigation(horizontal, vertical)
                 : movieGrid.handleControllerNavigation(horizontal, vertical)
@@ -78,6 +87,7 @@ Item {
             selectionError = qsTr("This release has no usable download link.")
             return
         }
+        root.playbackReplacementRequested()
         prowlarrManager.prepareRelease(title, magnetUrl, downloadUrl)
     }
 
@@ -89,7 +99,7 @@ Item {
             Layout.fillWidth: true
             Label {
                 Layout.fillWidth: true
-                text: qsTr("Results")
+                text: root.showingHighlights ? qsTr("Highlights") : qsTr("Results")
                 color: Theme.textPrimary
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.headingSize
@@ -97,6 +107,7 @@ Item {
             }
             AppToolButton {
                 objectName: "gridViewButton"
+                visible: !root.showingHighlights
                 icon.name: "view-grid-symbolic"
                 primary: !root.listMode
                 Accessible.name: qsTr("Grid view")
@@ -106,6 +117,7 @@ Item {
             }
             AppToolButton {
                 objectName: "listViewButton"
+                visible: !root.showingHighlights
                 icon.name: "view-list-symbolic"
                 primary: root.listMode
                 Accessible.name: qsTr("List view")
@@ -115,7 +127,7 @@ Item {
             }
             ControllerHint {
                 objectName: "viewToggleControllerHint"
-                visible: root.controllerManager
+                visible: !root.showingHighlights && root.controllerManager
                          && root.controllerManager.connected
                 buttonLabel: root.controllerManager
                              ? root.controllerManager.secondaryActionLabel : "X"
@@ -125,8 +137,8 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            visible: root.prowlarrManager.searchBusy
-                     || root.prowlarrManager.searchError.length > 0
+            visible: !root.showingHighlights && (root.prowlarrManager.searchBusy
+                     || root.prowlarrManager.searchError.length > 0)
             spacing: Theme.px(8)
             BusyIndicator {
                 implicitWidth: Theme.px(22)
@@ -191,7 +203,13 @@ Item {
         StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: root.listMode ? 1 : 0
+            currentIndex: root.showingHighlights ? 0 : (root.listMode ? 2 : 1)
+
+            HighlightsPage {
+                id: highlights
+                manager: root.highlightManager
+                onMovieSelected: title => root.highlightSelected(title)
+            }
 
             MovieGrid {
                 id: movieGrid

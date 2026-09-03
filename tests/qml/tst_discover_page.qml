@@ -15,6 +15,17 @@ TestCase {
             downloadUrl: ""
         }
     }
+    ListModel { id: emptyHighlights }
+    QtObject {
+        id: fakeHighlights
+        property var trendingModel: emptyHighlights
+        property var bestOfYearModel: emptyHighlights
+        property var highRatingsModel: emptyHighlights
+        property bool busy: false
+        property bool configured: true
+        property string errorMessage: ""
+        property int bestOfYear: 2026
+    }
     QtObject {
         id: fakeProwlarr
         property bool searchBusy: false
@@ -48,6 +59,8 @@ TestCase {
             id: page
             anchors.fill: parent
             movieModel: releases
+            highlightManager: fakeHighlights
+            searchQuery: "Movie"
             prowlarrManager: fakeProwlarr
             torrentEngine: fakeTorrent
             controllerManager: fakeControllerManager

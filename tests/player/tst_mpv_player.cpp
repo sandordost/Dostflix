@@ -27,6 +27,7 @@ private slots:
         QCOMPARE(player.selectedSubtitleId(), QStringLiteral("no"));
         QCOMPARE(player.subtitleDelay(), 0.0);
         QVERIFY(!player.muted());
+        QVERIFY(!player.fillScreen());
     }
 
     void boundsVolume()
@@ -48,6 +49,18 @@ private slots:
         player.setMuted(false);
         QVERIFY(!player.muted());
         QCOMPARE(mutedSpy.size(), 2);
+    }
+
+    void togglesFillScreen()
+    {
+        MpvPlayer player;
+        QSignalSpy spy(&player, &MpvPlayer::fillScreenChanged);
+        player.toggleFillScreen();
+        QVERIFY(player.fillScreen());
+        QCOMPARE(spy.size(), 1);
+        player.setFillScreen(false);
+        QVERIFY(!player.fillScreen());
+        QCOMPARE(spy.size(), 2);
     }
 
     void stopIsIdempotent()

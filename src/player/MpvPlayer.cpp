@@ -231,11 +231,14 @@ bool MpvPlayer::renderReady() const { return m_renderReady; }
 QVariantList MpvPlayer::subtitleTracks() const { return m_subtitleTracks; }
 QString MpvPlayer::selectedSubtitleId() const { return m_selectedSubtitleId; }
 double MpvPlayer::subtitleDelay() const { return m_subtitleDelay; }
+bool MpvPlayer::fillScreen() const { return m_fillScreen; }
 mpv_handle *MpvPlayer::handle() const { return m_handle; }
 
 void MpvPlayer::play(const QString &url, const QString &title, double startSeconds)
 {
     if (!m_handle || url.isEmpty()) return;
+    if (m_active)
+        emit playbackStopping(m_position, m_duration);
     m_pendingUrl = url;
     m_pendingStartSeconds = std::max(0.0, startSeconds);
     m_activeTitle = title;
@@ -351,6 +354,22 @@ void MpvPlayer::setSubtitleDelay(double seconds)
     if (m_handle && m_active)
         mpv_set_property_async(m_handle, 0, "sub-delay", MPV_FORMAT_DOUBLE, &bounded);
     emit subtitleDelayChanged();
+}
+
+void MpvPlayer::setFillScreen(const bool enabled)
+{
+    if (m_fillScreen == enabled) return;
+    m_fillScreen = enabled;
+    if (m_handle) {
+        double panscan = enabled ? 1.0 : 0.0;
+        mpv_set_property_async(m_handle, 0, "panscan", MPV_FORMAT_DOUBLE, &panscan);
+    }
+    emit fillScreenChanged();
+}
+
+void MpvPlayer::toggleFillScreen()
+{
+    setFillScreen(!m_fillScreen);
 }
 
 void MpvPlayer::stop()

@@ -20,15 +20,26 @@ Item {
     signal controllerSearchDismissed(bool searched)
     implicitWidth: compact ? Theme.sidebarCompactWidth : Theme.sidebarWidth
 
-    function queueSearch(query) {
+    function updateSearch(query) {
+        pendingSearch = query.trim()
+        if (pendingSearch.length === 0) {
+            pageRequested(0)
+            searchRequested("")
+        }
+    }
+
+    function submitSearch(query) {
         pendingSearch = query.trim()
         if (controllerSearchActive && pendingSearch.length > 0)
             controllerSearchHadQuery = true
-        searchDebounce.stop()
-        if (pendingSearch.length > 0 && searchEnabled) {
-            pageRequested(0)
-            searchDebounce.start()
-        }
+        pageRequested(0)
+        searchRequested(pendingSearch)
+    }
+
+    function setSearchText(query) {
+        searchField.text = query
+        compactSearchField.text = query
+        updateSearch(query)
     }
 
     function openControllerSearch() {
@@ -73,16 +84,6 @@ Item {
             button.forceActiveFocus(Qt.TabFocusReason)
     }
 
-    Timer {
-        id: searchDebounce
-        interval: 2000
-        repeat: false
-        onTriggered: {
-            if (root.pendingSearch.length > 0 && root.searchEnabled)
-                root.searchRequested(root.pendingSearch)
-        }
-    }
-
     Rectangle {
         anchors.fill: parent
         radius: Theme.radiusLarge
@@ -113,9 +114,9 @@ Item {
             rightPadding: Theme.px(14)
             font.family: Theme.fontFamily
             font.pixelSize: Theme.bodySize
-            onTextChanged: root.queueSearch(text)
+            onTextChanged: root.updateSearch(text)
             onAccepted: {
-                root.queueSearch(text)
+                root.submitSearch(text)
                 compactSearch.close()
             }
             background: Rectangle {
@@ -154,7 +155,8 @@ Item {
                 rightPadding: Theme.px(14)
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.bodySize
-                onTextChanged: root.queueSearch(text)
+                onTextChanged: root.updateSearch(text)
+                onAccepted: root.submitSearch(text)
                 background: Rectangle {
                     radius: Theme.radius
                     color: searchField.activeFocus ? Theme.raisedHover : Theme.input

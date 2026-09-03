@@ -217,6 +217,8 @@ Popup {
 
     function acceptInput() {
         close()
+        if (targetField && typeof targetField.controllerAccept === "function")
+            targetField.controllerAccept()
     }
 
     onOpened: {

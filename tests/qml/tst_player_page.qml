@@ -23,6 +23,7 @@ TestCase {
         ]
         property string selectedSubtitleId: "2"
         property real subtitleDelay: 0
+        property bool fillScreen: false
         property int pauseCalls: 0
         property int seekCalls: 0
         property int subtitleCalls: 0
@@ -38,6 +39,7 @@ TestCase {
         function selectSubtitle(id) { selectedSubtitleId = id; subtitleCalls += 1 }
         function addSubtitleFile(url) {}
         function setSubtitleDelay(seconds) { subtitleDelay = seconds }
+        function toggleFillScreen() { fillScreen = !fillScreen }
     }
 
     ApplicationWindow {
@@ -80,6 +82,7 @@ TestCase {
         fakePlayer.seekCalls = 0
         fakePlayer.subtitleCalls = 0
         fakePlayer.stopCalls = 0
+        fakePlayer.fillScreen = false
         findSubtitlesSpy.clear()
     }
 
@@ -94,6 +97,15 @@ TestCase {
         verify(button !== null)
         mouseClick(button)
         compare(fakePlayer.pauseCalls, 1)
+    }
+
+    function test_fill_screen_toggle_is_controller_accessible() {
+        const button = findChild(page, "fillScreenButton")
+        verify(button !== null)
+        button.forceActiveFocus(Qt.TabFocusReason)
+        button.controllerActivate()
+        compare(fakePlayer.fillScreen, true)
+        compare(button.Accessible.name, "Fit video")
     }
 
     function test_center_pause_control_is_controller_default() {

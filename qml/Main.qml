@@ -9,6 +9,7 @@ ApplicationWindow {
     required property var appController
     required property var controllerManager
     required property var movieModel
+    required property var highlightManager
     required property var libraryManager
     required property var metadataManager
     required property var downloadManager
@@ -46,6 +47,7 @@ ApplicationWindow {
     property string launchedStreamUrl: ""
     property string stoppedStreamUrl: ""
     property bool controllerWasConnected: controllerManager.connected
+    property string searchQuery: ""
 
     Binding {
         target: Theme
@@ -66,8 +68,9 @@ ApplicationWindow {
                 || url === window.stoppedStreamUrl)
             return
         window.launchedStreamUrl = url
+        if (videoPlayer.hasActivePlayback)
+            videoPlayer.stop()
         window.libraryManager.clearPlaybackSession()
-        window.subtitleManager.setMediaContext("", "")
         videoPlayer.play(url, window.torrentEngine.title)
         window.showingPlayer = true
     }
@@ -126,6 +129,8 @@ ApplicationWindow {
     Connections {
         target: window.downloadManager
         function onLocalPlaybackRequested(fileUrl, title) {
+            if (videoPlayer.hasActivePlayback)
+                videoPlayer.stop()
             window.libraryManager.clearPlaybackSession()
             window.subtitleManager.setMediaContext(fileUrl, "")
             window.stoppedStreamUrl = ""
@@ -340,7 +345,11 @@ ApplicationWindow {
                 currentIndex: window.pageIndex
                 searchEnabled: window.prowlarrManager.ready
                 onPageRequested: index => window.pageIndex = index
-                onSearchRequested: query => window.prowlarrManager.search(query)
+                onSearchRequested: query => {
+                    window.searchQuery = query
+                    if (query.length > 0)
+                        window.prowlarrManager.search(query)
+                }
                 onControllerSearchDismissed: searched => {
                     if (searched && discoverPage.focusFirstResult())
                         return
@@ -362,9 +371,22 @@ ApplicationWindow {
                     DiscoverPage {
                         id: discoverPage
                         movieModel: window.movieModel
+                        highlightManager: window.highlightManager
+                        searchQuery: window.searchQuery
                         prowlarrManager: window.prowlarrManager
                         torrentEngine: window.torrentEngine
                         controllerManager: window.controllerManager
+                        onPlaybackReplacementRequested: {
+                            if (videoPlayer.hasActivePlayback)
+                                videoPlayer.stop()
+                            window.torrentEngine.cancel()
+                            window.stoppedStreamUrl = ""
+                            window.launchedStreamUrl = ""
+                        }
+                        onHighlightSelected: title => {
+                            sidePanel.setSearchText(title)
+                            sidePanel.submitSearch(title)
+                        }
                     }
                     LibraryPage {
                         id: libraryPage

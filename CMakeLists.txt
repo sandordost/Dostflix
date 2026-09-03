@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(Dostflix VERSION 0.1.0 LANGUAGES CXX)
+project(Dostflix VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,6 +26,7 @@ qt_add_executable(dostflix
     src/library/MovieFilenameParser.cpp
     src/input/ControllerManager.cpp
     src/movies/Movie.cpp
+    src/movies/MovieHighlightsManager.cpp
     src/movies/MovieListModel.cpp
     src/network/NetworkGuardClient.cpp
     src/network/SystemdScope.cpp
@@ -69,6 +70,7 @@ qt_add_qml_module(dostflix_ui
         qml/components/AppToolButton.qml
         qml/components/ControllerHint.qml
         qml/components/ControllerKeyboard.qml
+        qml/components/HighlightShelf.qml
         qml/components/MovieCard.qml
         qml/components/MovieGrid.qml
         qml/components/MovieList.qml
@@ -77,6 +79,7 @@ qt_add_qml_module(dostflix_ui
         qml/components/SidePanel.qml
         qml/components/SubtitleSearchDialog.qml
         qml/pages/DiscoverPage.qml
+        qml/pages/HighlightsPage.qml
         qml/pages/DownloadsPage.qml
         qml/pages/LibraryPage.qml
         qml/pages/PlayerPage.qml

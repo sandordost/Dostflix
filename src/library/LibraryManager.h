@@ -32,6 +32,7 @@ public:
 
 signals:
     void stateChanged();
+    void playbackReplacing();
     void playbackRequested(const QUrl &fileUrl, const QString &title, int startSeconds);
     void subtitleContextChanged(const QUrl &fileUrl, const QString &imdbId);
 

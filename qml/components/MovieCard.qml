@@ -10,6 +10,8 @@ Item {
     required property int seederCount
     required property url posterUrl
     required property string sourceLabel
+    property real rating: 0
+    property string actionSymbol: "\uf04b"
     property bool transferActive: false
     property bool transferLoading: false
     property string transferStatusText: ""
@@ -139,10 +141,9 @@ Item {
                 opacity: cardMouse.containsMouse || root.highlighted ? 1 : 0
                 visible: !root.transferLoading && !root.transferHasError
                 scale: cardMouse.containsMouse || root.highlighted ? 1 : 0.88
-                Label {
+                AppIcon {
                     anchors.centerIn: parent
-                    anchors.horizontalCenterOffset: Theme.px(2)
-                    text: "▶"
+                    glyph: root.actionSymbol
                     color: Theme.buttonText
                     font.pixelSize: Theme.px(22)
                 }
@@ -174,6 +175,7 @@ Item {
             anchors.rightMargin: Theme.px(10)
             anchors.bottomMargin: Theme.px(8)
             text: (root.year > 0 ? root.year : qsTr("Unknown year"))
+                  + (root.rating > 0 ? qsTr(" · ★ %1").arg(root.rating.toFixed(1)) : "")
                   + (root.seederCount > 0 ? qsTr(" · %1 seeds").arg(root.seederCount) : "")
             color: Theme.textSecondary
             font.family: Theme.fontFamily

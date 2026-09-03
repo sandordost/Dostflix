@@ -100,6 +100,23 @@ target_link_libraries(tst_movie_list_model PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_movie_list_model)
 add_test(NAME movie_list_model COMMAND tst_movie_list_model)
 
+qt_add_executable(tst_movie_highlights_manager
+    movies/tst_movie_highlights_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/Movie.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/MovieHighlightsManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/MovieListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderManager.cpp
+)
+target_include_directories(tst_movie_highlights_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_movie_highlights_manager PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_movie_highlights_manager)
+add_test(NAME movie_highlights_manager
+    COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_movie_highlights_manager>'"
+)
+
 qt_add_executable(tst_qml_components qml/tst_qml.cpp)
 target_link_libraries(tst_qml_components PRIVATE
     Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickTest dostflix_uiplugin

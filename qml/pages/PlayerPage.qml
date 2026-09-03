@@ -322,6 +322,21 @@ Item {
                 elide: Text.ElideRight
             }
             AppToolButton {
+                id: fillScreenButton
+                objectName: "fillScreenButton"
+                symbol: root.player.fillScreen ? "\uf066" : "\uf065"
+                icon.width: Theme.iconSizeLarge
+                icon.height: Theme.iconSizeLarge
+                Accessible.name: root.player.fillScreen
+                                 ? qsTr("Fit video") : qsTr("Fill screen")
+                ToolTip.visible: hovered
+                ToolTip.text: Accessible.name
+                onClicked: {
+                    root.player.toggleFillScreen()
+                    root.revealControls()
+                }
+            }
+            AppToolButton {
                 icon.name: "view-fullscreen-symbolic"
                 icon.width: Theme.iconSizeLarge
                 icon.height: Theme.iconSizeLarge

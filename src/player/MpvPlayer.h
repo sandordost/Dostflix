@@ -28,6 +28,7 @@ class MpvPlayer : public QQuickFramebufferObject
     Q_PROPERTY(QVariantList subtitleTracks READ subtitleTracks NOTIFY subtitleTracksChanged)
     Q_PROPERTY(QString selectedSubtitleId READ selectedSubtitleId NOTIFY subtitleTracksChanged)
     Q_PROPERTY(double subtitleDelay READ subtitleDelay WRITE setSubtitleDelay NOTIFY subtitleDelayChanged)
+    Q_PROPERTY(bool fillScreen READ fillScreen WRITE setFillScreen NOTIFY fillScreenChanged)
 
 public:
     explicit MpvPlayer(QQuickItem *parent = nullptr);
@@ -48,6 +49,7 @@ public:
     QVariantList subtitleTracks() const;
     QString selectedSubtitleId() const;
     double subtitleDelay() const;
+    bool fillScreen() const;
 
     Q_INVOKABLE void play(const QString &url, const QString &title,
                           double startSeconds = 0.0);
@@ -60,6 +62,8 @@ public:
     Q_INVOKABLE void selectSubtitle(const QString &trackId);
     Q_INVOKABLE void addSubtitleFile(const QUrl &fileUrl);
     Q_INVOKABLE void setSubtitleDelay(double seconds);
+    Q_INVOKABLE void setFillScreen(bool enabled);
+    Q_INVOKABLE void toggleFillScreen();
     Q_INVOKABLE void stop();
     void processEvents();
 
@@ -75,6 +79,7 @@ signals:
     void renderReadyChanged();
     void subtitleTracksChanged();
     void subtitleDelayChanged();
+    void fillScreenChanged();
     void playbackStopping(double position, double duration);
 
 private:
@@ -102,4 +107,5 @@ private:
     bool m_active = false;
     bool m_paused = false;
     bool m_buffering = false;
+    bool m_fillScreen = false;
 };

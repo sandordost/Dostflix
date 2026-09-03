@@ -21,6 +21,10 @@ TextField {
             controllerKeyboard.openForTarget()
     }
 
+    function controllerAccept() {
+        root.accepted()
+    }
+
     ControllerKeyboard {
         id: controllerKeyboard
         targetField: root
