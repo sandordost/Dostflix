@@ -27,7 +27,8 @@ public:
         SizeBytesRole,
         SourceLabelRole,
         DownloadUrlRole,
-        MagnetUrlRole
+        MagnetUrlRole,
+        RatingRole
     };
     Q_ENUM(Role)
 
@@ -37,6 +38,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     void replaceMovies(std::vector<Movie> movies);
     void applyPosterMatches(const std::vector<MoviePosterMatch> &matches);
+    Q_INVOKABLE void clear();
+    Q_INVOKABLE QString titleAt(int row) const;
 
 private:
     std::vector<Movie> m_movies;

@@ -3,6 +3,9 @@ import QtQuick
 
 QtObject {
     property real scaleFactor: 1.0
+    property bool controllerConnected: false
+    property var activeControllerKeyboard: null
+    readonly property bool controllerKeyboardOpen: activeControllerKeyboard !== null
     readonly property int referenceWidth: 1280
     readonly property color canvas: "#020307"
     readonly property color panel: "#121214"
@@ -70,9 +73,11 @@ QtObject {
             "media-playback-pause-symbolic": "\uf04c",
             "media-seek-forward-symbolic": "\uf051",
             "audio-volume-high-symbolic": "\uf028",
+            "audio-volume-muted-symbolic": "\uf6a9",
             "view-refresh-symbolic": "\uf2f1",
             "document-open-symbolic": "\uf56f",
             "folder-open-symbolic": "\uf07c",
+            "input-gaming-symbolic": "\uf11b",
             "edit-delete-symbolic": "\uf1f8"
         }
         return icons[name] || ""

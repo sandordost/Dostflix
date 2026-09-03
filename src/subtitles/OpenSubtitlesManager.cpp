@@ -222,7 +222,7 @@ void OpenSubtitlesManager::performSearch()
     url.setQuery(query);
     QNetworkRequest request(url);
     request.setRawHeader("Api-Key", m_apiKey.toUtf8());
-    request.setRawHeader("User-Agent", "Dostflix v0.1.0");
+    request.setRawHeader("User-Agent", "Dostflix v1.0.0");
     request.setRawHeader("Accept", "application/json");
     request.setTransferTimeout(15'000);
     QNetworkReply *reply = m_network->get(request);
@@ -314,7 +314,7 @@ void OpenSubtitlesManager::fetchSubtitle(const QUrl &url, QString fileName)
 {
     m_status = tr("Downloading subtitle…");
     QNetworkRequest request(url);
-    request.setRawHeader("User-Agent", "Dostflix v0.1.0");
+    request.setRawHeader("User-Agent", "Dostflix v1.0.0");
     request.setTransferTimeout(20'000);
     QNetworkReply *reply = m_network->get(request);
     m_reply = reply;
@@ -331,12 +331,12 @@ void OpenSubtitlesManager::fetchSubtitle(const QUrl &url, QString fileName)
             else if (suffix != QStringLiteral("srt") && suffix != QStringLiteral("ass")
                      && suffix != QStringLiteral("vtt")) safeName += QStringLiteral(".srt");
             QString directory = QDir(m_dataDir).filePath(QStringLiteral("subtitles"));
-            if (!m_videoPath.isEmpty() && QFileInfo::exists(m_videoPath))
+            if (!m_videoPath.isEmpty())
                 directory = QFileInfo(m_videoPath).absolutePath();
             if (!QDir().mkpath(directory)) {
                 setError(tr("Could not create the subtitle directory"));
             } else {
-                if (!m_videoPath.isEmpty() && QFileInfo::exists(m_videoPath)) {
+                if (!m_videoPath.isEmpty()) {
                     const QString language = m_pendingRow >= 0 && m_pendingRow < m_results.size()
                         ? m_results.at(m_pendingRow).toMap().value(QStringLiteral("language")).toString()
                         : QString{};
@@ -394,7 +394,7 @@ QNetworkReply *OpenSubtitlesManager::sendJson(const QString &path, const QByteAr
     QNetworkRequest request(base.resolved(QUrl(path)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
     request.setRawHeader("Api-Key", m_apiKey.toUtf8());
-    request.setRawHeader("User-Agent", "Dostflix v0.1.0");
+    request.setRawHeader("User-Agent", "Dostflix v1.0.0");
     request.setRawHeader("Accept", "application/json");
     if (!m_token.isEmpty()) request.setRawHeader("Authorization", QByteArrayLiteral("Bearer ") + m_token.toUtf8());
     request.setTransferTimeout(15'000);

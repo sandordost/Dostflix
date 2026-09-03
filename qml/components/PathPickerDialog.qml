@@ -40,6 +40,19 @@ Dialog {
         root.close()
     }
 
+    function focusFirstEntry() {
+        if (fileList.count < 1)
+            return
+        fileList.currentIndex = 0
+        fileList.positionViewAtIndex(0, ListView.Beginning)
+        Qt.callLater(function() {
+            if (fileList.currentItem)
+                fileList.currentItem.forceActiveFocus(Qt.TabFocusReason)
+        })
+    }
+
+    onOpened: focusFirstEntry()
+
     FolderListModel {
         id: folderModel
         showDirs: true
@@ -107,10 +120,23 @@ Dialog {
                 required property bool fileIsDir
                 width: fileList.width
                 height: Theme.px(48)
+                activeFocusOnTab: true
                 radius: Theme.radiusSmall
                 color: entry.fileUrl === root.selectedUrl
                        ? Theme.accentSoft
                        : (entryMouse.containsMouse ? Theme.raisedHover : "transparent")
+                border.width: activeFocus ? Theme.px(2) : 0
+                border.color: Theme.accent
+
+                function controllerActivate() {
+                    if (entry.fileIsDir) {
+                        folderModel.folder = entry.fileUrl
+                        root.selectedUrl = ""
+                        Qt.callLater(root.focusFirstEntry)
+                    } else {
+                        root.selectedUrl = entry.fileUrl
+                    }
+                }
 
                 RowLayout {
                     anchors.fill: parent
@@ -153,6 +179,14 @@ Dialog {
                             root.selectedUrl = entry.fileUrl
                             root.chooseCurrent()
                         }
+                    }
+                }
+
+                Keys.onPressed: event => {
+                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                            || event.key === Qt.Key_Space) {
+                        entry.controllerActivate()
+                        event.accepted = true
                     }
                 }
             }

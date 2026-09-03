@@ -100,6 +100,23 @@ target_link_libraries(tst_movie_list_model PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_movie_list_model)
 add_test(NAME movie_list_model COMMAND tst_movie_list_model)
 
+qt_add_executable(tst_movie_highlights_manager
+    movies/tst_movie_highlights_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/app/AppSettings.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/Movie.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/MovieHighlightsManager.cpp
+    ${PROJECT_SOURCE_DIR}/src/movies/MovieListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderListModel.cpp
+    ${PROJECT_SOURCE_DIR}/src/providers/ProviderManager.cpp
+)
+target_include_directories(tst_movie_highlights_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_movie_highlights_manager PRIVATE Qt6::Core Qt6::Network Qt6::Test)
+dostflix_enable_warnings(tst_movie_highlights_manager)
+add_test(NAME movie_highlights_manager
+    COMMAND /usr/bin/unshare --user --map-root-user --net /usr/bin/sh -c
+            "/usr/bin/ip link set lo up; exec '$<TARGET_FILE:tst_movie_highlights_manager>'"
+)
+
 qt_add_executable(tst_qml_components qml/tst_qml.cpp)
 target_link_libraries(tst_qml_components PRIVATE
     Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickTest dostflix_uiplugin
@@ -129,6 +146,16 @@ target_include_directories(tst_display_environment PRIVATE ${PROJECT_SOURCE_DIR}
 target_link_libraries(tst_display_environment PRIVATE Qt6::Core Qt6::Test)
 dostflix_enable_warnings(tst_display_environment)
 add_test(NAME display_environment COMMAND tst_display_environment)
+
+qt_add_executable(tst_controller_manager
+    input/tst_controller_manager.cpp
+    ${PROJECT_SOURCE_DIR}/src/input/ControllerManager.cpp
+)
+target_include_directories(tst_controller_manager PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(tst_controller_manager PRIVATE Qt6::Core Qt6::Gui Qt6::Quick Qt6::Test PkgConfig::SDL3)
+dostflix_enable_warnings(tst_controller_manager)
+add_test(NAME controller_manager COMMAND tst_controller_manager)
+set_tests_properties(controller_manager PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 qt_add_executable(tst_mpv_player player/tst_mpv_player.cpp)
 target_include_directories(tst_mpv_player PRIVATE ${PROJECT_SOURCE_DIR}/src)

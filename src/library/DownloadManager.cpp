@@ -77,6 +77,7 @@ qint64 DownloadManager::availableBytes() const { return m_availableBytes; }
 bool DownloadManager::diskSpaceReady() const { return m_diskSpaceReady; }
 QString DownloadManager::partialFileName() const
 { return QFileInfo(m_transfer.partialPath).fileName(); }
+QString DownloadManager::finalPath() const { return m_transfer.finalPath; }
 double DownloadManager::progress() const
 {
     return m_transfer.expectedSize > 0

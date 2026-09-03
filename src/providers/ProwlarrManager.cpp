@@ -234,7 +234,13 @@ void ProwlarrManager::fetchMetadata(const QString &query)
 void ProwlarrManager::prepareRelease(const QString &title, const QString &magnetUrl,
                                      const QString &downloadUrl)
 {
-    if (!m_ready || releaseBusy()) return;
+    if (!m_ready) return;
+    if (m_releaseReply) {
+        QNetworkReply *reply = m_releaseReply;
+        m_releaseReply = nullptr;
+        reply->abort();
+        reply->deleteLater();
+    }
     m_releaseError.clear();
     const ReleaseLocation location = resolveReleaseLocation(magnetUrl, downloadUrl);
     if (!location.magnetUrl.isEmpty()) {

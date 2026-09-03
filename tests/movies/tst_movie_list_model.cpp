@@ -18,6 +18,9 @@ private slots:
         QCOMPARE(model.data(first, MovieListModel::SeederCountRole).toInt(), 42);
         QCOMPARE(model.roleNames().value(MovieListModel::PosterUrlRole), QByteArray("posterUrl"));
         QCOMPARE(model.roleNames().value(MovieListModel::MagnetUrlRole), QByteArray("magnetUrl"));
+        QCOMPARE(model.roleNames().value(MovieListModel::RatingRole), QByteArray("rating"));
+        QCOMPARE(model.titleAt(0), QStringLiteral("Arrival"));
+        QVERIFY(model.titleAt(8).isEmpty());
     }
 
     void ignoresChildRowsAndInvalidIndexes()

@@ -10,6 +10,18 @@ SpinBox {
     rightPadding: Theme.px(38)
     font.family: Theme.fontFamily
     font.pixelSize: Theme.bodySize
+    focusPolicy: Qt.StrongFocus
+
+    function controllerAdjust(direction) {
+        if (direction === 0)
+            return
+        const nextValue = Math.max(root.from, Math.min(root.to,
+                root.value + (direction > 0 ? root.stepSize : -root.stepSize)))
+        if (nextValue === root.value)
+            return
+        root.value = nextValue
+        root.valueModified()
+    }
 
     contentItem: TextInput {
         z: 2

@@ -10,14 +10,28 @@ Item {
     required property int seederCount
     required property url posterUrl
     required property string sourceLabel
+    property real rating: 0
+    property string actionSymbol: "\uf04b"
+    property bool transferActive: false
+    property bool transferLoading: false
+    property string transferStatusText: ""
+    property bool transferHasError: false
+    property bool controllerFocused: false
+    readonly property bool highlighted: activeFocus || controllerFocused
     signal selected()
+    activeFocusOnTab: true
     width: Theme.posterWidth
     height: width / Theme.posterAspectRatio + Theme.px(62)
-    scale: cardMouse.containsMouse ? 1.025 : 1
-    z: cardMouse.containsMouse ? 2 : 0
+    scale: cardMouse.containsMouse || highlighted ? 1.025 : 1
+    z: cardMouse.containsMouse || highlighted ? 2 : 0
     Accessible.role: Accessible.Button
     Accessible.name: title
     Accessible.onPressAction: selected()
+
+    function controllerActivate() {
+        if (!transferLoading)
+            selected()
+    }
 
     Behavior on scale {
         NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic }
@@ -27,6 +41,8 @@ Item {
         anchors.fill: parent
         radius: Theme.radius
         color: Theme.surface
+        border.width: root.highlighted ? Theme.px(2) : 0
+        border.color: Theme.accent
 
         Rectangle {
             id: posterFrame
@@ -57,6 +73,46 @@ Item {
             }
 
             Rectangle {
+                anchors.fill: parent
+                visible: root.transferActive
+                         && (root.transferLoading || root.transferHasError)
+                color: Qt.rgba(0.02, 0.02, 0.025, 0.78)
+
+                Column {
+                    anchors.centerIn: parent
+                    width: parent.width - Theme.px(20)
+                    spacing: Theme.px(8)
+
+                    BusyIndicator {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: Theme.px(36)
+                        height: Theme.px(36)
+                        running: root.transferLoading
+                        visible: running
+                    }
+                    AppIcon {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: root.transferHasError && !root.transferLoading
+                        glyph: "\uf071"
+                        color: Theme.danger
+                        font.pixelSize: Theme.iconSizeLarge
+                    }
+                    Label {
+                        width: parent.width
+                        text: root.transferStatusText
+                        color: root.transferHasError ? Theme.danger : Theme.textPrimary
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.captionSize
+                        font.weight: Font.DemiBold
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                    }
+                }
+            }
+
+            Rectangle {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.margins: Theme.px(9)
@@ -82,12 +138,12 @@ Item {
                 height: Theme.px(52)
                 radius: Theme.px(26)
                 color: Theme.button
-                opacity: cardMouse.containsMouse ? 1 : 0
-                scale: cardMouse.containsMouse ? 1 : 0.88
-                Label {
+                opacity: cardMouse.containsMouse || root.highlighted ? 1 : 0
+                visible: !root.transferLoading && !root.transferHasError
+                scale: cardMouse.containsMouse || root.highlighted ? 1 : 0.88
+                AppIcon {
                     anchors.centerIn: parent
-                    anchors.horizontalCenterOffset: Theme.px(2)
-                    text: "▶"
+                    glyph: root.actionSymbol
                     color: Theme.buttonText
                     font.pixelSize: Theme.px(22)
                 }
@@ -119,6 +175,7 @@ Item {
             anchors.rightMargin: Theme.px(10)
             anchors.bottomMargin: Theme.px(8)
             text: (root.year > 0 ? root.year : qsTr("Unknown year"))
+                  + (root.rating > 0 ? qsTr(" · ★ %1").arg(root.rating.toFixed(1)) : "")
                   + (root.seederCount > 0 ? qsTr(" · %1 seeds").arg(root.seederCount) : "")
             color: Theme.textSecondary
             font.family: Theme.fontFamily
@@ -132,7 +189,15 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.selected()
+        onClicked: if (!root.transferLoading) root.selected()
+    }
+
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                || event.key === Qt.Key_Space) {
+            root.controllerActivate()
+            event.accepted = true
+        }
     }
 
     ToolTip.visible: cardMouse.containsMouse && root.sourceLabel.length > 0

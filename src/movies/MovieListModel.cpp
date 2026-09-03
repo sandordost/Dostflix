@@ -50,6 +50,8 @@ QVariant MovieListModel::data(const QModelIndex &index, int role) const
         return movie.downloadUrl;
     case MagnetUrlRole:
         return movie.magnetUrl;
+    case RatingRole:
+        return movie.rating;
     default:
         return {};
     }
@@ -68,7 +70,19 @@ QHash<int, QByteArray> MovieListModel::roleNames() const
         {SourceLabelRole, "sourceLabel"},
         {DownloadUrlRole, "downloadUrl"},
         {MagnetUrlRole, "magnetUrl"},
+        {RatingRole, "rating"},
     };
+}
+
+void MovieListModel::clear()
+{
+    replaceMovies({});
+}
+
+QString MovieListModel::titleAt(const int row) const
+{
+    return row >= 0 && row < rowCount()
+        ? m_movies.at(static_cast<std::size_t>(row)).title : QString{};
 }
 
 void MovieListModel::replaceMovies(std::vector<Movie> movies)

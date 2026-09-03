@@ -23,58 +23,64 @@ Item {
     function requestPlayback(index, title, durationSeconds, watchedSeconds) {
         const canResume = watchedSeconds >= 30
                 && (durationSeconds <= 0 || durationSeconds - watchedSeconds > 60)
-        if (!canResume) {
-            libraryManager.play(index, true)
-            return
-        }
-        resumeDialog.movieIndex = index
-        resumeDialog.movieTitle = title
-        resumeDialog.watchedSeconds = watchedSeconds
-        resumeDialog.open()
+        libraryManager.play(index, !canResume)
     }
 
-    Dialog {
-        id: resumeDialog
-        objectName: "resumePlaybackDialog"
-        anchors.centerIn: parent
-        width: Math.min(Theme.px(540), root.width - Theme.px(48))
-        height: Theme.px(220)
-        modal: true
-        title: qsTr("Continue watching?")
-        background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
-        property int movieIndex: -1
-        property string movieTitle: ""
-        property int watchedSeconds: 0
+    function focusFirstControl() {
+        libraryRefreshButton.forceActiveFocus(Qt.TabFocusReason)
+        return true
+    }
 
-        contentItem: Label {
-            text: qsTr("Resume %1 at %2, or start from the beginning?")
-                    .arg(resumeDialog.movieTitle)
-                    .arg(root.formatTime(resumeDialog.watchedSeconds))
-            color: Theme.textPrimary
-            wrapMode: Text.WordWrap
+    function ensureMovieVisible(index) {
+        if (index < 0 || index >= libraryList.count)
+            return false
+        libraryList.currentIndex = index
+        libraryList.positionViewAtIndex(index, ListView.Contain)
+        return true
+    }
+
+    function itemContainsFocus(item) {
+        let focused = root.Window.window ? root.Window.window.activeFocusItem : null
+        while (focused) {
+            if (focused === item)
+                return true
+            focused = focused.parent
         }
-        footer: DialogButtonBox {
-            background: Item {}
-            AppButton {
-                objectName: "restartMovieButton"
-                text: qsTr("Start over")
-                DialogButtonBox.buttonRole: DialogButtonBox.ResetRole
-                onClicked: {
-                    resumeDialog.close()
-                    root.libraryManager.play(resumeDialog.movieIndex, true)
-                }
-            }
-            AppButton {
-                objectName: "resumeMovieButton"
-                text: qsTr("Resume")
-                primary: true
-                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                onClicked: {
-                    resumeDialog.close()
-                    root.libraryManager.play(resumeDialog.movieIndex, false)
-                }
-            }
+        return false
+    }
+
+    function focusMovie(index) {
+        if (!ensureMovieVisible(index))
+            return false
+        Qt.callLater(function() {
+            if (libraryList.currentItem)
+                libraryList.currentItem.forceActiveFocus(Qt.TabFocusReason)
+        })
+        return true
+    }
+
+    function handleControllerNavigation(horizontal, vertical) {
+        if (itemContainsFocus(libraryRefreshButton)) {
+            if (vertical > 0 && libraryList.count > 0)
+                focusMovie(0)
+            return horizontal !== 0 || vertical !== 0
         }
+        if (!itemContainsFocus(libraryList))
+            return false
+        if (horizontal !== 0)
+            return true
+        if (vertical < 0 && libraryList.currentIndex <= 0) {
+            libraryRefreshButton.forceActiveFocus(Qt.TabFocusReason)
+            return true
+        }
+        if (vertical !== 0) {
+            const nextIndex = Math.max(0, Math.min(libraryList.count - 1,
+                    libraryList.currentIndex + (vertical > 0 ? 1 : -1)))
+            if (nextIndex !== libraryList.currentIndex)
+                focusMovie(nextIndex)
+            return true
+        }
+        return false
     }
 
     ColumnLayout {
@@ -97,6 +103,8 @@ Item {
                 font.family: Theme.fontFamily
             }
             AppToolButton {
+                id: libraryRefreshButton
+                objectName: "libraryRefreshButton"
                 icon.name: "view-refresh-symbolic"
                 Accessible.name: qsTr("Rescan movie library")
                 onClicked: root.libraryManager.refresh()
@@ -143,6 +151,7 @@ Item {
             clip: true
             spacing: Theme.px(8)
             boundsBehavior: Flickable.StopAtBounds
+            cacheBuffer: height
             model: root.libraryManager.model
 
             delegate: Rectangle {
@@ -155,13 +164,27 @@ Item {
                 required property int watchedSeconds
                 width: libraryList.width
                 height: Theme.px(132)
+                activeFocusOnTab: true
                 radius: Theme.radius
-                color: movieHover.hovered ? Theme.raisedHover : Theme.surface
+                color: movieHover.hovered || activeFocus ? Theme.raisedHover : Theme.surface
+                border.width: activeFocus ? Theme.px(2) : 0
+                border.color: Theme.accent
                 Accessible.role: Accessible.Button
                 Accessible.name: movieRow.title
+                onActiveFocusChanged: {
+                    if (activeFocus) {
+                        libraryList.currentIndex = movieRow.index
+                        root.ensureMovieVisible(movieRow.index)
+                    }
+                }
                 Accessible.onPressAction: root.requestPlayback(
                     movieRow.index, movieRow.title,
                     movieRow.durationSeconds, movieRow.watchedSeconds)
+
+                function controllerActivate() {
+                    root.requestPlayback(movieRow.index, movieRow.title,
+                                         movieRow.durationSeconds, movieRow.watchedSeconds)
+                }
 
                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -227,6 +250,8 @@ Item {
                               : qsTr("Play")
                         icon.name: "media-playback-start-symbolic"
                         primary: true
+                        activeFocusOnTab: false
+                        focusPolicy: Qt.NoFocus
                         onClicked: root.requestPlayback(
                             movieRow.index, movieRow.title,
                             movieRow.durationSeconds, movieRow.watchedSeconds)
@@ -234,6 +259,13 @@ Item {
                 }
 
                 HoverHandler { id: movieHover }
+                Keys.onPressed: event => {
+                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                            || event.key === Qt.Key_Space) {
+                        movieRow.controllerActivate()
+                        event.accepted = true
+                    }
+                }
             }
 
             ScrollBar.vertical: ScrollBar {}

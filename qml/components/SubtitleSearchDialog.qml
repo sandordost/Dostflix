@@ -9,6 +9,7 @@ Dialog {
     id: root
     required property var manager
     property string query: ""
+    property var controllerResultButtons: []
     signal settingsRequested()
     anchors.centerIn: parent
     width: Math.min(Theme.px(760), parent ? parent.width - Theme.px(80) : Theme.px(760))
@@ -16,9 +17,93 @@ Dialog {
     modal: true
     title: qsTr("Find subtitles")
     background: Rectangle { radius: Theme.radiusLarge; color: Theme.panel }
+
+    function registerResultButton(button) {
+        if (controllerResultButtons.indexOf(button) < 0)
+            controllerResultButtons = controllerResultButtons.concat([button])
+    }
+
+    function unregisterResultButton(button) {
+        controllerResultButtons = controllerResultButtons.filter(
+                    candidate => candidate !== button)
+    }
+
+    function navigationRows() {
+        const rows = [[searchField, searchButton]]
+        if (settingsButton.visible)
+            rows.push([settingsButton])
+        const sortedButtons = controllerResultButtons.slice().sort(
+                    (left, right) => left.resultIndex - right.resultIndex)
+        for (let index = 0; index < sortedButtons.length; ++index)
+            rows.push([sortedButtons[index]])
+        rows.push([closeButton])
+        return rows
+    }
+
+    function itemAvailable(item) {
+        return item && item.visible && item.enabled && item.activeFocusOnTab
+    }
+
+    function focusFirstInRow(row) {
+        for (let index = 0; index < row.length; ++index) {
+            if (itemAvailable(row[index])) {
+                row[index].forceActiveFocus(Qt.TabFocusReason)
+                return true
+            }
+        }
+        return false
+    }
+
+    function activeRowPosition(rows) {
+        for (let rowIndex = 0; rowIndex < rows.length; ++rowIndex) {
+            for (let columnIndex = 0; columnIndex < rows[rowIndex].length;
+                 ++columnIndex) {
+                if (rows[rowIndex][columnIndex].activeFocus)
+                    return { row: rowIndex, column: columnIndex }
+            }
+        }
+        return { row: -1, column: -1 }
+    }
+
+    function focusFirstControl() {
+        searchField.forceActiveFocus(Qt.PopupFocusReason)
+        return true
+    }
+
+    function handleControllerNavigation(horizontal, vertical) {
+        const rows = navigationRows()
+        const position = activeRowPosition(rows)
+        if (position.row < 0)
+            return focusFirstControl()
+        if (vertical !== 0) {
+            for (let rowIndex = position.row + (vertical > 0 ? 1 : -1);
+                 rowIndex >= 0 && rowIndex < rows.length;
+                 rowIndex += vertical > 0 ? 1 : -1) {
+                if (focusFirstInRow(rows[rowIndex]))
+                    return true
+            }
+            return true
+        }
+        if (horizontal !== 0) {
+            const row = rows[position.row]
+            for (let columnIndex = position.column + (horizontal > 0 ? 1 : -1);
+                 columnIndex >= 0 && columnIndex < row.length;
+                 columnIndex += horizontal > 0 ? 1 : -1) {
+                if (itemAvailable(row[columnIndex])) {
+                    row[columnIndex].forceActiveFocus(Qt.TabFocusReason)
+                    return true
+                }
+            }
+            return true
+        }
+        return false
+    }
+
     footer: DialogButtonBox {
         background: Item {}
         AppButton {
+            id: closeButton
+            objectName: "subtitleSearchCloseButton"
             text: qsTr("Close")
             DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
             onClicked: root.reject()
@@ -28,6 +113,7 @@ Dialog {
     onOpened: {
         if (manager.configured && manager.networkReady)
             manager.search(query)
+        Qt.callLater(focusFirstControl)
     }
     onClosed: manager.cancel()
 
@@ -38,12 +124,15 @@ Dialog {
             Layout.fillWidth: true
             AppTextField {
                 id: searchField
+                objectName: "subtitleSearchField"
                 Layout.fillWidth: true
                 text: root.query
                 placeholderText: qsTr("Movie or release title")
                 onAccepted: root.manager.search(text)
             }
             AppButton {
+                id: searchButton
+                objectName: "subtitleSearchButton"
                 text: qsTr("Search")
                 primary: true
                 enabled: !root.manager.busy && root.manager.configured && root.manager.networkReady
@@ -59,6 +148,8 @@ Dialog {
             wrapMode: Text.WordWrap
         }
         AppButton {
+            id: settingsButton
+            objectName: "subtitleSettingsButton"
             visible: !root.manager.configured
             text: qsTr("Open Settings")
             onClicked: root.settingsRequested()
@@ -91,6 +182,7 @@ Dialog {
         }
 
         ListView {
+            id: resultsList
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
@@ -131,10 +223,21 @@ Dialog {
                         }
                     }
                     AppButton {
+                        id: downloadButton
+                        property int resultIndex: resultDelegate.index
+                        objectName: "subtitleDownloadButton-" + resultIndex
                         text: qsTr("Download")
                         primary: true
+                        focusBorderColor: Theme.textPrimary
                         enabled: !root.manager.busy
                         onClicked: root.manager.download(resultDelegate.index)
+                        onActiveFocusChanged: {
+                            if (activeFocus)
+                                resultsList.positionViewAtIndex(resultIndex,
+                                                               ListView.Contain)
+                        }
+                        Component.onCompleted: root.registerResultButton(downloadButton)
+                        Component.onDestruction: root.unregisterResultButton(downloadButton)
                     }
                 }
             }

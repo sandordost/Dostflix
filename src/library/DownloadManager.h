@@ -25,6 +25,7 @@ class DownloadManager final : public QObject
     Q_PROPERTY(qint64 availableBytes READ availableBytes NOTIFY stateChanged)
     Q_PROPERTY(bool diskSpaceReady READ diskSpaceReady NOTIFY stateChanged)
     Q_PROPERTY(QString partialFileName READ partialFileName NOTIFY stateChanged)
+    Q_PROPERTY(QString finalPath READ finalPath NOTIFY stateChanged)
     Q_PROPERTY(double progress READ progress NOTIFY stateChanged)
     Q_PROPERTY(QString stateLabel READ stateLabel NOTIFY stateChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY stateChanged)
@@ -45,6 +46,7 @@ public:
     qint64 availableBytes() const;
     bool diskSpaceReady() const;
     QString partialFileName() const;
+    QString finalPath() const;
     double progress() const;
     QString stateLabel() const;
     QString errorMessage() const;

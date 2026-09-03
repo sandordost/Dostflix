@@ -28,6 +28,11 @@ TestCase {
                 width: parent.width
                 model: ["Torznab", "Prowlarr"]
             }
+            AppComboBox {
+                id: emptyCombo
+                visible: false
+                model: []
+            }
             AppButton {
                 id: button
                 text: "Save settings"
@@ -43,6 +48,16 @@ TestCase {
                 fileNameFilters: ["*.ovpn"]
             }
         }
+    }
+
+    SignalSpy {
+        id: buttonClickSpy
+        target: button
+        signalName: "clicked"
+    }
+
+    function init() {
+        buttonClickSpy.clear()
     }
 
     function test_font_and_borderless_radius() {
@@ -74,6 +89,16 @@ TestCase {
         const row = iconButton.contentItem.children[0]
         verify(row !== null)
         compare(Math.round(row.x), Math.round((iconButton.contentItem.width - row.width) / 2))
+    }
+
+    function test_controller_activation_clicks_buttons() {
+        button.controllerActivate()
+        compare(buttonClickSpy.count, 1)
+    }
+
+    function test_empty_combo_does_not_open_for_controller() {
+        emptyCombo.controllerActivate()
+        compare(emptyCombo.popup.opened, false)
     }
 
     function test_file_picker_uses_app_surface() {

@@ -10,15 +10,84 @@ Item {
     required property var movieModel
     required property var prowlarrManager
     required property var torrentEngine
+    required property var highlightManager
+    property var controllerManager: null
+    property string searchQuery: ""
     property bool listMode: false
     property string selectionError: ""
+    property string selectedReleaseKey: ""
+    signal playbackReplacementRequested()
+    signal highlightSelected(string title)
+    readonly property bool showingHighlights: searchQuery.trim().length === 0
+
+    readonly property bool transferLoading: prowlarrManager.releaseBusy
+                                                   || (torrentEngine.active
+                                                       && !torrentEngine.bufferReady)
+    readonly property bool transferHasError: prowlarrManager.releaseError.length > 0
+                                              || torrentEngine.errorMessage.length > 0
+                                              || selectionError.length > 0
+    readonly property string transferStatusText: {
+        if (prowlarrManager.releaseBusy)
+            return qsTr("Retrieving torrent…")
+        if (torrentEngine.errorMessage.length > 0)
+            return torrentEngine.errorMessage
+        if (prowlarrManager.releaseError.length > 0)
+            return prowlarrManager.releaseError
+        if (selectionError.length > 0)
+            return selectionError
+        if (torrentEngine.active)
+            return torrentEngine.stateLabel
+        return ""
+    }
+
+    function releaseKey(title, magnetUrl, downloadUrl) {
+        return title + "\n" + magnetUrl + "\n" + downloadUrl
+    }
+
+    function focusFirstResult() {
+        if (showingHighlights)
+            return highlights.focusFirstResult()
+        return listMode ? movieList.focusFirstResult() : movieGrid.focusFirstResult()
+    }
+
+    function focusFirstControl() {
+        return root.focusFirstResult()
+    }
+
+    function ensureResultVisible(index) {
+        return listMode ? movieList.ensureIndexVisible(index)
+                        : movieGrid.ensureIndexVisible(index)
+    }
+
+    function handleControllerNavigation(horizontal, vertical) {
+        if (showingHighlights)
+            return highlights.handleControllerNavigation(horizontal, vertical)
+        return listMode
+                ? movieList.handleControllerNavigation(horizontal, vertical)
+                : movieGrid.handleControllerNavigation(horizontal, vertical)
+    }
+
+    function toggleViewMode() {
+        const previousIndex = listMode ? movieList.currentIndex
+                                       : movieGrid.currentIndex
+        listMode = !listMode
+        Qt.callLater(function() {
+            const nextView = root.listMode ? movieList : movieGrid
+            if (previousIndex >= 0 && previousIndex < nextView.count)
+                nextView.focusIndex(previousIndex)
+            else
+                nextView.focusFirstResult()
+        })
+    }
 
     function startRelease(title, magnetUrl, downloadUrl) {
         selectionError = ""
+        selectedReleaseKey = releaseKey(title, magnetUrl, downloadUrl)
         if (magnetUrl.length === 0 && downloadUrl.length === 0) {
             selectionError = qsTr("This release has no usable download link.")
             return
         }
+        root.playbackReplacementRequested()
         prowlarrManager.prepareRelease(title, magnetUrl, downloadUrl)
     }
 
@@ -30,7 +99,7 @@ Item {
             Layout.fillWidth: true
             Label {
                 Layout.fillWidth: true
-                text: qsTr("Results")
+                text: root.showingHighlights ? qsTr("Highlights") : qsTr("Results")
                 color: Theme.textPrimary
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.headingSize
@@ -38,6 +107,7 @@ Item {
             }
             AppToolButton {
                 objectName: "gridViewButton"
+                visible: !root.showingHighlights
                 icon.name: "view-grid-symbolic"
                 primary: !root.listMode
                 Accessible.name: qsTr("Grid view")
@@ -47,6 +117,7 @@ Item {
             }
             AppToolButton {
                 objectName: "listViewButton"
+                visible: !root.showingHighlights
                 icon.name: "view-list-symbolic"
                 primary: root.listMode
                 Accessible.name: qsTr("List view")
@@ -54,12 +125,20 @@ Item {
                 ToolTip.text: Accessible.name
                 onClicked: root.listMode = true
             }
+            ControllerHint {
+                objectName: "viewToggleControllerHint"
+                visible: !root.showingHighlights && root.controllerManager
+                         && root.controllerManager.connected
+                buttonLabel: root.controllerManager
+                             ? root.controllerManager.secondaryActionLabel : "X"
+                description: qsTr("Switch between grid and list view")
+            }
         }
 
         RowLayout {
             Layout.fillWidth: true
-            visible: root.prowlarrManager.searchBusy
-                     || root.prowlarrManager.searchError.length > 0
+            visible: !root.showingHighlights && (root.prowlarrManager.searchBusy
+                     || root.prowlarrManager.searchError.length > 0)
             spacing: Theme.px(8)
             BusyIndicator {
                 implicitWidth: Theme.px(22)
@@ -124,15 +203,31 @@ Item {
         StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: root.listMode ? 1 : 0
+            currentIndex: root.showingHighlights ? 0 : (root.listMode ? 2 : 1)
+
+            HighlightsPage {
+                id: highlights
+                manager: root.highlightManager
+                onMovieSelected: title => root.highlightSelected(title)
+            }
 
             MovieGrid {
+                id: movieGrid
                 movieModel: root.movieModel
+                selectedReleaseKey: root.selectedReleaseKey
+                transferLoading: root.transferLoading
+                transferStatusText: root.transferStatusText
+                transferHasError: root.transferHasError
                 onReleaseSelected: (title, magnetUrl, downloadUrl, posterUrl) =>
                     root.startRelease(title, magnetUrl, downloadUrl)
             }
             MovieList {
+                id: movieList
                 movieModel: root.movieModel
+                selectedReleaseKey: root.selectedReleaseKey
+                transferLoading: root.transferLoading
+                transferStatusText: root.transferStatusText
+                transferHasError: root.transferHasError
                 onReleaseSelected: (title, magnetUrl, downloadUrl, posterUrl) =>
                     root.startRelease(title, magnetUrl, downloadUrl)
             }

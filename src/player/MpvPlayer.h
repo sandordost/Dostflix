@@ -22,11 +22,13 @@ class MpvPlayer : public QQuickFramebufferObject
     Q_PROPERTY(bool paused READ paused NOTIFY pausedChanged)
     Q_PROPERTY(bool buffering READ buffering NOTIFY bufferingChanged)
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(bool muted READ muted WRITE setMuted NOTIFY mutedChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorChanged)
     Q_PROPERTY(bool renderReady READ renderReady NOTIFY renderReadyChanged)
     Q_PROPERTY(QVariantList subtitleTracks READ subtitleTracks NOTIFY subtitleTracksChanged)
     Q_PROPERTY(QString selectedSubtitleId READ selectedSubtitleId NOTIFY subtitleTracksChanged)
     Q_PROPERTY(double subtitleDelay READ subtitleDelay WRITE setSubtitleDelay NOTIFY subtitleDelayChanged)
+    Q_PROPERTY(bool fillScreen READ fillScreen WRITE setFillScreen NOTIFY fillScreenChanged)
 
 public:
     explicit MpvPlayer(QQuickItem *parent = nullptr);
@@ -41,11 +43,13 @@ public:
     bool paused() const;
     bool buffering() const;
     double volume() const;
+    bool muted() const;
     QString errorMessage() const;
     bool renderReady() const;
     QVariantList subtitleTracks() const;
     QString selectedSubtitleId() const;
     double subtitleDelay() const;
+    bool fillScreen() const;
 
     Q_INVOKABLE void play(const QString &url, const QString &title,
                           double startSeconds = 0.0);
@@ -53,9 +57,13 @@ public:
     Q_INVOKABLE void seek(double offsetSeconds);
     Q_INVOKABLE void setPosition(double seconds);
     Q_INVOKABLE void setVolume(double value);
+    Q_INVOKABLE void setMuted(bool muted);
+    Q_INVOKABLE void toggleMuted();
     Q_INVOKABLE void selectSubtitle(const QString &trackId);
     Q_INVOKABLE void addSubtitleFile(const QUrl &fileUrl);
     Q_INVOKABLE void setSubtitleDelay(double seconds);
+    Q_INVOKABLE void setFillScreen(bool enabled);
+    Q_INVOKABLE void toggleFillScreen();
     Q_INVOKABLE void stop();
     void processEvents();
 
@@ -66,10 +74,12 @@ signals:
     void pausedChanged();
     void bufferingChanged();
     void volumeChanged();
+    void mutedChanged();
     void errorChanged();
     void renderReadyChanged();
     void subtitleTracksChanged();
     void subtitleDelayChanged();
+    void fillScreenChanged();
     void playbackStopping(double position, double duration);
 
 private:
@@ -91,9 +101,11 @@ private:
     double m_position = 0.0;
     double m_duration = 0.0;
     double m_volume = 100.0;
+    bool m_muted = false;
     double m_subtitleDelay = 0.0;
     bool m_renderReady = false;
     bool m_active = false;
     bool m_paused = false;
     bool m_buffering = false;
+    bool m_fillScreen = false;
 };

@@ -1,172 +1,87 @@
-# Dostflix
+<p align="center"><img src="assets/icons/dostflix.svg" width="112" alt="Dostflix logo"></p>
+<h1 align="center">Dostflix</h1>
+<p align="center">Native Linux movie discovery, VPN-protected torrent streaming and an offline library.<br>Built with Qt Quick, TorrServer and libmpv — designed for desktop and Steam/Gamescope.</p>
 
-Dostflix is a native Qt 6 movie library and streaming client for Arch Linux. The finished application will connect through a user-selected OpenVPN profile, search user-configured Prowlarr or Torznab endpoints, stream a selected torrent while it downloads, and retain the completed movie locally.
+![Dostflix Highlights](docs/screenshots/highlights.png)
 
-This repository does not bundle torrent indexers or content sources. Users are responsible for configuring lawful sources and for complying with applicable copyright law.
+## What it does
 
-## Current status
+- Activates your selected OpenVPN profile at startup and disconnects only the connection it started.
+- Keeps Dostflix, Prowlarr and TorrServer inside a process-scoped nftables kill switch.
+- Searches your own Prowlarr/Torznab providers and streams one selected torrent at a time.
+- Starts playback after a safe buffer while retaining the movie as a resumable download.
+- Stores metadata, posters, watch progress and downloaded subtitles for offline playback.
+- Supports mouse, keyboard and SDL-compatible controllers, including Steam Input and Steam Controller.
+- Scales automatically in Gamescope and offers fit, fill/crop and native fullscreen playback.
 
-The current application contains the native shell, library foundation, OpenVPN
-profile management, provider search, a managed TorrServer streaming backend,
-and a process-scoped nftables kill switch. The installed
-application registers itself in a dedicated systemd cgroup; Polkit-authorized rules
-block that scope from the clear interface before VPN activation and during tunnel
-loss. `networkReady` becomes true only after NetworkManager, the tunnel interface,
-the default route, and protected firewall state have all been verified.
+> Dostflix contains no indexers or media. Configure only sources and download content you are legally allowed to use.
 
-TorrServer is started only after `networkReady`, listens for control requests on
-loopback, inherits Dostflix's protected cgroup, and is stopped before the VPN.
-When another release is selected, Dostflix waits for TorrServer to drop the
-current live swarm before submitting its replacement, guaranteeing at most one
-active torrent while still allowing database-only history entries.
-If its local API does not become ready within 20 seconds, Dostflix reports a
-startup error instead of waiting indefinitely. Backend diagnostics are stored in
-`$XDG_DATA_HOME/dostflix/torrserver/torrserver.log` (normally
-`~/.local/share/dostflix/torrserver/torrserver.log`).
-Ready TorrServer streams now open in an embedded libmpv render surface with
-pause, seek, volume, fullscreen, buffering feedback, and a return-to-movie flow.
-The player lists embedded subtitle tracks, accepts local `.srt`, `.ass`, and
-`.vtt` files, and supports subtitle delay. Its final subtitle-menu action can
-search Dutch and English releases through a user-configured OpenSubtitles.com
-account, download the selected subtitle, and load it directly into mpv. These
-requests are disabled until VPN protection is verified.
-Preferred subtitle languages are configurable as ordered ISO codes. For a local
-library film, searches also include its IMDb ID and OpenSubtitles movie hash;
-the selected subtitle is atomically stored beside the video as
-`Movie.language.srt` so it remains available with the retained film.
-Users can choose a writable movie-library folder; Dostflix recursively discovers
-supported local videos, registers them in SQLite without duplicates, and plays
-them through embedded mpv even when the VPN is unavailable. The selected
-TorrServer video is simultaneously retained as a resumable `.dostflix.part`
-file. Its exact transfer identity and progress survive restarts; only an exact,
-fsynced, atomically finalized video becomes visible in the Library. Downloads
-can be played or removed directly, and selecting the same release again reuses
-its existing torrent cache and partial-file progress.
-Before a new or resumed writer starts, Dostflix verifies that the library
-filesystem can hold every remaining byte while retaining a 512 MiB safety
-margin. Insufficient space pauses the transfer before any request is made;
-Downloads shows the `.dostflix.part` filename, bytes remaining, free space, and
-a recovery message instead of failing silently mid-transfer.
-Local filenames are normalized into a title and year before registration. When
-a TMDB Read Access Token is configured, Dostflix enriches unmatched local films
-only while VPN protection is verified, then stores the canonical title, year,
-runtime, synopsis, TMDB/IMDb identity, and a locally cached poster. Once cached,
-all library metadata remains available for offline browsing.
-Local playback position is persisted in five-second increments and once more
-before stopping. Returning to a partially watched movie offers Resume or Start
-over; completed movies automatically lose their resume marker.
+## Install on Arch Linux
 
-The UI follows the Dostify reference with matte translucent panels, fixed 2:3
-poster cards, responsive icon-only navigation on small windows, consistent
-Montserrat typography, and Font Awesome icons. Borderless rounded inputs and
-dark popup/hover states avoid the platform-dependent Qt Basic styling. File and
-folder selection uses the same in-app visual system instead of compositor-themed
-dialogs. Discover can switch between a poster grid and compact result list;
-active torrent progress stays visible in the application header. The local
-library uses compact poster rows without hover tooltips. Player controls fade
-after 2.8 seconds and return on pointer
-movement, pause, buffering, or keyboard input; only opacity, color, and scale are
-animated to keep frame pacing smooth.
-
-In a Gamescope/Steam session Dostflix detects `STEAM_GAMESCOPE_SESSION`,
-`GAMESCOPE_WAYLAND_DISPLAY`, or a Gamescope desktop-session name and opens on
-the complete output in native fullscreen. Its window dimensions remain bound to
-the active `Screen`, so a 3840×2160 session is not restricted by the normal
-1280×800 desktop startup size. The 1280-pixel reference width also drives the
-complete interface scale: `screen width / 1280`. A 3840-pixel-wide Gamescope
-output therefore renders typography, icons, controls, posters, and spacing at
-3× while preserving the reference layout. The binding updates automatically
-when the output width changes. `dostflix --fullscreen` and
-`dostflix --windowed` provide explicit launch-option overrides.
-
-## Arch installation and dependencies
-
-The recommended local installation route is the Arch package. `makepkg -si`
-installs Dostflix's declared runtime and build dependencies through pacman,
-including NetworkManager's OpenVPN plugin, OpenVPN, nftables, Polkit, TorrServer,
-mpv, Secret Service support, and Qt's Wayland platform integration.
+The package declares all application dependencies. Prowlarr and TorrServer are expected from an AUR helper or a configured binary repository.
 
 ```bash
-cd packaging/arch
+git clone https://github.com/sandordost/Dostflix.git
+cd Dostflix/packaging/arch
 makepkg -si
 ```
 
-For a source-only development build, install the toolchain and current direct
-dependencies with:
+Launch **Dostflix** from the application menu. On first use:
+
+1. Import an `.ovpn` profile in **Settings**.
+2. Add a TMDB Read Access Token for Highlights and library metadata.
+3. Open managed Prowlarr and enable the indexers you want to search.
+4. Optionally add OpenSubtitles credentials and preferred languages.
+5. Enter a movie title and press Enter. Select a result to buffer, play and retain it.
+
+![Dostflix Library](docs/screenshots/library.png)
+
+## Other distributions
+
+Arch is the supported V1 target. On another system, install equivalent development/runtime packages for:
+
+| Component | Debian/Ubuntu family | Fedora family |
+|---|---|---|
+| Qt 6 | `qt6-base-dev`, `qt6-declarative-dev`, Qt SVG/Wayland tools | `qt6-qtbase-devel`, `qt6-qtdeclarative-devel`, Qt SVG/Wayland |
+| Player/input | `libmpv-dev`, SDL 3 development files | `mpv-libs-devel`, SDL 3 development files |
+| VPN/security | NetworkManager, `network-manager-openvpn`, OpenVPN, nftables, Polkit | NetworkManager, `NetworkManager-openvpn`, OpenVPN, nftables, Polkit |
+| Desktop/data | libsecret, SQLite, Montserrat, Font Awesome | libsecret, SQLite, Montserrat, Font Awesome |
+| Services | Install Prowlarr and TorrServer from their upstream packages | Install Prowlarr and TorrServer from their upstream packages |
+
+Package names and SDL 3 availability vary by release. Once dependencies are installed:
 
 ```bash
-sudo pacman -S --needed base-devel cmake hicolor-icon-theme libsecret \
-  mpv networkmanager networkmanager-openvpn nftables ninja otf-font-awesome \
-  openvpn polkit qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland sqlite \
-  ttf-montserrat
-yay -S --needed prowlarr-bin torrserver-bin
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build
+ctest --test-dir build --output-on-failure
+sudo cmake --install build
 ```
 
-## Build and test
+The Polkit policy and network helper are installed with the app. NetworkManager must be the active network service.
+
+## Controls
+
+- **Enter** searches; an empty search shows Trending, Best of the current year and High Ratings.
+- **Esc / B / Circle** leaves a dialog or returns to the active movie.
+- **LT/RT** changes sections; during playback the triggers seek.
+- **X / Square** switches result layout and opens subtitles in the player.
+- **Y / Triangle** opens search and toggles fullscreen in the player.
+- Player controls include subtitle selection/delay, mute/volume and Fill Screen.
+
+## Development
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
+cmake --build build -j2
 ctest --test-dir build --output-on-failure
 cmake --build build --target dostflix_ui_qmllint
 ```
 
-The privileged isolation test creates temporary network namespaces and virtual
-interfaces, then verifies bootstrap, protected, and removal behavior:
+Do not launch the production executable during automated tests: startup intentionally changes VPN/firewall state. Tests use isolated loopback fakes. Start with the [V1 handoff](docs/V1-HANDOFF.md) and the [product design](docs/superpowers/specs/2026-08-31-dostflix-design.md) before changing cross-component behavior.
 
-```bash
-cmake --build build --target network_isolation_test
-```
+## Projects and APIs
 
-Run the application with:
+[Qt](https://www.qt.io/) · [mpv](https://mpv.io/) · [SDL](https://www.libsdl.org/) · [NetworkManager OpenVPN](https://networkmanager.dev/docs/vpn/) · [nftables](https://www.netfilter.org/projects/nftables/) · [Prowlarr](https://prowlarr.com/) · [TorrServer](https://github.com/YouROK/TorrServer) · [TMDB API](https://developer.themoviedb.org/docs/getting-started) · [OpenSubtitles API](https://opensubtitles.stoplight.io/) · [Dostify reference](https://github.com/sandordost/Dostify)
 
-```bash
-./build/dostflix
-```
-
-## Local package
-
-To rebuild the local package from `packaging/arch`:
-
-```bash
-makepkg -si
-```
-
-The package installs the `dostflix` executable, desktop entry, and scalable application icon.
-
-## Design and implementation notes
-
-Agents and contributors should start with the following documents before
-changing cross-component behavior:
-
-- `docs/superpowers/specs/2026-08-31-dostflix-design.md` — product architecture,
-  security boundaries, UX requirements, and definition of done.
-- `docs/superpowers/plans/2026-09-01-dostflix-torrserver-backend.md` — managed
-  torrent backend, buffering, diagnostics, and loopback streaming contract.
-- `docs/superpowers/plans/2026-09-01-dostflix-mpv-player.md` — current native
-  player implementation, lifecycle invariants, verification, and the next
-  subtitle increment.
-- `docs/superpowers/plans/2026-09-01-dostflix-subtitle-controls.md` — embedded
-  and local subtitle implementation and its networked handoff boundary.
-- `docs/superpowers/plans/2026-09-01-dostflix-opensubtitles.md` — OpenSubtitles
-  API, language preferences, hash/IMDb matching, sidecar storage, VPN gating,
-  and fake-server tests.
-- `docs/superpowers/plans/2026-09-01-dostflix-local-library.md` — local folder,
-  SQLite registration, offline playback, tests, and torrent-retention handoff.
-- `docs/superpowers/plans/2026-09-01-dostflix-library-metadata.md` — filename
-  recognition, TMDB matching, poster caching, schema v4, and network invariants.
-- `docs/superpowers/plans/2026-09-01-dostflix-watch-progress.md` — local playback
-  persistence, resume/start-over behavior, completion rules, and tests.
-- `docs/superpowers/plans/2026-09-01-dostflix-durable-retention.md` — resumable
-  loopback writer, playback/removal lifecycle, cache reuse, atomic completion,
-  and security rules.
-- `docs/superpowers/plans/2026-09-01-dostflix-download-disk-safety.md` — free-space
-  preflight, safety margin, disk-full handling, incomplete-file UX, and tests.
-- `docs/superpowers/plans/2026-09-01-dostflix-ui-overhaul.md` — Dostify-inspired
-  visual tokens, responsive layout, animation performance rules, player auto-hide,
-  keyboard controls, accessibility, and visual-regression follow-up.
-- `docs/superpowers/plans/2026-08-31-dostflix-network-guard.md` — kill-switch and
-  process-isolation rules that networking changes must preserve.
-
-The plan documents describe completed increments as well as the remaining work;
-do not infer that unfinished features in the design specification already exist.
+This product uses the TMDB API but is not endorsed or certified by TMDB.

@@ -155,6 +155,29 @@ private slots:
         QVERIFY(file.open(QIODevice::ReadOnly));
         QVERIFY(file.readAll().contains("Hallo"));
     }
+
+    void savesBesideFutureDurableVideo()
+    {
+        MemorySecretStore secrets;
+        QTemporaryDir data;
+        AppSettings settings(data.filePath(QStringLiteral("settings.ini")));
+        FakeOpenSubtitlesServer server;
+        QVERIFY(server.listen());
+        OpenSubtitlesManager manager(settings, secrets, data.path(), server.apiBase());
+        QVERIFY(manager.saveCredentials("api-key", "viewer", "secret"));
+        const QString videoPath = data.filePath(QStringLiteral("library/Future Movie.mkv"));
+        manager.setMediaContext(QUrl::fromLocalFile(videoPath));
+        manager.setNetworkReady(true);
+        manager.search("Future Movie");
+        QTRY_COMPARE_WITH_TIMEOUT(manager.results().size(), 1, 3000);
+        QSignalSpy readySpy(&manager, &OpenSubtitlesManager::subtitleReady);
+        manager.download(0);
+        QTRY_COMPARE_WITH_TIMEOUT(readySpy.size(), 1, 3000);
+        const QString savedPath = readySpy.first().first().toUrl().toLocalFile();
+        QCOMPARE(savedPath, data.filePath(QStringLiteral("library/Future Movie.nl.srt")));
+        QVERIFY(QFileInfo::exists(savedPath));
+        QVERIFY(!QFileInfo::exists(videoPath));
+    }
 };
 
 QTEST_MAIN(OpenSubtitlesManagerTest)

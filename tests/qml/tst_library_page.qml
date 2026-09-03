@@ -35,6 +35,7 @@ TestCase {
         function clearPlaybackSession() {}
     }
     ApplicationWindow {
+        id: libraryWindow
         width: 700
         height: 500
         visible: true
@@ -47,9 +48,20 @@ TestCase {
     }
 
     function init() {
+        libraryWindow.requestActivate()
+        tryCompare(libraryWindow, "active", true)
+        while (movies.count < 12) {
+            const index = movies.count
+            movies.append({
+                title: "Local movie " + index, posterUrl: "", year: 2000 + index,
+                durationSeconds: 7200, watchedSeconds: 0,
+                synopsis: "A local movie synopsis."
+            })
+        }
         movies.setProperty(0, "watchedSeconds", 0)
         fakeLibrary.playCalls = 0
         fakeLibrary.lastRestart = false
+        page.ensureMovieVisible(0)
     }
 
     function test_localMovieCanBePlayed() {
@@ -64,15 +76,43 @@ TestCase {
         verify(fakeLibrary.lastRestart)
     }
 
-    function test_resumeChoice() {
+    function test_continue_resumes_without_a_dialog() {
         movies.setProperty(0, "watchedSeconds", 125)
         const button = findChild(page, "libraryPlayButton")
         mouseClick(button)
-        const dialog = findChild(page, "resumePlaybackDialog")
-        tryCompare(dialog, "opened", true)
-        const resume = findChild(page, "resumeMovieButton")
-        mouseClick(resume)
         compare(fakeLibrary.playCalls, 1)
         verify(!fakeLibrary.lastRestart)
+        verify(findChild(page, "resumePlaybackDialog") === null)
+    }
+
+    function test_refresh_is_the_top_controller_target() {
+        verify(page.focusFirstControl())
+        const refresh = findChild(page, "libraryRefreshButton")
+        verify(refresh !== null)
+        compare(refresh.focus, true)
+    }
+
+    function test_controller_selection_scrolls_into_view() {
+        const list = findChild(page, "libraryList")
+        verify(list !== null)
+        tryVerify(function() { return list.contentHeight > list.height })
+        verify(page.ensureMovieVisible(movies.count - 1))
+        tryVerify(function() { return list.contentY > 0 })
+    }
+
+    function test_list_controller_navigation_stays_on_rows() {
+        const list = findChild(page, "libraryList")
+        verify(page.focusMovie(0))
+        tryCompare(list, "currentIndex", 0)
+        tryCompare(list.currentItem, "activeFocus", true)
+        verify(page.handleControllerNavigation(-1, 0))
+        compare(list.currentIndex, 0)
+        compare(list.currentItem.activeFocus, true)
+        verify(page.handleControllerNavigation(0, 1))
+        tryCompare(list, "currentIndex", 1)
+        verify(page.handleControllerNavigation(0, -1))
+        tryCompare(list, "currentIndex", 0)
+        verify(page.handleControllerNavigation(0, -1))
+        tryCompare(findChild(page, "libraryRefreshButton"), "activeFocus", true)
     }
 }

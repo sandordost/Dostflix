@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import Dostflix
 
 Item {
@@ -10,27 +11,77 @@ Item {
     property bool searchEnabled: false
     property bool compact: false
     property string pendingSearch: ""
+    required property var controllerManager
+    property bool controllerSearchActive: false
+    property bool controllerSearchHadQuery: false
+    property var controllerPreviousFocus: null
     signal pageRequested(int index)
     signal searchRequested(string query)
+    signal controllerSearchDismissed(bool searched)
     implicitWidth: compact ? Theme.sidebarCompactWidth : Theme.sidebarWidth
 
-    function queueSearch(query) {
+    function updateSearch(query) {
         pendingSearch = query.trim()
-        searchDebounce.stop()
-        if (pendingSearch.length > 0 && searchEnabled) {
+        if (pendingSearch.length === 0) {
             pageRequested(0)
-            searchDebounce.start()
+            searchRequested("")
         }
     }
 
-    Timer {
-        id: searchDebounce
-        interval: 2000
-        repeat: false
-        onTriggered: {
-            if (root.pendingSearch.length > 0 && root.searchEnabled)
-                root.searchRequested(root.pendingSearch)
+    function submitSearch(query) {
+        pendingSearch = query.trim()
+        if (controllerSearchActive && pendingSearch.length > 0)
+            controllerSearchHadQuery = true
+        pageRequested(0)
+        searchRequested(pendingSearch)
+    }
+
+    function setSearchText(query) {
+        searchField.text = query
+        compactSearchField.text = query
+        updateSearch(query)
+    }
+
+    function openControllerSearch() {
+        if (!searchEnabled)
+            return
+        controllerPreviousFocus = root.Window.window
+                ? root.Window.window.activeFocusItem : null
+        controllerSearchActive = true
+        controllerSearchHadQuery = false
+        if (compact) {
+            compactSearch.open()
+        } else {
+            searchField.forceActiveFocus(Qt.ShortcutFocusReason)
+            searchField.selectAll()
         }
+    }
+
+    function closeControllerSearch() {
+        if (!controllerSearchActive)
+            return false
+        const searched = controllerSearchHadQuery
+        controllerSearchActive = false
+        if (compactSearch.opened)
+            compactSearch.close()
+        controllerSearchDismissed(searched)
+        controllerSearchHadQuery = false
+        return true
+    }
+
+    function restoreControllerFocus() {
+        if (controllerPreviousFocus && controllerPreviousFocus.visible
+                && controllerPreviousFocus.enabled) {
+            controllerPreviousFocus.forceActiveFocus(Qt.BacktabFocusReason)
+            return true
+        }
+        return false
+    }
+
+    function focusCurrentPage() {
+        const button = navRepeater.itemAt(currentIndex)
+        if (button)
+            button.forceActiveFocus(Qt.TabFocusReason)
     }
 
     Rectangle {
@@ -54,15 +105,18 @@ Item {
         }
         contentItem: AppTextField {
             id: compactSearchField
+            objectName: "compactSearchField"
             placeholderText: qsTr("Search movies…")
             enabled: root.searchEnabled
+            activeFocusOnTab: false
+            focusPolicy: Qt.StrongFocus
             leftPadding: Theme.px(14)
             rightPadding: Theme.px(14)
             font.family: Theme.fontFamily
             font.pixelSize: Theme.bodySize
-            onTextChanged: root.queueSearch(text)
+            onTextChanged: root.updateSearch(text)
             onAccepted: {
-                root.queueSearch(text)
+                root.submitSearch(text)
                 compactSearch.close()
             }
             background: Rectangle {
@@ -78,23 +132,43 @@ Item {
         anchors.margins: root.compact ? Theme.px(10) : Theme.px(14)
         spacing: Theme.px(8)
 
-        AppTextField {
-            id: searchField
+        RowLayout {
             Layout.fillWidth: true
+            Layout.minimumHeight: Theme.px(46)
             Layout.preferredHeight: Theme.px(46)
+            Layout.maximumHeight: Theme.px(46)
             visible: !root.compact
-            placeholderText: qsTr("Search movies…")
-            enabled: root.searchEnabled
-            leftPadding: Theme.px(14)
-            rightPadding: Theme.px(14)
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.bodySize
-            onTextChanged: root.queueSearch(text)
-            background: Rectangle {
-                radius: Theme.radius
-                color: searchField.activeFocus ? Theme.raisedHover : Theme.input
+            spacing: Theme.px(8)
+
+            AppTextField {
+                id: searchField
+                objectName: "searchField"
+                Layout.fillWidth: true
+                Layout.minimumHeight: Theme.px(46)
+                Layout.preferredHeight: Theme.px(46)
+                Layout.maximumHeight: Theme.px(46)
+                placeholderText: qsTr("Search movies…")
+                enabled: root.searchEnabled
+                activeFocusOnTab: false
+                focusPolicy: Qt.StrongFocus
+                leftPadding: Theme.px(14)
+                rightPadding: Theme.px(14)
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.bodySize
+                onTextChanged: root.updateSearch(text)
+                onAccepted: root.submitSearch(text)
+                background: Rectangle {
+                    radius: Theme.radius
+                    color: searchField.activeFocus ? Theme.raisedHover : Theme.input
+                }
+                Accessible.name: qsTr("Search movies")
             }
-            Accessible.name: qsTr("Search movies")
+
+            ControllerHint {
+                visible: root.controllerManager.connected
+                buttonLabel: root.controllerManager.searchButtonLabel
+                description: qsTr("Focus search")
+            }
         }
 
         AppToolButton {
@@ -106,6 +180,8 @@ Item {
             icon.width: Theme.iconSize
             icon.height: Theme.iconSize
             enabled: root.searchEnabled
+            activeFocusOnTab: false
+            focusPolicy: Qt.NoFocus
             onClicked: compactSearch.open()
             background: Rectangle {
                 radius: Theme.radiusSmall
@@ -113,6 +189,16 @@ Item {
                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
             }
             Accessible.name: qsTr("Search movies")
+
+            ControllerHint {
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: -Theme.px(3)
+                visible: root.controllerManager.connected
+                buttonLabel: root.controllerManager.searchButtonLabel
+                description: qsTr("Focus search")
+                scale: 0.78
+            }
         }
 
         Rectangle {
@@ -122,7 +208,30 @@ Item {
             color: Theme.separator
         }
 
+        RowLayout {
+            Layout.fillWidth: true
+            visible: root.controllerManager.connected
+            spacing: Theme.px(7)
+
+            ControllerHint {
+                buttonLabel: root.controllerManager.previousPageLabel
+                description: qsTr("Previous section")
+            }
+            Label {
+                Layout.fillWidth: true
+                text: qsTr("Switch section")
+                color: Theme.textMuted
+                font.pixelSize: Theme.captionSize
+                horizontalAlignment: Text.AlignHCenter
+            }
+            ControllerHint {
+                buttonLabel: root.controllerManager.nextPageLabel
+                description: qsTr("Next section")
+            }
+        }
+
         Repeater {
+            id: navRepeater
             model: [
                 { label: qsTr("Discover"), iconName: "system-search-symbolic" },
                 { label: qsTr("Library"), iconName: "folder-videos-symbolic" },

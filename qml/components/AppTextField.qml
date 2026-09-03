@@ -4,6 +4,7 @@ import Dostflix
 
 TextField {
     id: root
+    readonly property alias controllerKeyboardOpened: controllerKeyboard.opened
     implicitHeight: Theme.px(44)
     leftPadding: Theme.px(14)
     rightPadding: Theme.px(14)
@@ -13,6 +14,21 @@ TextField {
     selectedTextColor: Theme.textPrimary
     font.family: Theme.fontFamily
     font.pixelSize: Theme.bodySize
+
+    function controllerActivate() {
+        root.forceActiveFocus(Qt.TabFocusReason)
+        if (Theme.controllerConnected)
+            controllerKeyboard.openForTarget()
+    }
+
+    function controllerAccept() {
+        root.accepted()
+    }
+
+    ControllerKeyboard {
+        id: controllerKeyboard
+        targetField: root
+    }
 
     background: Rectangle {
         radius: Theme.radius

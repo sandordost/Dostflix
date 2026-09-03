@@ -91,6 +91,7 @@ void LibraryManager::play(int row, bool restart)
         emit stateChanged();
         return;
     }
+    emit playbackReplacing();
     m_activeVideoPath = videoPath;
     m_lastPersistedSeconds = startSeconds;
     if (restart) reload();

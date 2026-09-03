@@ -14,6 +14,12 @@ TestCase {
         property int watchedSeconds: 0
     }
 
+    QtObject {
+        id: fakeControllerManager
+        property bool connected: true
+        property string backButtonLabel: "B"
+    }
+
     ApplicationWindow {
         width: 500
         height: 200
@@ -22,7 +28,18 @@ TestCase {
         NowWatchingCard {
             id: card
             controller: fakeController
+            controllerManager: fakeControllerManager
         }
+    }
+    SignalSpy {
+        id: returnSpy
+        target: card
+        signalName: "returnRequested"
+    }
+
+    function init() {
+        fakeController.hasActivePlayback = false
+        returnSpy.clear()
     }
 
     function test_visibility_tracks_session() {
@@ -30,5 +47,12 @@ TestCase {
         fakeController.hasActivePlayback = true
         compare(card.controller.hasActivePlayback, true)
         tryCompare(card, "visible", true)
+    }
+
+    function test_controller_activation_returns_to_movie() {
+        fakeController.hasActivePlayback = true
+        tryCompare(card, "visible", true)
+        card.controllerActivate()
+        compare(returnSpy.count, 1)
     }
 }
