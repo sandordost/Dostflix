@@ -324,7 +324,9 @@ Item {
             AppToolButton {
                 id: fillScreenButton
                 objectName: "fillScreenButton"
-                symbol: root.player.fillScreen ? "\uf066" : "\uf065"
+                // Keep this visually distinct from the native fullscreen control:
+                // four diagonal arrows communicate video crop/zoom rather than window mode.
+                symbol: root.player.fillScreen ? "\uf78c" : "\uf31e"
                 icon.width: Theme.iconSizeLarge
                 icon.height: Theme.iconSizeLarge
                 Accessible.name: root.player.fillScreen
